@@ -1,4 +1,4 @@
-module dcache #(parameter ACP_RS = 4) (
+module dcache #(parameter ACP_RS = 1) (
     input   wire logic                          cpu_clock_i,
 
     // Cache interface

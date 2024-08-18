@@ -1,7 +1,7 @@
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
 parameter [31:0] BPU_ENTRIES = 1,
 parameter [31:0] BPU_RAS_ENABLE = 1,
-parameter [31:0] BPU_RAS_ENTRIES = 32, parameter HARTID = 0) (
+parameter [31:0] BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -43,6 +43,28 @@ parameter [31:0] BPU_RAS_ENTRIES = 32, parameter HARTID = 0) (
     input   wire logic                      dcache_d_corrupt,
     input   wire logic                      dcache_d_valid,
     output  wire logic                      dcache_d_ready,
+
+    // TileLink Bus Slave Uncached Lightweight to keep coherent
+    input   wire logic [2:0]                acp_a_opcode,
+    input   wire logic [2:0]                acp_a_param,
+    input   wire logic [3:0]                acp_a_size,
+    input   wire logic [ACP_RS-1:0]         acp_a_source,
+    input   wire logic [31:0]               acp_a_address,
+    input   wire logic [3:0]                acp_a_mask,
+    input   wire logic [31:0]               acp_a_data,
+    input   wire logic                      acp_a_valid,
+    output  wire logic                      acp_a_ready, 
+
+    output       logic [2:0]                acp_d_opcode,
+    output       logic [1:0]                acp_d_param,
+    output       logic [3:0]                acp_d_size,
+    output       logic [ACP_RS-1:0]         acp_d_source,
+    output       logic                      acp_d_denied,
+    output       logic [31:0]               acp_d_data,
+    output       logic                      acp_d_corrupt,
+    output       logic                      acp_d_valid,
+    input   wire logic                      acp_d_ready,
+
 
     input   wire logic [2:0]                ext_int_i
 );
@@ -297,6 +319,23 @@ counter_overload);
     tmu_data_i, tmu_address_i, tmu_opcode_i, tmu_wr_en, tmu_valid_i, tmu_done_o, tmu_excp_o, tmu_data_o, rcu_lock, oldest_instruction, mem_lock, agu0_rob_slot_i,
     agu0_rob_complete_i,ldq_rob_slot_i,ldq_rob_complete_i,exception_i, exception_code_i[3:0], completed_rob_id,exception_addr, p2_we_i, p2_we_data, p2_we_dest, 
     stb_c0, stb_c1, stb_emp, dcache_a_opcode, dcache_a_param, dcache_a_size, dcache_a_address, dcache_a_mask, dcache_a_data, dcache_a_corrupt, dcache_a_valid, dcache_a_ready, 
-    dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready);
+    dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,acp_a_opcode,
+    acp_a_param,
+    acp_a_size,
+    acp_a_source,
+    acp_a_address,
+    acp_a_mask,
+    acp_a_data,
+    acp_a_valid,
+    acp_a_ready, 
+    acp_d_opcode,
+    acp_d_param,
+    acp_d_size,
+    acp_d_source,
+    acp_d_denied,
+    acp_d_data,
+    acp_d_corrupt,
+    acp_d_valid,
+    acp_d_ready);
     assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = flush|rename_flush_o; assign exception_code_i[4] = 0;
 endmodule
