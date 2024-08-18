@@ -119,7 +119,7 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
     wire [1:0] btb_type = btype[{match[1], btb_lkp_idx}];
     wire [29:0] btb_target_bm = targets[{match[1], btb_lkp_idx}];
     wire btb_index = idx[{match[1], btb_lkp_idx}];
-    wire btb_hit = (|match)&!(core_reset_i|core_flush_i)&!(!btb_index&program_counter[2]);
+    wire btb_hit = (|match)&!(core_reset_i|core_flush_i)&!(!btb_index&program_counter[0]);
     wire [29:0] btb_target;
     generate if (BPU_ENABLE_RAS) begin : _
         assign btb_target = btb_type==2'b11 ? RAS[RAS_idx_spec] : btb_target_bm;    
@@ -217,12 +217,12 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
             if (|match) begin : modify_entry
                 counters[{~match[0],btb_lkp_idx}] <= val_to_be_written; btype[{~match[0],btb_lkp_idx}] <= c1_bnch_type_i; targets[{~match[0],btb_lkp_idx}] <= c1_btb_target_i; // here tags are not changed
                 valid0[btb_lkp_idx] <= match[0] ?  1 : valid0[btb_lkp_idx];valid1[btb_lkp_idx] <= match[1] ?  1 : valid1[btb_lkp_idx];
-                idx[{~match[0], btb_lkp_idx}] <= c1_btb_vpc_i[2];
+                idx[{~match[0], btb_lkp_idx}] <= c1_btb_vpc_i[0];
             end else begin : add_new_entry
                 counters[{replacement_idx,btb_lkp_idx}] <=  val_to_be_written; btype[{replacement_idx,btb_lkp_idx}] <= c1_bnch_type_i; targets[{replacement_idx,btb_lkp_idx}] <= c1_btb_target_i;
                 valid0[{btb_lkp_idx}] <= replacement_idx==0 ? 1 : valid0[btb_lkp_idx]; valid1[{btb_lkp_idx}] <= replacement_idx==1 ? 1 : valid1[btb_lkp_idx];
                 tag0[{btb_lkp_idx}] <= replacement_idx==0 ? tag_based_on_pc : tag0[btb_lkp_idx];tag1[{btb_lkp_idx}] <= replacement_idx==1 ? tag_based_on_pc : tag1[btb_lkp_idx];
-                idx[{replacement_idx, btb_lkp_idx}] <= c1_btb_vpc_i[2];
+                idx[{replacement_idx, btb_lkp_idx}] <= c1_btb_vpc_i[0];
             end
         end else if (btb_correct_i) begin
             valid0[btb_lkp_idx] <= match[0] ?  0 : valid0[btb_lkp_idx];valid1[btb_lkp_idx] <= match[1] ? 0: valid1[btb_lkp_idx];

@@ -69,11 +69,11 @@ module EX00 (
             alu_valid <= ins_type[0]&!btb_correct;
             bnch_operand_1 <= rs1_data_i; bnch_operand_2 <= rs2_data_i;
             bnch_offset <= immediate_i; 
-            bnch_pc <= {pc_i[29:1], pc_i[1] ? 1'b1 : data_i[0]};
+            bnch_pc <= {pc_i[29:1], pc_i[0] ? 1'b1 : data_i[0]};
             bnch_auipc <= ins_type[4]; bnch_lui <= ins_type[3]; bnch_jal <= ins_type[1]; bnch_jalr <= ins_type[2];
             bnch_bnch_cond <= opcode_i[2:0]; bnch_rob_id_o <= data_i[5:0]; bnch_dest_o <= dest_i; bnch_bm_pred_o <= bm_pred_i;
             bnch_btype_o <= btype_i;
-            bnch_btb_vld_o <= btb_vld_i&(btb_idx_i==(pc_i[2] ? 1'b1 : data_i[0]));
+            bnch_btb_vld_o <= btb_vld_i&(btb_idx_i==(pc_i[0] ? 1'b1 : data_i[0]));
             bnch_btb_target_o <= btb_target_i;
             bnch_btb_way_o <= btb_way_i; // mask off appropriately
             wakeup_dest <= dest_i;

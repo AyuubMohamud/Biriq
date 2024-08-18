@@ -89,7 +89,7 @@ module icacheA1 (
     wire [8:0] ram_addr;
     wire [63:0] ram_data;
     assign dec_instruction_o = ram_data; // When busy_i true, data must be held stable.
-    assign ram_addr = working_addr[11:3];
+    assign ram_addr = working_addr[9:1];
     wire [1:0] valids = {valid1[used_address[11:7]],valid0[used_address[11:7]]};
     reg random_sample = 0;
     wire replacement = &valids ? random_sample : valids[1];

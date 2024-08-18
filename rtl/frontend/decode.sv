@@ -75,7 +75,7 @@ module decode (
         cpu_clk_i, flush_i|branch_correction_flush, rn_busy_i, {working_ins, rv_ppc_i, rv_target, rv_btype, rv_bm_pred, rv_btb_vld, excp_vld, excp_code,btb_idx,btb_way}, rv_valid, busy_o, {instruction_i, if2_sip_vpc_i, btb_target_i, btb_btype_i,
         btb_bm_pred_i, btb_vld_i, if2_sip_excp_vld_i, if2_sip_excp_code_i, if2_btb_index,btb_way_i}, icache_valid_i
     );
-    assign rv_instruction_i_p[31:0] = rv_ppc_i[2] ? working_ins[63:32] : working_ins[31:0];
+    assign rv_instruction_i_p[31:0] = rv_ppc_i[0] ? working_ins[63:32] : working_ins[31:0];
     assign rv_instruction_i_p[63:32] = working_ins[63:32];
     wire [31:0] rv_instruction_i = rv_instruction_i_p[31:0];
     wire [31:0] rv_instruction_i2 = rv_instruction_i_p[63:32];

@@ -2,6 +2,13 @@
 
 // Works as this
 /**
+    Loads that hit in cache and whose conflicting data can be forwarded
+    execute IMMEDIATELY regardless of any previous instructions as long as its
+    not an I/O instruction or in deep sleep.
+    Load misses/isIO/inDeepSleep -> out to FIFO
+    So loads still execute out of order on this CPU
+    USE FENCE.
+    This way I avoid having another contrived data structure in the CPU (looking at you store queue/buffer).
 **/
 
 
@@ -59,19 +66,17 @@ module loadQueue (
     conflict_res_valid}, lsu_vld, lsu_busy_o, {lsu_rob_i,lsu_op_i,lsu_addr_i,lsu_dest_i, conflict_data_i, conflict_bm_i, conflict_resolvable_i, 
     conflict_res_valid_i}, lsu_vld_i);
     // Missed Load Queue
-    wire current_req_miss = lsu_vld&!busy&((conflict_res_valid&!conflict_resolvable)|lsu_addr[31]|!load_set_valid_i);
+    wire current_req_miss = lsu_vld&!busy&((conflict_res_valid&!conflict_resolvable)|lsu_addr[31]|!load_set_valid_i|!this_cycle_from_lsu);
     wire buffer_full; wire miss_satisfied; wire empty;
     wire logic [5:0]  mlsu_rob;
     wire logic [2:0]  mlsu_op;
     wire logic [31:0] mlsu_addr;
     wire logic [5:0]  mlsu_dest;
-    wire logic        mlsu_drain; // true when store buffer has to be drained
-    assign busy = buffer_full|!this_cycle_from_lsu;
-    wire load_must_be_drained = (conflict_res_valid&!conflict_resolvable);
+    assign busy = buffer_full;
     assign load_cache_set_o = this_cycle_from_lsu ? lsu_addr[30:7] : mlsu_addr[30:7];
-    sfifo2 #(.FW(4), .DW(48)) missedMemLoads (cpu_clock_i, flush_i|rob_lock, current_req_miss, {lsu_rob,lsu_op,lsu_addr,lsu_dest, load_must_be_drained}, 
-    buffer_full, miss_satisfied, {mlsu_rob,mlsu_op,mlsu_addr,mlsu_dest, mlsu_drain}, empty);
-    assign this_cycle_from_lsu = !(dc_cmp|(load_set_valid_i&!mlsu_addr[31]&&!mlsu_drain&&!empty)|(load_set_valid_i&!mlsu_addr[31]&&mlsu_drain&&store_buf_emp&&!empty));
+    sfifo2 #(.FW(4), .DW(47)) missedMemLoads (cpu_clock_i, flush_i|rob_lock, current_req_miss, {lsu_rob,lsu_op,lsu_addr,lsu_dest}, 
+    buffer_full, miss_satisfied, {mlsu_rob,mlsu_op,mlsu_addr,mlsu_dest}, empty);
+    assign this_cycle_from_lsu = !dc_cmp;
     wire [31:0] memdata;
     reg nx2_vd = 0;
     initial nx2_vd = 0;
@@ -86,9 +91,9 @@ module loadQueue (
     assign lq_wr_data_o = ((nx2_op[2]||(nx2_op[1:0]==2'b10))) ? data : (nx2_op[0]) ? {{16{data[15]}},data[15:0]} : {{24{data[7]}},data[7:0]};
     assign lq_wr_o = nx2_dest;
     assign rob_o = nx2_rob;
-    assign miss_satisfied = (!this_cycle_from_lsu)|(lsu_vld&this_cycle_from_lsu&!busy&!rob_lock&!current_req_miss);
+    assign miss_satisfied = dc_cmp;
     always_ff @(posedge cpu_clock_i) begin
-        if (!empty && (mlsu_rob[4:0]==oldest_instruction_i) && !dc_req && !rob_lock && store_buf_emp && (mlsu_addr[31]|load_set_valid_i)) begin
+        if (!empty && (mlsu_rob[4:0]==oldest_instruction_i) && !dc_req & !rob_lock && store_buf_emp) begin
             dc_req <= 1;
             dc_addr <= mlsu_addr;
             dc_op <= mlsu_op[1:0];
@@ -106,7 +111,7 @@ module loadQueue (
     {24'h000000,root_mem_data[31:24]};
     assign ciff_o = (nx2_vd);
     always_ff @(posedge cpu_clock_i) begin
-        nx2_vd <= flush_i ? 1'b0 : (!this_cycle_from_lsu)|(lsu_vld&this_cycle_from_lsu&!busy&!rob_lock&!current_req_miss);
+        nx2_vd <= flush_i ? 1'b0 : (dc_cmp)|(lsu_vld&this_cycle_from_lsu&!busy&!rob_lock&!current_req_miss);
         nx2_dest <= dc_cmp ? mlsu_dest : lsu_dest;
         nx2_rob <= dc_cmp ? mlsu_rob : lsu_rob;
         nx2_op <= dc_cmp ? {mlsu_op[2:0]} : {lsu_op[2:0]};
@@ -114,4 +119,6 @@ module loadQueue (
         nx2_addr <= this_cycle_from_lsu ? lsu_addr[1:0] : mlsu_addr[1:0];
         nx2_io <= dc_cmp&dc_addr[31]; nx2_io_data <= dc_data;
     end
+
+
 endmodule
