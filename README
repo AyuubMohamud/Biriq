@@ -1,10 +1,7 @@
-This is a yet to be fully verified 2-way superscalar, out-of-order RV32IM_Zifencei_Zicsr implementation with Machine, Supervisor and User support. This is deprecated in favour of a newer version I am designing.
+This is a yet to be fully verified 2-way superscalar, out-of-order RV32IMB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
 
 Properties:
-- A BTB storing both targets and bimodal prediction counters. 64-entries, 2-ways.
-- DTLB with 32 entries, 2 ways.
-- ITLB with 64 entries, 2 ways.
-- A hardware page walker.
+- A configurable BTB storing both targets and bimodal prediction counters.
 - 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines.
 - 10-entry Store Buffer/Queue (holds both speculative and commited results)
 - A branch mispredict recovery delay of 16 cycles.
@@ -14,9 +11,16 @@ Properties:
 - Forwarding for both integer ALU's and branch unit.
 - Up to 32 instructions in flight.
 
+Queue capacities:
+Up to 16 memory/mul/div/csr instructions
+up to 12 ALU/Branch instructions.
+
+Branches are scheduled on the second time round to avoid a ALU instruction taking a branch capable slot over a branch.
+The ALU/Branch scheduler is unified to enable efficient use of CPU resources.
+All ALU's support most of the base integer and all bit manipulation instructions alongside Zicond.
+
 Pipeline is as follows:
 - IF1: generate PC and predict.
-- IF2: generate TLB result.
 - ICache: fetch instruction from cache or miss and fill.
 - Predecode: Prepare and decode operands as necessary to simplify rename.
 - Rename: Move elimination/Resource allocation/Dispatch to Schedulers
@@ -25,19 +29,24 @@ Pipeline is as follows:
 From here on it splits into three pipelines: Integer, Memory and Mul/Div/CSR.
 
 Integer: Register Read, Execute, Writeback\
-Loads: AGEN, Translate, Cache Read and conflict detect, Writeback
+Loads: AGEN, Detect unaligned, Cache Read and conflict detect, Writeback
 
-When a load conflicts with more than one store, or is an IO Load (where address > 0x7FFFFFFF) it is held until it is the oldest instruction in the system and forces the RCU not to take exceptions/interrupts whilst it executes.
+When a load conflicts with more than one store, or is a Load to a strongly ordered uncached unidempotent region (address > 0x7FFFFFFF) it is held until it is the oldest instruction in the system and forces the RCU not to take exceptions/interrupts whilst it executes.
 
-Stores: AGEN, Translate, Enqueue (into store buffer)
+Stores: AGEN, Detect unaligned, Enqueue (into store buffer)
 
 Multiplies and Divides get sent to the complex unit which blocks until it completes.
 
-Special instructions (SFENCE.VMA, FENCE.I, MRET, SRET) do not get assigned to any functional unit but rather go straight to the RCU, where they are held until they are the oldest instruction to be committed, where the RCU will proceed to execute them.
+Special instructions FENCE.I, MRET, WFI do not get assigned to any functional unit but rather go straight to the RCU, where they are held until they are the oldest instruction to be committed, where the RCU will proceed to execute them.
 
-All RISC-V instructions supported work during simulation, M-mode mostly tested, S-mode partially tested with SATP on and with 1MB superpages and 4KB pages mixed in TLB, U-mode untested.
-
-Runs at up to 100MHZ on a Arty A7-100T, with Vivado Synthesis Defaults, and takes up ~9600 LUT6s, 4 DSP48E1s, and 4 BRAM36E1s.
+Improvements:
+- Add ebreak into decoder
+- Make divider and multiplier out of pipe
+- Fix RAS
+- Fix the load pipeline, and improve non-blocking cache
+- Add PMP
+- Add atomic instructions for both IO and non IO regions
+- Add in coherent I/O by means of a port into the data cache
 
 This core supports a regular TileLink Uncached Heavyweight bus at 32-bit data width, and 32-bit address width.
 
