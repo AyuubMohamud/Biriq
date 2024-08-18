@@ -1,7 +1,7 @@
 // Project F Library - Division: Unsigned Integer with Remainder
 // (C)2023 Will Green, Open source hardware released under the MIT License
 // Learn more at https://projectf.io/verilog-lib/
-// Expanded to support all divison opcodes in riscv by Ayuub Mohamud
+// Expanded to support all divison opcodes in RISC-V by Ayuub Mohamud
 
 module division ( 
     input wire logic clk,              // clock
