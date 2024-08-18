@@ -58,7 +58,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     reg [4:0] mcause = 0; localparam MCAUSE = 12'h342;
     reg [31:0] mtval = 0; localparam MTVAL = 12'h343;
     reg [2:0] mip = 0; localparam MIP = 12'h344;
-    assign mie_o = mstatus[3];
+    assign mie_o = mstatus[0];
     localparam MENVCFG = 12'h30A;// fences are already implemented as total
     localparam MENVCFGH = 12'h31A; // RO ZERO
 

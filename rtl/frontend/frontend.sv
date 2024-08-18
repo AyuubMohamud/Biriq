@@ -119,7 +119,7 @@ parameter [31:0] BPU_RAS_ENTRIES = 32)
     wire logic                      pdc_btb_vld_o;
     wire logic                      pdc_btb_way_o;
     wire logic                      pdc_busy_i;
-    icacheA1 instructionCache (core_clock_i, core_flush_i|core_reset_i, if2_vld_o,if2_sip_vpc_o,if2_btb_index,if2_btype_o,if2_bm_pred_o,if2_btb_target_o,if2_btb_hit,if2_btb_way,
+    icacheA1 instructionCache (core_clock_i, core_flush_i|core_reset_i|branch_correct, if2_vld_o,if2_sip_vpc_o,if2_btb_index,if2_btype_o,if2_bm_pred_o,if2_btb_target_o,if2_btb_hit,if2_btb_way,
     if2_busy_i, pdc_hit_o, pdc_instruction_o, pdc_sip_vpc_o, pdc_sip_excp_code_o, pdc_sip_excp_vld_o, 
     pdc_btb_index_o, pdc_btb_btype_o, pdc_btb_bm_pred_o, pdc_btb_target_o, pdc_btb_vld_o, pdc_btb_way_o, pdc_busy_i, cache_flush_i,
     flush_resp_o,icache_a_opcode, icache_a_param, icache_a_size, icache_a_address, icache_a_mask, icache_a_data, icache_a_corrupt, icache_a_valid,

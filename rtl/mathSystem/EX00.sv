@@ -58,7 +58,6 @@ module EX00 (
     assign rs1_o = data_i[11:6];
     assign rs2_o = data_i[17:12];
     initial wakeup_valid = 0; initial alu_valid = 0;
-    wire btb_correct = (btb_idx_i==(pc_i[2]?1'b1:data_i[0]))&&btb_vld_i;
     always_ff @(posedge cpu_clock_i) begin
         if (valid_i&!flush_i) begin
             alu_a <= rs1_data_i;
@@ -66,7 +65,7 @@ module EX00 (
             alu_opc <= opcode_i;
             alu_rob_id <= data_i[4:0];
             alu_dest <= dest_i;
-            alu_valid <= ins_type[0]&!btb_correct;
+            alu_valid <= ins_type[0];
             bnch_operand_1 <= rs1_data_i; bnch_operand_2 <= rs2_data_i;
             bnch_offset <= immediate_i; 
             bnch_pc <= {pc_i[29:1], pc_i[0] ? 1'b1 : data_i[0]};

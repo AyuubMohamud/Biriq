@@ -202,9 +202,9 @@ module decode (
             valid_o <= 0;
         end else if (!rn_busy_i&rv_valid) begin
             ins0_port_o <= !(isJAL|isJALR|isAUIPC|isLUI|(((isOP&!port0)|isOPIMM))|isCmpBranch);
-            ins0_dnagn_o <= isFenceI|isSystem&(isSRET|isMRET|isSFENCE_VMA);
+            ins0_dnagn_o <= isFenceI|isSystem&(isMRET|isWFI);
             ins0_alu_type_o <= {isAUIPC, isLUI, isJALR, isJAL, ((isOP&!port0)|isOPIMM)};
-            ins0_alu_opcode_o <= isOP ? uop0 : uop_imm0;
+            ins0_alu_opcode_o <= isOP ? uop0 : isOPIMM ? uop_imm0 : {4'b0000, rv_instruction_i[14:12]};
             ins0_alu_imm_o <= isOPIMM;
             ins0_ios_type_o <= {isLoad, isStore, (isCSRRC|isCSRRS|isCSRRW)&isSystem, isFence, (isOP&port0)};
             ins0_ios_opcode_o <= {rv_instruction_i[14:12]};
@@ -216,14 +216,14 @@ module decode (
             ins0_reg_props_o <= {(isOP|isOPIMM|isLoad|isJAL|isJALR|isAUIPC|isLUI|((isCSRRW|isCSRRC|isCSRRS)&isSystem))&&(rv_instruction_i[11:7]!=0), !(((isECALL|isSRET|isMRET|isWFI|isSFENCE_VMA)&isSystem)|isAUIPC|isLUI|isJAL), isOP|isCmpBranch|isStore};
             ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
             ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
-            ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&isMRET&(current_privlidge));
-            ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&isMRET2&(current_privlidge));
+            ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&isMRET&!(current_privlidge));
+            ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&isMRET2&!(current_privlidge));
             ins0_excp_code_o <= excp_vld ? excp_code : isSystem&isECALL ? ecall : 4'b0010;
             ins1_excp_code_o <= excp_vld ? excp_code : isSystem2&isECALL2 ? ecall : 4'b0010;
             ins1_port_o <= !(isJAL2|isJALR2|isAUIPC2|isLUI2|(isOP2&!port1)|isOPIMM2|isCmpBranch2);
-            ins1_dnagn_o <= isFenceI2|isSystem2&(isMRET2);
+            ins1_dnagn_o <= isFenceI2|isSystem2&(isMRET2|isWFI2);
             ins1_alu_type_o <= {isAUIPC2, isLUI2, isJALR2, isJAL2, ((isOP2&!port1)|isOPIMM2)};
-            ins1_alu_opcode_o <= isOP2 ? uop1 : uop_imm1;
+            ins1_alu_opcode_o <= isOP2 ? uop1 : isOPIMM2 ? uop_imm1 : {4'b0000, rv_instruction_i2[14:12]};
             ins1_alu_imm_o <= isOPIMM2;
             ins1_ios_type_o <= {isLoad2, isStore2, (isCSRRC2|isCSRRS2|isCSRRW2)&isSystem2, isFence2, (isOP2)&port1};
             ins1_ios_opcode_o <= {rv_instruction_i2[14:12]};

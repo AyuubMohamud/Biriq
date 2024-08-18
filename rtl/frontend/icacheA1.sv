@@ -62,8 +62,9 @@ module icacheA1 (
     localparam CFLUSH = 2'b11;
     reg [1:0] cache_fsm = IDLE;
     wire req_not_found;
+    wire miss = (cache_fsm==IDLE)&(cache_flush_i|req_not_found);
     skdbf #(.DW(67)) skidbuffer (
-        core_clock_i, core_flush_i, dec_busy_i|(cache_fsm!=IDLE)|(cache_fsm==IDLE)&(cache_flush_i|req_not_found), 
+        core_clock_i, core_flush_i, dec_busy_i|(cache_fsm!=IDLE)|miss, 
         {working_addr, working_target, working_type, working_btb_vld, working_bimodal_prediction, working_btb_index, btb_way
     }, working_valid, icache_busy_o, {icache_ppc_i, icache_btb_target_i, icache_btb_btype_i, icache_btb_vld_i, 
     icache_btb_bm_pred_i,icache_btb_index_i, icache_btb_way_i}, icache_vld_i
@@ -92,7 +93,7 @@ module icacheA1 (
     assign ram_addr = working_addr[9:1];
     wire [1:0] valids = {valid1[used_address[11:7]],valid0[used_address[11:7]]};
     reg random_sample = 0;
-    wire replacement = &valids ? random_sample : valids[1];
+    wire replacement = &valids ? random_sample : ~valids[1];
     wire rd_en = (cache_fsm==IDLE && !dec_busy_i);
     wire wr_en = cache_fsm==MISS_RESP && icache_d_ready && icache_d_valid&&counter[0];
     wire [9:0] wr_addr;
@@ -116,7 +117,7 @@ module icacheA1 (
                     dec_vld_o <= 0;
                 end else if (block&!dec_busy_i) begin
                     dec_vld_o <= 0;
-                end if (!dec_busy_i) begin
+                end else if (!dec_busy_i) begin
                     if (((!req_not_found)&working_valid)) begin
                         dec_vpc_o <= working_addr;
                         dec_excp_code_o <= 0;
