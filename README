@@ -43,10 +43,11 @@ Improvements:
 - Add ebreak into decoder
 - Make divider and multiplier out of pipe
 - Fix RAS
-- Fix the load pipeline, and improve non-blocking cache
+- Fix the load pipeline, and improve non-blocking cache (partially complete)
 - Add PMP
 - Add atomic instructions for both IO and non IO regions
-- Add in coherent I/O by means of a port into the data cache
+- Add in coherent I/O by means of a port into the data cache (complete)
+- Make more parameters configurable
 
 This core supports a regular TileLink Uncached Heavyweight bus at 32-bit data width, and 32-bit address width.
 
