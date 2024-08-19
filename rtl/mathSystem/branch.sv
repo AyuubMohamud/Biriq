@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: CERN-OHL-W-2.0
-//! This module is the BRU for the ALUs of NEON
 /*
 op == 3'b000: maxu
 op == 3'b001: minu
@@ -10,7 +9,6 @@ op == 3'b101: min
 op == 3'b110: czero.eqz
 op == 3'b111: czero.nez
 */
-// VERIFIED 23/06/2023
 module branch (
     input   wire logic  [31:0]  a, //! rs1
     input   wire logic  [31:0]  b, //! rs2 or imm

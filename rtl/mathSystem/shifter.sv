@@ -1,6 +1,6 @@
 /* verilator lint_off SELRANGE*/
 // SPDX-License-Identifier: CERN-OHL-W-2.0
-//! This module is the barrel shifter for the ALUs of NEON
+
 /*
 op == 5'b00000: sll
 op == 5'b00001: slr
@@ -13,7 +13,7 @@ op == 5'b11000: binv
 op == 5'b11010: bset
 Everything else is undefined
 */
-// Verified on 23/06/2023
+
 module shifter (
     input   wire logic  [31:0]  a, //! rs1
     /* verilator lint_off UNUSED*/

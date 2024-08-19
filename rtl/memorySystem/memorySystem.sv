@@ -150,6 +150,7 @@ module memorySystem #(parameter ACP_RS = 1) (
     wire logic              valid_i;
     wire logic              busy_o;
          logic  [31:0]      result_o;
+         wire logic        lq_wr_en;
          logic              wb_valid_o;
     wire memsched_we; wire [31:0] memsched_data; wire [5:0] memsched_dest;
     memory_scheduler port2 (cpu_clk_i, flush_i, renamer_pkt_vld_i, pkt0_rs1_i, pkt0_rs2_i, pkt0_dest_i, pkt0_immediate_i, pkt0_ios_type_i, pkt0_ios_opcode_i, 
@@ -163,7 +164,7 @@ module memorySystem #(parameter ACP_RS = 1) (
     result_o,
     wb_valid_o,tmu_data_o,tmu_address_o,tmu_opcode_o,tmu_wr_en,tmu_valid_o,tmu_done_i,tmu_excp_i,
     tmu_data_i, store_buffer_empty, rob_lock, rob_oldest_i, agu_completed_rob_id, agu_completion_valid, agu_exception, agu_exception_rob,agu_exception_code, 
-    memsched_we, memsched_data, memsched_dest);
+    memsched_we, memsched_data, memsched_dest, lq_wr_en);
     complex_unit cu0 (cpu_clk_i, flush_i, opcode_i,operand1_i,operand2_i,valid_i,busy_o,result_o,wb_valid_o);
     AGU0 agu (cpu_clk_i, flush_i, lsu_busy,lsu_vld,lsu_rob,lsu_op,lsu_data,lsu_addr,lsu_dest,
     lq_full,lq_addr,lq_ld_type,lq_dest,lq_rob,lq_valid,enqueue_full,enqueue_address,enqueue_data,enqueue_bm,enqueue_io,enqueue_en,enqueue_rob,conflict_address,conflict_bm,
@@ -185,7 +186,7 @@ module memorySystem #(parameter ACP_RS = 1) (
     wire        dc_cmp;
     wire logic [5:0]  lq_wr;
     wire logic [31:0] lq_wr_data;
-    wire logic        lq_wr_en;
+
     wire logic [5:0]  lq_rob_cmp;
     wire logic         lq_cmp;
     loadQueue lq (cpu_clk_i, flush_i, lq_valid, lq_rob, lq_ld_type, lq_addr, lq_dest, lq_full, conflict_data_c, conflict_bm_c, 

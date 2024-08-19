@@ -41,10 +41,10 @@ Special instructions FENCE.I, MRET, WFI do not get assigned to any functional un
 
 Improvements:
 - Add ebreak into decoder
-- Make divider and multiplier out of pipe
+- Make divider and multiplier out of pipe (done)
 - Fix RAS
-- Fix the load pipeline, and improve non-blocking cache (partially complete)
-- Add PMP
+- Fix the load pipeline, and improve non-blocking cache
+- Add PMP for NAPOT only with 256 byte granules.
 - Add atomic instructions for both IO and non IO regions
 - Add in coherent I/O by means of a port into the data cache (complete)
 - Make more parameters configurable

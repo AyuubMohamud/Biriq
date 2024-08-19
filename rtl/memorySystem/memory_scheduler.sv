@@ -66,7 +66,9 @@ module memory_scheduler (
     output  wire logic [3:0]                    exception_code_o,
     output  wire logic                          p2_we_i,
     output  wire logic [31:0]                   p2_we_data,
-    output  wire logic [5:0]                    p2_we_dest
+    output  wire logic [5:0]                    p2_we_dest,
+
+    input   wire logic                          p2_we_i_ld
 );
     initial tmu_valid_o = 0; initial lsu_vld_o = 0; initial cu_valid_o = 0;
     wire empty;
@@ -109,10 +111,10 @@ module memory_scheduler (
     assign r4_vec_indx_o = packet_rs1;
     assign r5_vec_indx_o = packet_rs2;
     reg csrfile_being_read;
-    reg fence_exec; reg complex_performing = 0;
+    reg fence_exec; reg complex_performing = 0;     reg complex_await = 0;
     wire performing_system_operation = |packet_type[2:1];
     wire system_instruction_done;
-    wire packet_is_issueable = r4_i&!(!r5_i&packet_rs2_dependant)&!flush_i&!((performing_system_operation&!system_instruction_done)||(packet_type[0]&!wb_valid_i))&!lsu_busy_i&!rob_lock&!empty&!busy_i;
+    wire packet_is_issueable = r4_i&!(!r5_i&packet_rs2_dependant)&!flush_i&!((performing_system_operation&!system_instruction_done)||(packet_type[0]&(complex_await|complex_performing)))&!lsu_busy_i&!rob_lock&!empty&!busy_i;
     assign issue = (pkt0_vld&!pkt1_vld)||(!pkt0_vld&pkt1_vld) ? packet_is_issueable : packet_is_issueable&packet_select;
     wire can_commit_non_specs = (packet_rob[4:0]==rob_oldest_i)&&!rob_lock;
     always_ff @(posedge cpu_clk_i) begin
@@ -130,17 +132,30 @@ module memory_scheduler (
             lsu_vld_o <= 0;
         end
     end
+    reg [4:0] complex_rob = 0;
+    reg [5:0] complex_dest = 0;
+    reg [31:0] complex_data = 0;
+
     always_ff @(posedge cpu_clk_i) begin
         if (flush_i) begin
             cu_valid_o <= 0;
+            complex_performing <= 0;
+            complex_await <= 0;
+        end else if (complex_await) begin
+            if (!p2_we_i_ld) begin
+                complex_await <= 0;
+            end
         end else if (complex_performing) begin
             cu_valid_o <= 0;
             if (wb_valid_i) begin
                 complex_performing <= 0;
+                complex_data <= result_i;
+                complex_await <= 1;
             end
-        end else if (packet_type[0]&can_commit_non_specs&!empty) begin
+        end else if (packet_type[0]&!empty) begin
             cu_valid_o <= 1; cu_opcode_o <= packet_opcode; cu_operand1_o <= rs1_data; cu_operand2_o <= rs2_data;
             complex_performing <= 1;
+            complex_rob <= packet_rob[4:0]; complex_dest <= packet_dest;
         end else begin
             cu_valid_o <= 0;
         end
@@ -183,11 +198,11 @@ module memory_scheduler (
             fence_exec <= 1;
         end
     end
-    assign p2_we_data = wb_valid_i ? result_i : tmu_data_i;
-    assign p2_we_dest = packet_dest;
-    assign p2_we_i = (tmu_done_i&!tmu_excp_i||(wb_valid_i))&&packet_dest!=0;
-    assign completed_rob_id = packet_rob[4:0];
-    assign completion_valid = system_instruction_done|wb_valid_i;
+    assign p2_we_data = complex_await&!p2_we_i_ld ? complex_data : tmu_data_i;
+    assign p2_we_dest = complex_await&!p2_we_i_ld ? complex_dest : packet_dest;
+    assign p2_we_i = (tmu_done_i&!tmu_excp_i||(complex_await&!p2_we_i_ld))&&p2_we_dest!=0;
+    assign completed_rob_id = complex_await&!p2_we_i_ld ? complex_rob : packet_rob[4:0];
+    assign completion_valid = system_instruction_done|(complex_await&!p2_we_i_ld);
     assign exception_o = tmu_done_i&tmu_excp_i;
     assign exception_code_o = 4'd2;
     assign exception_rob_o = packet_rob;

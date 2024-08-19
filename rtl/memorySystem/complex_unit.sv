@@ -26,7 +26,11 @@ module complex_unit (
     assign busy_o = busy|valid_i;
     initial wb_valid_o = 0;
     always_ff @(posedge clk_i) begin
-        case (busy)
+        if (flush_i) begin
+            wb_valid_o <= 0;
+            busy <= 0;
+        end else begin
+            case (busy)
             1'b0: begin
                 if (valid_i) begin
                     busy <= 1'b1;
@@ -57,6 +61,7 @@ module complex_unit (
                 end
             end
         endcase
+        end
     end
 
 
