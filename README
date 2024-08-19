@@ -40,7 +40,7 @@ Multiplies and Divides get sent to the complex unit which blocks until it comple
 Special instructions FENCE.I, MRET, WFI do not get assigned to any functional unit but rather go straight to the RCU, where they are held until they are the oldest instruction to be committed, where the RCU will proceed to execute them.
 
 Improvements:
-- Add ebreak into decoder
+- Add ebreak into decoder (done)
 - Make divider and multiplier out of pipe (done)
 - Fix RAS
 - Fix the load pipeline, and improve non-blocking cache

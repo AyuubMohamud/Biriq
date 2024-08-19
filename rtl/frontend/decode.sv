@@ -112,6 +112,7 @@ module decode (
     wire store_invalid = rv_instruction_i[14:12] > 3'b010;
     wire isSystem = rv_instruction_i[6:2] == 5'b11100;
     wire isECALL = rv_instruction_i[31:7] == 0;
+    wire isEBREAK = rv_instruction_i[31:7] == 25'b000000000001000000000000;
     wire isSRET = rv_instruction_i[31:7]==25'b0001000000100000000000000;
     wire isMRET = rv_instruction_i[31:7]==25'b0011000000100000000000000;
     wire isWFI =  rv_instruction_i[31:7]==25'b0001000001010000000000000;
@@ -130,7 +131,7 @@ module decode (
     wire isLUI = rv_instruction_i[6:2]==5'b01101;
     wire isOP = rv_instruction_i[6:2]==5'b01100;
     wire isOPIMM = rv_instruction_i[6:2]==5'b00100;
-    wire sys_invalid = !(isECALL|isSRET|isMRET|isWFI|isSFENCE_VMA|isCSRRW|isCSRRC|isCSRRS);
+    wire sys_invalid = !(isECALL|isSRET|isMRET|isWFI|isSFENCE_VMA|isCSRRW|isCSRRC|isCSRRS|isEBREAK);
     wire [6:0] uop0; wire port0; wire op_valid0;
     op_dec #(1) opdec0 (rv_instruction_i[31:25], rv_instruction_i[14:12], uop0,port0,op_valid0);
     wire [6:0] uop_imm0; wire op_imm_valid0;
@@ -144,6 +145,7 @@ module decode (
     wire store_invalid2 = rv_instruction_i2[14:12] > 3'b010;
     wire isSystem2 = rv_instruction_i2[6:2] == 5'b11100;
     wire isECALL2 = rv_instruction_i2[31:7] == 0;
+    wire isEBREAK2 = rv_instruction_i2[31:7] == 25'b000000000001000000000000;
     wire isSRET2 = rv_instruction_i2[31:7]==25'b0001000000100000000000000;
     wire isMRET2 = rv_instruction_i2[31:7]==25'b0011000000100000000000000;
     wire isWFI2 =  rv_instruction_i2[31:7]==25'b0001000001010000000000000;
@@ -162,14 +164,15 @@ module decode (
     wire isLUI2 = rv_instruction_i2[6:2]==5'b01101;
     wire isOP2 = rv_instruction_i2[6:2]==5'b01100;
     wire isOPIMM2 = rv_instruction_i2[6:2]==5'b00100;
-    wire sys_invalid2 = !(isECALL2|isSRET2|isMRET2|isWFI2|isSFENCE_VMA2|isCSRRW2|isCSRRC2|isCSRRS2);
+    wire sys_invalid2 = !(isECALL2|isSRET2|isMRET2|isWFI2|isSFENCE_VMA2|isCSRRW2|isCSRRC2|isCSRRS2|isEBREAK2);
     wire [6:0] uop1; wire port1; wire op_valid1;
     op_dec #(1) opdec1 (rv_instruction_i2[31:25], rv_instruction_i2[14:12], uop1,port1,op_valid1);
     wire [6:0] uop_imm1; wire op_imm_valid1;
     op_imm_dec opimmdec1 (rv_instruction_i2[31:25], rv_instruction_i2[14:12], rv_instruction_i2[24:20], uop_imm1,op_imm_valid1);
     wire invalid_instruction2 = !(&rv_instruction_i2[1:0])||!(isAUIPC2|isLUI2|(isOP2&op_valid1)|(isOPIMM2&op_imm_valid1)|isJAL2|isJALR2|(isCmpBranch2&!isCMPBranchInvalid2)|(isLoad2&!load_invalid2)|(isStore2&!store_invalid2)
     |(isSystem2&!sys_invalid2)|isFence2|isFenceI2);
-    wire [3:0] ecall = {2'b10, {current_privlidge,current_privlidge}};
+    wire [3:0] ecall = {2'b10, current_privlidge,current_privlidge};
+    wire [3:0] ebreak = 4'd3;
     wire [31:0] jalrImmediate2 = {{20{rv_instruction_i2[31]}},rv_instruction_i2[31:20]};
     wire [31:0] cmpBranchImmediate2 = {{20{rv_instruction_i2[31]}}, rv_instruction_i2[7], rv_instruction_i2[30:25], rv_instruction_i2[11:8], 1'b0};
     wire [31:0] jalImmediate2 = {{11{rv_instruction_i2[31]}}, rv_instruction_i2[31], rv_instruction_i2[19:12], rv_instruction_i2[20], rv_instruction_i2[30:21], 1'b0};
@@ -216,10 +219,10 @@ module decode (
             ins0_reg_props_o <= {(isOP|isOPIMM|isLoad|isJAL|isJALR|isAUIPC|isLUI|((isCSRRW|isCSRRC|isCSRRS)&isSystem))&&(rv_instruction_i[11:7]!=0), !(((isECALL|isSRET|isMRET|isWFI|isSFENCE_VMA)&isSystem)|isAUIPC|isLUI|isJAL), isOP|isCmpBranch|isStore};
             ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
             ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
-            ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&isMRET&!(current_privlidge));
-            ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&isMRET2&!(current_privlidge));
-            ins0_excp_code_o <= excp_vld ? excp_code : isSystem&isECALL ? ecall : 4'b0010;
-            ins1_excp_code_o <= excp_vld ? excp_code : isSystem2&isECALL2 ? ecall : 4'b0010;
+            ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&((isMRET&!(current_privlidge))|isECALL|isEBREAK));
+            ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&((isMRET2&!(current_privlidge))|isECALL2|isEBREAK2));
+            ins0_excp_code_o <= excp_vld ? excp_code : invalid_instruction ? 4'b0010 : isSystem&isECALL ? ecall : ebreak;
+            ins1_excp_code_o <= excp_vld ? excp_code : invalid_instruction ? 4'b0010 : isSystem2&isECALL2 ? ecall : ebreak;
             ins1_port_o <= !(isJAL2|isJALR2|isAUIPC2|isLUI2|(isOP2&!port1)|isOPIMM2|isCmpBranch2);
             ins1_dnagn_o <= isFenceI2|isSystem2&(isMRET2|isWFI2);
             ins1_alu_type_o <= {isAUIPC2, isLUI2, isJALR2, isJAL2, ((isOP2&!port1)|isOPIMM2)};
