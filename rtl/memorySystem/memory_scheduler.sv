@@ -43,7 +43,7 @@ module memory_scheduler (
     output       logic  [31:0]                  cu_operand1_o,
     output       logic  [31:0]                  cu_operand2_o,
     output       logic                          cu_valid_o,
-    input  wire  logic                          busy_i,
+    input  wire  logic                          busy_i, // ! Unused as successive requests never issued to this
     input  wire  logic  [31:0]                  result_i,
     input  wire  logic                          wb_valid_i,
     // csrfile inputs
@@ -114,7 +114,7 @@ module memory_scheduler (
     reg fence_exec; reg complex_performing = 0;     reg complex_await = 0;
     wire performing_system_operation = |packet_type[2:1];
     wire system_instruction_done;
-    wire packet_is_issueable = r4_i&!(!r5_i&packet_rs2_dependant)&!flush_i&!((performing_system_operation&!system_instruction_done)||(packet_type[0]&(complex_await|complex_performing)))&!lsu_busy_i&!rob_lock&!empty&!busy_i;
+    wire packet_is_issueable = r4_i&!(!r5_i&packet_rs2_dependant)&!flush_i&!((performing_system_operation&!system_instruction_done)||(packet_type[0]&(complex_await|complex_performing)))&!lsu_busy_i&!rob_lock&!empty;
     assign issue = (pkt0_vld&!pkt1_vld)||(!pkt0_vld&pkt1_vld) ? packet_is_issueable : packet_is_issueable&packet_select;
     wire can_commit_non_specs = (packet_rob[4:0]==rob_oldest_i)&&!rob_lock;
     always_ff @(posedge cpu_clk_i) begin
