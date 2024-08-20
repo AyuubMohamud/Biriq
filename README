@@ -42,6 +42,7 @@ Special instructions FENCE.I, MRET, WFI do not get assigned to any functional un
 Improvements:
 - Add ebreak into decoder (done)
 - Make divider and multiplier out of pipe (done)
+- Add in timeout wait
 - Fix RAS
 - Fix the load pipeline, and improve non-blocking cache
 - Add PMP for NAPOT only with 256 byte granules
