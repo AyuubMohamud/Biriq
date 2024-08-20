@@ -216,7 +216,7 @@ module retireControlUnit (
     assign tmu_epc_o = currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
     assign altcommit = ((backendException&exception_code[4])||((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])))
-    && (retire_control_state==Normal)&!mem_block_i&!empty&!interrupt_pending;
+    && (retire_control_state==Normal)&!mem_block_i&!empty&!interrupt_pending &!excp_special[0];
     reg btb_mod;
     // Special[3] == CSR writes
     // Special[2] == MRET
@@ -246,8 +246,7 @@ module retireControlUnit (
             end
             WaitForInterrupt: begin
                 if (interrupt_pending&&(!empty)&&!mem_block_i) begin
-                    retire_control_state <= Await;
-                    flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
+                    retire_control_state <= Normal;
                 end
             end
             ReclaimAndRecover: begin
