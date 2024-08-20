@@ -209,15 +209,16 @@ module retireControlUnit (
     assign rcu_block = retire_control_state!=Normal;
     assign rename_flush_o = (retire_control_state==Await) && icache_idle;
     assign ins_commit0 = commit_ins0;
-    assign ins_commit1 = commit_ins1;
+    assign ins_commit1 = commit_ins1;    reg wfi = 0;
     assign mret = !interrupt_pending&((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
     assign take_interrupt = interrupt_pending&&(!empty)&&!mem_block_i&(retire_control_state==Normal);
     assign take_exception = !interrupt_pending&(excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
-    assign tmu_epc_o = currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
+    assign tmu_epc_o = wfi ? pcPlus4 : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
     assign altcommit = ((backendException&exception_code[4])||((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])))
-    && (retire_control_state==Normal)&!mem_block_i&!empty&!interrupt_pending &!excp_special[0];
+    && (retire_control_state==Normal)&!mem_block_i&!empty&!interrupt_pending&!excp_special[0];
     reg btb_mod;
+
     // Special[3] == CSR writes
     // Special[2] == MRET
     // Special[1] == FENCE.I
@@ -227,12 +228,13 @@ module retireControlUnit (
             Normal: begin
                 if (interrupt_pending&&(!empty)&&!mem_block_i) begin
                     retire_control_state <= Await;
+                    wfi <= 0;
                     flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
                 end
                 else if ((excp_excp_valid|backendException)&!mem_block_i&!empty) begin
                     retire_control_state <= Await;
                     flush_address <= backendException&exception_code[4] ? c1_btb_target : mtvec_i[31:2];
-                end else if ((((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3]))&!mem_block_i&!empty)) begin
+                end else if ((((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])&!(wfi&excp_special[0]))&!mem_block_i&!empty)) begin
                     retire_control_state <= excp_special[1] ? WipeInstructionCache : excp_special[0] ? WaitForInterrupt : Await;
                     flush_address <= excp_special[2] ? mepc_i : pcPlus4;
                 end
@@ -247,9 +249,11 @@ module retireControlUnit (
             WaitForInterrupt: begin
                 if (interrupt_pending&&(!empty)&&!mem_block_i) begin
                     retire_control_state <= Normal;
+                    wfi <= 1;
                 end
             end
             ReclaimAndRecover: begin
+                wfi <= 0;
                 partial_retire <= 0;
                 recoveryCounter0 <= recoveryCounter0 + 5'd2;
                 recoveryCounter1 <= recoveryCounter1 + 5'd2;
@@ -259,6 +263,7 @@ module retireControlUnit (
                 end
             end
             Await: begin
+                wfi <= 0;
                 if (icache_idle) begin
                     retire_control_state <= ReclaimAndRecover;
                 end
