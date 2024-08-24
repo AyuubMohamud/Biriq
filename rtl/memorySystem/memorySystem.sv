@@ -189,11 +189,12 @@ module memorySystem #(parameter ACP_RS = 1) (
 
     wire logic [5:0]  lq_rob_cmp;
     wire logic         lq_cmp;
-    loadQueue lq (cpu_clk_i, flush_i, lq_valid, lq_rob, lq_ld_type, lq_addr, lq_dest, lq_full, conflict_data_c, conflict_bm_c, 
-    conflict_resolvable, conflict_res_valid, bram_rd_en,bram_rd_addr,bram_rd_data,load_cache_set,load_set_valid,load_set,dc_req,dc_addr,dc_op,dc_data,
+    wire dcu;
+    newLoadQueue lq (cpu_clk_i, flush_i, lq_valid, lq_rob, lq_ld_type, lq_addr, lq_dest, lq_full, conflict_data_c, conflict_bm_c, 
+    conflict_resolvable, conflict_res_valid, bram_rd_en,bram_rd_addr,bram_rd_data,load_cache_set,load_set_valid,load_set,dc_req,dc_addr,dc_op,dcu,dc_data,
     dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty);
 
-    dcache #(ACP_RS) datacache (cpu_clk_i, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr,dc_op,dc_data,dc_cmp, bram_rd_en,
+    dcache #(ACP_RS) datacache (cpu_clk_i, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr,dc_op,dcu,dc_data,dc_cmp, bram_rd_en,
     bram_rd_addr,bram_rd_data,dcache_a_opcode,dcache_a_param,dcache_a_size,dcache_a_address,dcache_a_mask,dcache_a_data,dcache_a_corrupt,dcache_a_valid,
     dcache_a_ready,  dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,
     acp_a_opcode,

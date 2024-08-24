@@ -11,6 +11,7 @@ module dcache #(parameter ACP_RS = 1) (
     input   wire logic                          dc_req,
     input   wire logic [31:0]                   dc_addr,
     input   wire logic [1:0]                    dc_op,
+    input   wire logic                          dc_uncached,
     output       logic [31:0]                   dc_data,
     output  wire logic                          dc_cmp,
     // sram
@@ -86,20 +87,44 @@ module dcache #(parameter ACP_RS = 1) (
             valid0[x] = 0;valid1[x] = 0;
         end
     end
-    wire [3:0] wr_en; wire [10:0] wr_addr; wire [31:0] wr_data; 
-    wire [1:0] match; wire match_line;
-    assign match = {tags1[store_address_i[9:5]]==store_address_i[28:10], tags0[store_address_i[9:5]]==store_address_i[28:10]} &
-    {valid1[store_address_i[9:5]], valid0[store_address_i[9:5]]};
-    assign match_line = match[1];
-    dbraminst dsram (cpu_clock_i, bram_rd_en, bram_rd_addr, bram_rd_data, wr_en, wr_addr, wr_data);
+    wire [ACP_RS-1:0] working_acp_source;
+    wire [3:0] working_acp_size;
+    wire [31:0] working_acp_data;
+    wire [3:0] working_acp_mask;
+    wire [2:0] working_acp_opcode;
+    wire [31:0] working_acp_address;
+    wire working_acp_valid;
+    wire acp_busy;
+    skdbf #(ACP_RS+43+32) skidbuffer (cpu_clock_i, 1'b0, cache_fsm!=IDLE, {
+        working_acp_source,
+        working_acp_size,
+        working_acp_data,
+        working_acp_mask,
+        working_acp_opcode,
+        working_acp_address
+    }, working_acp_valid, acp_busy, {
+        acp_a_source, acp_a_size, acp_a_data, acp_a_mask, acp_a_opcode, acp_a_address
+    }, acp_a_valid);
+    assign acp_a_ready = ~acp_busy;
+    reg [3:0] size = 0; reg [ACP_RS-1:0] source = 0;
     localparam IDLE = 3'b000;
     localparam LOAD_CMP = 3'b001;
     localparam IO_LD_CMP = 3'b010;
     localparam STORE_CMP = 3'b100;
     localparam MEM_LD_CMP = 3'b011;
+    localparam VICTIM = 3'b101;
     localparam SERVICE_COHERENT = 3'b111;
     reg [2:0] cache_fsm = IDLE;
     reg [4:0] counter = 0; 
+    wire [3:0] wr_en; wire [10:0] wr_addr; wire [31:0] wr_data; 
+    wire [1:0] match_tags; wire match_line; wire [1:0] match_vld; wire [1:0] match;
+    assign match_tags = {tags1[dcache_a_address[11:7]]==dcache_a_address[30:12], tags0[dcache_a_address[11:7]]==dcache_a_address[30:12]};
+    assign match_vld = {valid1[dcache_a_address[11:7]], valid0[dcache_a_address[11:7]]};
+    assign match = match_tags & match_vld;
+    
+    assign match_line = match[1];
+    dbraminst dsram (cpu_clock_i, bram_rd_en, bram_rd_addr, bram_rd_data, wr_en, wr_addr, wr_data);
+
     wire cache_fill = (cache_fsm==LOAD_CMP)&(dcache_d_valid)&(!dc_addr[31]);
     assign wr_en = {cache_fill|((|match)&(cache_fsm==STORE_CMP)&store_bm_i[3]), cache_fill
     |((|match)&(cache_fsm==STORE_CMP)&store_bm_i[2]), cache_fill|((|match)&(cache_fsm==STORE_CMP)&store_bm_i[1]), 
@@ -109,7 +134,7 @@ module dcache #(parameter ACP_RS = 1) (
     ld_vld;
     assign load_set_o = ld_mtch[1];
     assign load_set_valid_o = |ld_mtch;
-    assign replacement_bitvec = &ld_vld ? rr : ld_vld==2'b00 ? 2'b01 : ld_vld==2'b01 ? 2'b10 : 2'b01;
+    assign replacement_bitvec = &match_vld ? rr : match_vld==2'b00 ? 2'b01 : match_vld==2'b01 ? 2'b10 : 2'b01;
     assign replacement_enc = replacement_bitvec[1];
     assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter} : {match_line, store_address_i[9:0]};
     assign wr_data = cache_fsm==LOAD_CMP ? dcache_d_data : store_data_i;
@@ -154,26 +179,7 @@ module dcache #(parameter ACP_RS = 1) (
             end
         endcase
     end
-    wire [ACP_RS-1:0] working_acp_source;
-    wire [3:0] working_acp_size;
-    wire [31:0] working_acp_data;
-    wire [3:0] working_acp_mask;
-    wire [2:0] working_acp_opcode;
-    wire [31:0] working_acp_address;
-    wire working_acp_valid;
-    wire acp_busy;
-    skdbf #(ACP_RS+43+32) skidbuffer (cpu_clock_i, 1'b0, cache_fsm!=IDLE, {
-        working_acp_source,
-        working_acp_size,
-        working_acp_data,
-        working_acp_mask,
-        working_acp_opcode,
-        working_acp_address
-    }, working_acp_valid, acp_busy, {
-        acp_a_source, acp_a_size, acp_a_data, acp_a_mask, acp_a_opcode, acp_a_address
-    }, acp_a_valid);
-    assign acp_a_ready = ~acp_busy;
-    reg [3:0] size = 0; reg [ACP_RS-1:0] source = 0;
+
     always_ff @(posedge cpu_clock_i) begin  
         case (cache_fsm)
             IDLE: begin
@@ -192,20 +198,26 @@ module dcache #(parameter ACP_RS = 1) (
                     dcache_a_opcode <= 3'd0; dcache_a_size <= {2'b00,op}; dcache_a_valid <= 1;
                     dcache_a_data <= recovered_data; dcache_a_mask <= 4'hF;
                 end else if (dc_req) begin
-                    cache_fsm <= LOAD_CMP;
-                    dcache_a_address <= dc_addr[31] ? dc_addr : {dc_addr[31:7],7'h00}; dcache_a_mask <= 0; dcache_a_param <= 0;
+                    cache_fsm <= VICTIM;
+                    dcache_a_address <= dc_addr[31]|dc_uncached ? dc_addr : {dc_addr[31:7],7'h00}; dcache_a_mask <= 0; dcache_a_param <= 0;
                     dcache_a_corrupt <= 0;
-                    dcache_a_opcode <= 3'd4; dcache_a_size <= dc_addr[31] ? {2'b00,dc_op[1:0]} : 4'd7; dcache_a_valid <= 1;
+                    dcache_a_opcode <= 3'd4; dcache_a_size <= dc_addr[31]|dc_uncached ? {2'b00,dc_op[1:0]} : 4'd7; 
                 end
-            end 
+            end
+            VICTIM: begin
+                dcache_a_valid <= 1;
+                valid0[dc_addr[11:7]] <= replacement_bitvec[0] ? 1'b0 : valid0[dc_addr[11:7]];
+                valid1[dc_addr[11:7]] <= replacement_bitvec[1] ? 1'b0 : valid1[dc_addr[11:7]];
+                cache_fsm <= LOAD_CMP;
+            end
             LOAD_CMP: begin
                 acp_d_valid <= acp_d_ready ? 1'b0 : acp_d_valid;
                 dcache_a_valid <= dcache_a_ready ? 1'b0 : dcache_a_valid;
-                if (dc_addr[31]&dcache_d_valid) begin
+                if (dc_uncached&dcache_d_valid) begin
                     cache_fsm <= IO_LD_CMP;
                     dc_data <= dcache_d_data;
-                end
-                if (!dc_addr[31]&dcache_d_valid) begin
+                end                        
+                if (!dc_uncached&dcache_d_valid) begin
                     if (counter==5'd31) begin
                         counter <= 0;
                         cache_fsm <= MEM_LD_CMP;

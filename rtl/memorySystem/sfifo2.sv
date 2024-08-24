@@ -1,5 +1,5 @@
 `default_nettype none
-module sfifo2 #(parameter FW = 64, parameter DW = 8) ( // Just a circular buffer 
+module sfifo2 #(parameter FW = 32, parameter DW = 47) ( // Just a circular buffer 
     input   wire logic i_clk,
     input   wire logic i_reset,
 
