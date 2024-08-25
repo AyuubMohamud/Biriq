@@ -11,6 +11,7 @@ parameter [31:0] BPU_RAS_ENTRIES = 32)
     input   wire logic                          enable_counter_overload,
     input   wire logic                          counter_overload,
     input   wire logic                          current_privlidge,
+    input   wire logic                          tw,
 
     // System control port
     input   wire logic                          cache_flush_i,
@@ -125,7 +126,7 @@ parameter [31:0] BPU_RAS_ENTRIES = 32)
     flush_resp_o,icache_a_opcode, icache_a_param, icache_a_size, icache_a_address, icache_a_mask, icache_a_data, icache_a_corrupt, icache_a_valid,
     icache_a_ready, icache_d_opcode, icache_d_param, icache_d_size, icache_d_denied, icache_d_data, icache_d_corrupt, icache_d_valid, icache_d_ready);
 
-    decode decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, flush_resp_o, pdc_hit_o,pdc_instruction_o,pdc_sip_vpc_o,
+    decode decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw, flush_resp_o, pdc_hit_o,pdc_instruction_o,pdc_sip_vpc_o,
     pdc_sip_excp_code_o,pdc_sip_excp_vld_o, 
     pdc_btb_index_o,pdc_btb_btype_o,pdc_btb_bm_pred_o,pdc_btb_target_o,pdc_btb_vld_o,pdc_btb_way_o,pdc_busy_i,
     ins0_port_o,

@@ -28,6 +28,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     input   wire logic                          inc_commit0,
     input   wire logic                          inc_commit1,
     output  wire logic                          mprv_o,
+    output  wire logic                          tw,
 
     // IQ
     output  wire logic                          real_privilege,
@@ -46,7 +47,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     localparam MHARTID = 12'hF14;
     localparam MCONFIGPTR = 12'hF15;
 
-    reg [4:0] mstatus = 0; localparam MSTATUS = 12'h300; 
+    reg [5:0] mstatus = 0; localparam MSTATUS = 12'h300; 
     localparam MISA = 12'h301;
     reg [2:0] mie = 0; localparam MIE = 12'h304;
     reg [31:0] mtvec = 0; localparam MTVEC = 12'h305;
@@ -66,7 +67,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     reg [63:0] cycle = 0; localparam CYCLE = 12'hC00; localparam CYCLEH = 12'hC80; localparam MCYCLE = 12'hB00; localparam MCYCLEH = 12'hB80;
     reg [63:0] instret = 0; localparam INSTRET = 12'hC01; localparam INSTRETH = 12'hC81;localparam MINSTRET = 12'hB02; localparam MINSTRETH = 12'hB82;
     reg [1:0] mcountinhibit = 0; localparam MCOUNTERINHIBIT = 12'h320; 
-
+    assign tw = mstatus[5];
     // Vendor-specific CSRs
     reg [2:0] siriusBrnchCtrl = 3'b100; localparam BRNCHCTRL = 12'h800;
     assign enable_branch_pred = siriusBrnchCtrl[2];
@@ -151,6 +152,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
         end else if (tmu_valid_i && tmu_wr_en && (current_privilege_mode)) begin
             case (tmu_address_i)
                 MSTATUS: begin
+                    mstatus[5] <= new_data[21];
                     mstatus[4] <= new_data[17];
                     mstatus[3:2] <= {new_data[12],new_data[12]};
                     mstatus[1] <= new_data[7];

@@ -103,8 +103,9 @@ wire logic [1:0]                        c1_cntr_pred_o;
 wire logic                              c1_bnch_tkn_o;
 wire logic [1:0]                        c1_bnch_type_o;
 wire logic                              c1_btb_mod_o;
+wire tw;
     csrfile #(.HARTID(HARTID)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
-    take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,real_privilege,mepc_o,mtvec_o,
+    take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,tw,real_privilege,mepc_o,mtvec_o,
     enable_branch_pred,
 enable_counter_overload,
 counter_overload);
@@ -164,7 +165,7 @@ counter_overload);
     wire logic                     c1_btb_bm_i;
     frontend #(START_ADDR,BPU_ENTRIES,BPU_RAS_ENABLE,BPU_RAS_ENTRIES) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
     enable_counter_overload,
-    counter_overload, real_privilege,icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
+    counter_overload, real_privilege,tw,icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
     icache_a_mask,icache_a_data,icache_a_corrupt,icache_a_valid,icache_a_ready,icache_d_opcode,icache_d_param,icache_d_size,icache_d_denied,icache_d_data,
     icache_d_corrupt,icache_d_valid,icache_d_ready, ins0_port_o, ins0_dnagn_o, ins0_alu_type_o, ins0_alu_opcode_o, ins0_alu_imm_o, ins0_ios_type_o, ins0_ios_opcode_o, 
     ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_excp_valid_o, ins0_excp_code_o, 

@@ -2,6 +2,7 @@ module decode (
     input   wire logic                  cpu_clk_i,
     input   wire logic                  flush_i,
     input   wire logic                  current_privlidge,
+    input   wire logic                  tw,
     input   wire logic                  icache_idle,
     input   wire logic                  icache_valid_i,
     input   wire logic [63:0]           instruction_i,
@@ -219,10 +220,10 @@ module decode (
             ins0_reg_props_o <= {(isOP|isOPIMM|isLoad|isJAL|isJALR|isAUIPC|isLUI|((isCSRRW|isCSRRC|isCSRRS)&isSystem))&&(rv_instruction_i[11:7]!=0), !(((isECALL|isSRET|isMRET|isWFI|isSFENCE_VMA)&isSystem)|isAUIPC|isLUI|isJAL), isOP|isCmpBranch|isStore};
             ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
             ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
-            ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&((isMRET&!(current_privlidge))|isECALL|isEBREAK));
-            ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&((isMRET2&!(current_privlidge))|isECALL2|isEBREAK2));
-            ins0_excp_code_o <= excp_vld ? excp_code : invalid_instruction ? 4'b0010 : isSystem&isECALL ? ecall : ebreak;
-            ins1_excp_code_o <= excp_vld ? excp_code : invalid_instruction ? 4'b0010 : isSystem2&isECALL2 ? ecall : ebreak;
+            ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&((isMRET&!(current_privlidge))|(isWFI&!current_privlidge&tw)|isECALL|isEBREAK));
+            ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&((isMRET2&!(current_privlidge))|(isWFI2&!current_privlidge&tw)|isECALL2|isEBREAK2));
+            ins0_excp_code_o <= excp_vld ? excp_code : invalid_instruction|(isSystem&(isWFI&!current_privlidge&tw)) ? 4'b0010 : isSystem&isECALL ? ecall : ebreak;
+            ins1_excp_code_o <= excp_vld ? excp_code : invalid_instruction|(isSystem2&(isWFI2&!current_privlidge&tw)) ? 4'b0010 : isSystem2&isECALL2 ? ecall : ebreak;
             ins1_port_o <= !(isJAL2|isJALR2|isAUIPC2|isLUI2|(isOP2&!port1)|isOPIMM2|isCmpBranch2);
             ins1_dnagn_o <= isFenceI2|isSystem2&(isMRET2|isWFI2);
             ins1_alu_type_o <= {isAUIPC2, isLUI2, isJALR2, isJAL2, ((isOP2&!port1)|isOPIMM2)};
