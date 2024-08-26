@@ -5,7 +5,7 @@
 **/
 
 
-module newLoadQueue #(parameter WOQE = 4, parameter MMIOE = 4) (
+module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     input   wire logic                          core_clock_i,
     input   wire logic                          core_flush_i,
 

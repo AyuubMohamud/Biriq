@@ -138,7 +138,7 @@ module dcache #(parameter ACP_RS = 1) (
     assign replacement_enc = replacement_bitvec[1];
     assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter} : {match_line, store_address_i[9:0]};
     assign wr_data = cache_fsm==LOAD_CMP ? dcache_d_data : store_data_i;
-    assign dc_cmp = (dc_addr[31]&(cache_fsm==IO_LD_CMP))|((cache_fsm==MEM_LD_CMP));
+    assign dc_cmp = ((dc_addr[31]|dc_uncached)&(cache_fsm==IO_LD_CMP))|((cache_fsm==MEM_LD_CMP));
     assign cache_done = cache_fsm==STORE_CMP && dcache_d_valid; assign dcache_d_ready = 1'b1;
     logic [1:0] recover_low_order; logic [1:0] op; logic [31:0] recovered_data;
     initial dcache_a_valid = 0;
@@ -249,6 +249,7 @@ module dcache #(parameter ACP_RS = 1) (
                 cache_fsm <= IDLE;
             end
             SERVICE_COHERENT: begin
+                dcache_a_valid <= dcache_a_ready ? 1'b0 : dcache_a_valid;
                 rr <= ~rr;
                 if (dcache_d_valid) begin
                     acp_d_data <= dcache_d_data;

@@ -83,7 +83,10 @@ module branchUnit (
                        {bnch_cond[2], bnch_cond[0]} == 2'b10 ? lt :
                        mt|eq; 
     wire [31:0] excp_addr;
-    assign excp_addr = jal ? {pc,2'b00}+offset : jalr ? operand_1+offset : brnch_res&&!(lui|auipc) ? {pc,2'b00}+offset : {pc,2'b00}+32'd4;
+    wire [31:0] first_operand = jalr ? operand_1 : {pc,2'b00};
+    wire [31:0] second_operand = jal|jalr|brnch_res&&!(lui|auipc) ? offset : 32'd4;
+
+    assign excp_addr = first_operand+second_operand;
     wire wrongful_nbranch = !btb_vld_i&&!(lui|auipc);
     wire wrongful_target = {btb_target_i,2'b00}!=excp_addr && btb_vld_i;
     wire [1:0] branch_type = jal|jalr ? 2'b10 : 2'b00;
@@ -93,7 +96,7 @@ module branchUnit (
     always_ff @(posedge cpu_clock_i) begin
         wb_valid_o <= !flush_i&valid_i&(lui|auipc|jal|jalr)&!(dest_i==0);
         res_valid_o <= !flush_i&valid_i;
-        result_o <= lui ? offset : auipc ? offset+{pc,2'b00} : {pc+29'h1,2'b00};
+        result_o <= lui ? offset : auipc ? offset+{pc,2'b00} : {pc+30'h1,2'b00};
         wb_dest_o <= dest_i;
         rob_o <= rob_id_i;
         if ((wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm)&& !flush_i && valid_i) begin
