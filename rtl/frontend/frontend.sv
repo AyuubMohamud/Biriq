@@ -1,7 +1,5 @@
 module frontend #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 1,
-parameter [31:0] BPU_RAS_ENABLE = 1,
-parameter [31:0] BPU_RAS_ENTRIES = 32) 
+parameter [31:0] BPU_ENTRIES = 32) 
 (
     input   wire logic                          core_clock_i,
     input   wire logic                          core_reset_i,
@@ -102,7 +100,7 @@ parameter [31:0] BPU_RAS_ENTRIES = 32)
     wire logic              if2_btb_hit;
     wire logic              if2_btb_way;
     wire branch_correct; wire [29:0] branch_correct_pc;
-    pcgenA1 #(START_ADDR, BPU_ENTRIES, BPU_RAS_ENABLE, BPU_RAS_ENTRIES) pcgenstage (core_clock_i, core_reset_i,core_flush_i|branch_correct, core_flush_i ? core_flush_pc : branch_correct_pc, enable_branch_pred,
+    pcgenA1 #(START_ADDR, BPU_ENTRIES) pcgenstage (core_clock_i, core_reset_i,core_flush_i|branch_correct, core_flush_i ? core_flush_pc : branch_correct_pc, enable_branch_pred,
     enable_counter_overload,
     counter_overload, if2_busy_i, branch_correct, branch_correct_pc,
     c1_btb_vpc_i, c1_btb_target_i, c1_cntr_pred_i, c1_bnch_tkn_i, c1_bnch_type_i, c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i,

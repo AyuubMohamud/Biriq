@@ -21,8 +21,7 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 
-module pcgenA1 #(parameter [31:0] START_ADDR = 32'h0,parameter BPU_ENTRIES = 128,
-parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
+module pcgenA1 #(parameter [31:0] START_ADDR = 32'h0,parameter BPU_ENTRIES = 128)
 (
     input   wire logic                      core_clock_i, 
     input   wire logic                      core_reset_i,
@@ -67,11 +66,6 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
     reg idx [0:BPU_ENTRIES-1];
     reg valid0 [0:(BPU_ENTRIES/2)-1]; reg valid1 [0:(BPU_ENTRIES/2)-1];
     reg [taglen-1:0] tag0   [0:(BPU_ENTRIES/2)-1]; reg [taglen-1:0] tag1   [0:(BPU_ENTRIES/2)-1];
-
-    reg [29:0] RAS [0:BPU_RAS_ENTRIES-1];
-
-    reg [$clog2(BPU_RAS_ENTRIES)-1:0] RAS_idx_spec = 0;
-    reg [$clog2(BPU_RAS_ENTRIES)-1:0] RAS_idx_real = 0;
     initial begin
         tlb_stage_valid_o = 0;
         tlb_stage_pc_o = 0;
@@ -81,9 +75,6 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
         for (integer i = 0; i < BPU_ENTRIES/2; i++) begin : _initialise
             valid0[i] = 0; valid1[i] = 0; 
             tag0[i] = 0; tag1[i] = 0;
-        end
-        for (integer i = 0; i < BPU_RAS_ENTRIES; i++) begin : _initialise
-            RAS[i] = 0;
         end
     end
     wire [29:0] pc_used = c1_btb_mod_i ? c1_btb_vpc_i : btb_correct_i ? btb_correct_pc : program_counter;
@@ -121,12 +112,7 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
     wire btb_index = idx[{match[1], btb_lkp_idx}];
     wire btb_hit = (|match)&!(core_reset_i|core_flush_i)&!(!btb_index&program_counter[0]);
     wire [29:0] btb_target;
-    generate if (BPU_ENABLE_RAS) begin : _
-        assign btb_target = btb_type==2'b11 ? RAS[RAS_idx_spec] : btb_target_bm;    
-    end else begin : __
-        assign btb_target = btb_target_bm;
-    end 
-    endgenerate
+    assign btb_target = btb_target_bm;
     wire btb_redirect = btb_hit&(btb_type==2'b00 ? btb_bm_pred[1] : 1'b1);
     wire [29:0] next_pc = btb_redirect&&enable_branch_pred ? btb_target : misaligned ? program_counter + 1 : program_counter + 2;
 
@@ -147,63 +133,6 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
             tlb_btb_index <= btb_index;
             tlb_btb_hit <= btb_hit&&enable_branch_pred;
             tlb_btb_way <= match[1];
-        end
-    end
-    wire call_predicted;
-    wire ret_predicted;
-    wire call_mispredicted;
-    wire ret_mispredicted;
-    wire call_affirmed;
-    wire ret_affirmed;
-    wire [$clog2(BPU_RAS_ENTRIES)-1:0] RAS_idx_spec_p1_w;
-    wire [$clog2(BPU_RAS_ENTRIES)-1:0] RAS_idx_real_p1_w;
-    wire [$clog2(BPU_RAS_ENTRIES)-1:0] RAS_idx_spec_m1_w;
-    wire [$clog2(BPU_RAS_ENTRIES)-1:0] RAS_idx_real_m1_w;
-    generate if (BPU_ENABLE_RAS) begin : ___
-        assign call_predicted = btb_hit&!tlb_stage_busy_i&(btb_type==2'b01);
-        assign ret_predicted = btb_hit&!tlb_stage_busy_i&(btb_type==2'b11);
-        assign call_mispredicted = c1_btb_mod_i&(c1_bnch_type_i==2'b01);
-        assign ret_mispredicted = c1_btb_mod_i&(c1_bnch_type_i==2'b11);
-        assign call_affirmed = 0;
-        assign ret_affirmed = 0;
-        assign RAS_idx_spec_p1_w = RAS_idx_spec + 1;
-        assign RAS_idx_real_p1_w = RAS_idx_real + 1;
-        assign RAS_idx_spec_m1_w = RAS_idx_spec - 1;
-        assign RAS_idx_real_m1_w = RAS_idx_real - 1;
-    end else begin : ____
-        assign call_predicted = 1'b0;
-        assign ret_predicted = 1'b0;
-        assign call_mispredicted = 1'b0;
-        assign ret_mispredicted = 1'b0;
-        assign call_affirmed = 0;
-        assign ret_affirmed = 0;
-        assign RAS_idx_spec_p1_w = 0;
-        assign RAS_idx_real_p1_w = 0;
-        assign RAS_idx_spec_m1_w = 0;
-        assign RAS_idx_real_m1_w = 0;
-    end
-    endgenerate
-    always_ff @(posedge core_clock_i) begin
-        if (core_reset_i) begin
-            RAS_idx_spec <= 0;
-        end else if (call_mispredicted) begin
-            RAS_idx_spec <= RAS_idx_real_p1_w;
-            RAS[RAS_idx_real_p1_w] <= c1_btb_vpc_i+1;
-        end else if (ret_mispredicted) begin
-            RAS_idx_spec <= RAS_idx_real_m1_w;
-        end
-        else if (call_predicted) begin
-            RAS_idx_spec <= RAS_idx_spec_p1_w;
-            RAS[RAS_idx_spec_p1_w] <= program_counter[29:0] + 1;
-        end else if (ret_predicted) begin
-            RAS_idx_spec <= RAS_idx_spec_m1_w;
-        end
-        if (core_reset_i) begin
-            RAS_idx_real <= 0;
-        end else if (call_mispredicted|call_affirmed) begin
-            RAS_idx_real <= RAS_idx_real_p1_w;
-        end else if (ret_mispredicted|ret_affirmed) begin
-            RAS_idx_real <= RAS_idx_real_m1_w;
         end
     end
     reg rr = 0;

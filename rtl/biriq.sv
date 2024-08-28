@@ -1,7 +1,5 @@
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 1,
-parameter [31:0] BPU_RAS_ENABLE = 1,
-parameter [31:0] BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0) (
+parameter [31:0] BPU_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -163,7 +161,7 @@ counter_overload);
     wire logic                     c1_btb_mod_i = c1_btb_mod_o;
     wire logic                     c1_btb_way_i;
     wire logic                     c1_btb_bm_i;
-    frontend #(START_ADDR,BPU_ENTRIES,BPU_RAS_ENABLE,BPU_RAS_ENTRIES) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
+    frontend #(START_ADDR,BPU_ENTRIES) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
     enable_counter_overload,
     counter_overload, real_privilege,tw,icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
     icache_a_mask,icache_a_data,icache_a_corrupt,icache_a_valid,icache_a_ready,icache_d_opcode,icache_d_param,icache_d_size,icache_d_denied,icache_d_data,

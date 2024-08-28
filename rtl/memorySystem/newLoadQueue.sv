@@ -73,16 +73,17 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     wire logic wk_dequeue = !current_miss_valid&!wempty&!rob_lock;
     sfifo2 #(.FW(WOQE), .DW(47)) weakQueue (core_clock_i, core_flush_i|rob_lock, wk_enqueue, {lsu_rob,lsu_op,lsu_addr,lsu_dest}, 
     wfull, wk_dequeue, {wlsu_rob,wlsu_op,wlsu_addr,wlsu_dest}, wempty);
-    // Strongly ordered loads handling
+    // Stronger ordered loads handling
     wire logic [5:0]  slsu_rob;
     wire logic [2:0]  slsu_op;
     wire logic [31:0] slsu_addr;
     wire logic [5:0]  slsu_dest;
+    wire logic        slsu_slept;
     wire logic sempty;
     wire logic sfull;
     wire logic so_dequeue = dc_cmp&dc_uncached;
-    sfifo2 #(.FW(MMIOE), .DW(47)) strongQueue (core_clock_i, core_flush_i|rob_lock, so_enqueue, {lsu_rob,lsu_op,lsu_addr,lsu_dest}, 
-    sfull, so_dequeue, {slsu_rob,slsu_op,slsu_addr,slsu_dest}, sempty);
+    sfifo2 #(.FW(MMIOE), .DW(48)) strongQueue (core_clock_i, core_flush_i|rob_lock, so_enqueue, {lsu_rob,lsu_op,lsu_addr,lsu_dest,conflict_res_valid}, 
+    sfull, so_dequeue, {slsu_rob,slsu_op,slsu_addr,slsu_dest,slsu_slept}, sempty);
     assign busy = (wk_dequeue|so_dequeue|sfull|wfull);
     always_ff @(posedge core_clock_i) begin
         if (!current_miss_valid&wk_enqueue&!rob_lock) begin
@@ -95,7 +96,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
         end
     end
     always_ff @(posedge core_clock_i) begin
-        if (!sempty && (slsu_rob[4:0]==oldest_instruction_i) && !dc_req & !rob_lock && store_buf_emp &!core_flush_i) begin
+        if (!sempty && (slsu_rob[4:0]==oldest_instruction_i) && !dc_req & !rob_lock && !(!store_buf_emp&slsu_slept) &!core_flush_i) begin
             dc_req <= 1;
             dc_addr <= slsu_addr;
             dc_op <= slsu_op[1:0];
