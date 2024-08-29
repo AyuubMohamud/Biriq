@@ -6,21 +6,21 @@ KADD8, KADD16 func7 = 0x06  // Saturated signed addition of packed 8-bit/16-bit 
 KUADD8, KUADD16 func7 = 0x04 // Saturated unsigned addition of packed 8-bit/16-bit values
 KSUB8, KSUB16 func7 = 0x07 // Saturated signed subtraction of packed 8-bit/16-bit values
 KUSUB8, KUSUB16 func7 = 0x05 // Saturated unsigned subtraction of packed 8-bit/16-bit values
-MAX8, MAX16 func7 = 0x18
-UMAX8, UMAX16 func7 = 0x10
-MIN8, MIN16 func7 = 0x19
-UMIN8, UMIN16 func7 = 0x11
-CEQ8, CEQ16 func7 = 0x14
-CNE8, CNE16 func7 = 0x1C
-CLT8, CLT16 func7 = 0x1D
-CLE8, CLE16 func7 = 0x1E
-CGT8, CGT16 func7 = 0x1F
-CLTU8, CLTU16 func7 = 0x15
-CLEU8, CLEU16 func7 = 0x16
-CGTU8, CGTU16 func7 = 0x17
-CLZ8, CLZ16 func7 = 0x20 rs2 = 0
-PLC8, PLC16 func7 = 0x21 rs2 = 0
-SEL8, SEL16 func7 = 0x22
+MAX8, MAX16 func7 = 0x18 // Signed maximum
+UMAX8, UMAX16 func7 = 0x10 // Unsigned maximum
+MIN8, MIN16 func7 = 0x19 // Signed minimum
+UMIN8, UMIN16 func7 = 0x11 // Unsigned minimum
+CEQ8, CEQ16 func7 = 0x14 // Bitfield becomes 1 on condition
+CNE8, CNE16 func7 = 0x1C // Bitfield becomes 1 on condition
+CLT8, CLT16 func7 = 0x1D // Bitfield becomes 1 on condition
+CLE8, CLE16 func7 = 0x1E // Bitfield becomes 1 on condition
+CGT8, CGT16 func7 = 0x1F // Bitfield becomes 1 on condition
+CLTU8, CLTU16 func7 = 0x15 // Bitfield becomes 1 on condition
+CLEU8, CLEU16 func7 = 0x16 // Bitfield becomes 1 on condition
+CGTU8, CGTU16 func7 = 0x17 // Bitfield becomes 1 on condition
+CLZ8, CLZ16 func7 = 0x20 rs2 = 0 // count leading zeros
+PLC8, PLC16 func7 = 0x21 rs2 = 0 // population count
+SEL8, SEL16 func7 = 0x22 // Byteselect
 
 size determined by 6th bit (op[6] ? 16-bit ops : 8-bit ops)
 example: 
