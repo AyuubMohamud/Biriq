@@ -16,13 +16,21 @@ module EX10 (
     input   wire logic                              imm_i,
     input   wire logic [31:0]                       immediate_i,
     input   wire logic [5:0]                        dest_i,
+    input   wire logic                              psx_i,
 
     output       logic [31:0]                       alu_a,
     output       logic [31:0]                       alu_b,
     output       logic [6:0]                        alu_opc,
     output       logic [4:0]                        alu_rob_id,
     output       logic [5:0]                        alu_dest,
-    output       logic                              alu_valid
+    output       logic                              alu_valid,
+
+    output       logic [31:0]                       valu_a,
+    output       logic [31:0]                       valu_b,
+    output       logic [6:0]                        valu_opc,
+    output       logic [4:0]                        valu_rob_id,
+    output       logic [5:0]                        valu_dest,
+    output       logic                              valu_valid
 );
     assign rob_o = data_i[4:0];
     assign rs1_o = data_i[11:6];
@@ -35,7 +43,13 @@ module EX10 (
             alu_opc <= opcode_i;
             alu_rob_id <= data_i[4:0];
             alu_dest <= dest_i;
-            alu_valid <= 1;
+            alu_valid <= !psx_i;
+            valu_a <= rs1_data_i;
+            valu_b <= rs2_data_i;
+            valu_opc <= opcode_i;
+            valu_rob_id <= data_i[4:0];
+            valu_dest <= dest_i;
+            valu_valid <= psx_i;
         end else begin
             alu_valid <= 0;
         end

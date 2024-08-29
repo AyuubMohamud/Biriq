@@ -13,7 +13,7 @@ module EX00 (
     output  wire logic [4:0]                        rob_o,
     // instruction ram
     input   wire logic [6:0]                        opcode_i,
-    input   wire logic [4:0]                        ins_type, // 0 = ALU, 1 = JAL, 2 = JALR, 3 = LUI, 4 - AUIPC
+    input   wire logic [5:0]                        ins_type, // 0 = ALU, 1 = JAL, 2 = JALR, 3 = LUI, 4 - AUIPC
     input   wire logic                              imm_i,
     input   wire logic [31:0]                       immediate_i,
     input   wire logic [5:0]                        dest_i,
@@ -51,6 +51,13 @@ module EX00 (
     output       logic [5:0]                        alu_dest,
     output       logic                              alu_valid,
 
+    output       logic [31:0]                       valu_a,
+    output       logic [31:0]                       valu_b,
+    output       logic [6:0]                        valu_opc,
+    output       logic [4:0]                        valu_rob_id,
+    output       logic [5:0]                        valu_dest,
+    output       logic                              valu_valid,
+
     output       logic [5:0]                        wakeup_dest,
     output       logic                              wakeup_valid
 );
@@ -66,6 +73,12 @@ module EX00 (
             alu_rob_id <= data_i[4:0];
             alu_dest <= dest_i;
             alu_valid <= ins_type[0];
+            valu_a <= rs1_data_i;
+            valu_b <= rs2_data_i;
+            valu_opc <= opcode_i;
+            valu_rob_id <= data_i[4:0];
+            valu_dest <= dest_i;
+            valu_valid <= ins_type[5];
             bnch_operand_1 <= rs1_data_i; bnch_operand_2 <= rs2_data_i;
             bnch_offset <= immediate_i; 
             bnch_pc <= {pc_i[29:1], pc_i[0] ? 1'b1 : data_i[0]};
@@ -76,10 +89,10 @@ module EX00 (
             bnch_btb_target_o <= btb_target_i;
             bnch_btb_way_o <= btb_way_i; // mask off appropriately
             wakeup_dest <= dest_i;
-            bnch_valid_o <= ((|ins_type[4:1])||!ins_type[0]);
+            bnch_valid_o <= ((|ins_type[4:1])||(!ins_type[0]&!ins_type[5]));
             wakeup_valid <= (|ins_type);
         end else begin
-            alu_valid <= 0; bnch_valid_o <= 0;
+            alu_valid <= 0; bnch_valid_o <= 0; valu_valid <= 0;
         end
     end
 

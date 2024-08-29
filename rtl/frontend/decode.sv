@@ -20,7 +20,7 @@ module decode (
 
     output       logic                  ins0_port_o,
     output       logic                  ins0_dnagn_o,
-    output       logic [4:0]            ins0_alu_type_o,
+    output       logic [5:0]            ins0_alu_type_o,
     output       logic [6:0]            ins0_alu_opcode_o,
     output       logic                  ins0_alu_imm_o,
     output       logic [4:0]            ins0_ios_type_o,
@@ -37,7 +37,7 @@ module decode (
     output       logic [3:0]            ins0_excp_code_o,
     output       logic                  ins1_port_o,
     output       logic                  ins1_dnagn_o,
-    output       logic [4:0]            ins1_alu_type_o,
+    output       logic [5:0]            ins1_alu_type_o,
     output       logic [6:0]            ins1_alu_opcode_o,
     output       logic                  ins1_alu_imm_o,
     output       logic [4:0]            ins1_ios_type_o,
@@ -130,13 +130,14 @@ module decode (
     wire isLUI = rv_instruction_i[6:2]==5'b01101;
     wire isOP = rv_instruction_i[6:2]==5'b01100;
     wire isOPIMM = rv_instruction_i[6:2]==5'b00100;
+    wire isPSX = rv_instruction_i[6:2]==5'b01010&(rv_instruction_i[14:12]==0);
     wire sys_invalid = !(isECALL|isMRET|isWFI|isCSRRW|isCSRRC|isCSRRS|isEBREAK);
     wire [6:0] uop0; wire port0; wire op_valid0;
     op_dec #(1) opdec0 (rv_instruction_i[31:25], rv_instruction_i[14:12], uop0,port0,op_valid0);
     wire [6:0] uop_imm0; wire op_imm_valid0;
     op_imm_dec opimmdec0 (rv_instruction_i[31:25], rv_instruction_i[14:12], rv_instruction_i[24:20], uop_imm0,op_imm_valid0);
     wire invalid_instruction = !(&rv_instruction_i[1:0])||!(isAUIPC|isLUI|(isOP&op_valid0)|(isOPIMM&op_imm_valid0)|isJAL|isJALR|(isCmpBranch&!isCMPBranchInvalid)|(isLoad&!load_invalid)|(isStore&!store_invalid)
-    |(isSystem&!sys_invalid)|isFence|isFenceI);
+    |(isSystem&!sys_invalid)|isFence|isFenceI|isPSX);
     // second instruction
     wire isLoad2 = rv_instruction_i2[6:2]==5'b00000; 
     wire isStore2 = rv_instruction_i2[6:2]==5'b01000;
@@ -161,13 +162,14 @@ module decode (
     wire isLUI2 = rv_instruction_i2[6:2]==5'b01101;
     wire isOP2 = rv_instruction_i2[6:2]==5'b01100;
     wire isOPIMM2 = rv_instruction_i2[6:2]==5'b00100;
+    wire isPSX2 = rv_instruction_i2[6:2]==5'b01010&(rv_instruction_i2[14:12]==0);
     wire sys_invalid2 = !(isECALL2|isMRET2|isWFI2|isCSRRW2|isCSRRC2|isCSRRS2|isEBREAK2);
     wire [6:0] uop1; wire port1; wire op_valid1;
     op_dec #(1) opdec1 (rv_instruction_i2[31:25], rv_instruction_i2[14:12], uop1,port1,op_valid1);
     wire [6:0] uop_imm1; wire op_imm_valid1;
     op_imm_dec opimmdec1 (rv_instruction_i2[31:25], rv_instruction_i2[14:12], rv_instruction_i2[24:20], uop_imm1,op_imm_valid1);
     wire invalid_instruction2 = !(&rv_instruction_i2[1:0])||!(isAUIPC2|isLUI2|(isOP2&op_valid1)|(isOPIMM2&op_imm_valid1)|isJAL2|isJALR2|(isCmpBranch2&!isCMPBranchInvalid2)|(isLoad2&!load_invalid2)|(isStore2&!store_invalid2)
-    |(isSystem2&!sys_invalid2)|isFence2|isFenceI2);
+    |(isSystem2&!sys_invalid2)|isFence2|isFenceI2|isPSX2);
     wire [3:0] ecall = {2'b10, current_privlidge,current_privlidge};
     wire [3:0] ebreak = 4'd3;
     wire [31:0] jalrImmediate2 = {{20{rv_instruction_i2[31]}},rv_instruction_i2[31:20]};
@@ -201,10 +203,10 @@ module decode (
         if (flush_i|branch_correction_flush) begin
             valid_o <= 0;
         end else if (!rn_busy_i&rv_valid) begin
-            ins0_port_o <= !(isJAL|isJALR|isAUIPC|isLUI|(((isOP&!port0)|isOPIMM))|isCmpBranch);
+            ins0_port_o <= !(isJAL|isJALR|isAUIPC|isLUI|(((isOP&!port0)|isOPIMM))|isCmpBranch|isPSX);
             ins0_dnagn_o <= isFenceI|isSystem&(isMRET|isWFI);
-            ins0_alu_type_o <= {isAUIPC, isLUI, isJALR, isJAL, ((isOP&!port0)|isOPIMM)};
-            ins0_alu_opcode_o <= isOP ? uop0 : isOPIMM ? uop_imm0 : {4'b0000, rv_instruction_i[14:12]};
+            ins0_alu_type_o <= {isPSX,isAUIPC, isLUI, isJALR, isJAL, ((isOP&!port0)|isOPIMM)};
+            ins0_alu_opcode_o <= isOP ? uop0 : isOPIMM ? uop_imm0 : isPSX ? {rv_instruction_i[31:25]} : {4'b0000, rv_instruction_i[14:12]};
             ins0_alu_imm_o <= isOPIMM;
             ins0_ios_type_o <= {isLoad, isStore, (isCSRRC|isCSRRS|isCSRRW)&isSystem, isFence, (isOP&port0)};
             ins0_ios_opcode_o <= {rv_instruction_i[14:12]};
@@ -213,17 +215,17 @@ module decode (
             ins0_rs2_o <= rv_instruction_i[24:20];
             ins0_dest_o <= rv_instruction_i[11:7];
             ins0_imm_o <= isOPIMM|isJALR|isLoad|isSystem ? jalrImmediate : isStore ? storeImmediate : isLUI|isAUIPC ? auipcImmediate : isJAL ? jalImmediate : isCmpBranch ? cmpBranchImmediate : 0; 
-            ins0_reg_props_o <= {(isOP|isOPIMM|isLoad|isJAL|isJALR|isAUIPC|isLUI|((isCSRRW|isCSRRC|isCSRRS)&isSystem))&&(rv_instruction_i[11:7]!=0), !(((isECALL|isEBREAK|isMRET|isWFI)&isSystem)|isAUIPC|isLUI|isJAL), isOP|isCmpBranch|isStore};
+            ins0_reg_props_o <= {(isOP|isPSX|isOPIMM|isLoad|isJAL|isJALR|isAUIPC|isLUI|((isCSRRW|isCSRRC|isCSRRS)&isSystem))&&(rv_instruction_i[11:7]!=0), !(((isECALL|isEBREAK|isMRET|isWFI)&isSystem)|isAUIPC|isLUI|isJAL), isOP|isPSX|isCmpBranch|isStore};
             ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
             ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
             ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&((isMRET&!(current_privlidge))|(isWFI&!current_privlidge&tw)|isECALL|isEBREAK));
             ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&((isMRET2&!(current_privlidge))|(isWFI2&!current_privlidge&tw)|isECALL2|isEBREAK2));
             ins0_excp_code_o <= excp_vld ? excp_code : invalid_instruction|(isSystem&(isWFI&!current_privlidge&tw)) ? 4'b0010 : isSystem&isECALL ? ecall : ebreak;
             ins1_excp_code_o <= excp_vld ? excp_code : invalid_instruction|(isSystem2&(isWFI2&!current_privlidge&tw)) ? 4'b0010 : isSystem2&isECALL2 ? ecall : ebreak;
-            ins1_port_o <= !(isJAL2|isJALR2|isAUIPC2|isLUI2|(isOP2&!port1)|isOPIMM2|isCmpBranch2);
+            ins1_port_o <= !(isJAL2|isJALR2|isAUIPC2|isLUI2|(isOP2&!port1)|isOPIMM2|isCmpBranch2|isPSX2);
             ins1_dnagn_o <= isFenceI2|isSystem2&(isMRET2|isWFI2);
-            ins1_alu_type_o <= {isAUIPC2, isLUI2, isJALR2, isJAL2, ((isOP2&!port1)|isOPIMM2)};
-            ins1_alu_opcode_o <= isOP2 ? uop1 : isOPIMM2 ? uop_imm1 : {4'b0000, rv_instruction_i2[14:12]};
+            ins1_alu_type_o <= {isPSX2,isAUIPC2, isLUI2, isJALR2, isJAL2, ((isOP2&!port1)|isOPIMM2)};
+            ins1_alu_opcode_o <= isOP2 ? uop1 : isOPIMM2 ? uop_imm1 : isPSX2 ? {rv_instruction_i2[31:25]} : {4'b0000, rv_instruction_i2[14:12]};
             ins1_alu_imm_o <= isOPIMM2;
             ins1_ios_type_o <= {isLoad2, isStore2, (isCSRRC2|isCSRRS2|isCSRRW2)&isSystem2, isFence2, (isOP2)&port1};
             ins1_ios_opcode_o <= {rv_instruction_i2[14:12]};
@@ -232,7 +234,7 @@ module decode (
             ins1_rs2_o <= rv_instruction_i2[24:20];
             ins1_dest_o <= rv_instruction_i2[11:7];
             ins1_imm_o <= isOPIMM2|isJALR2|isLoad2|isSystem2 ? jalrImmediate2 : isStore2 ? storeImmediate2 : isLUI2|isAUIPC2 ? auipcImmediate2 : isJAL2 ? jalImmediate2 : isCmpBranch2 ? cmpBranchImmediate2 : 0; 
-            ins1_reg_props_o <= {(isOP2|isOPIMM2|isLoad2|isJAL2|isJALR2|isAUIPC2|isLUI2|((isCSRRW2|isCSRRC2|isCSRRS2)&isSystem2))&&(rv_instruction_i2[11:7]!=0), !(((isECALL2|isEBREAK2|isMRET2|isWFI2)&isSystem2)|isAUIPC2|isLUI2|isJAL2), isOP2|isCmpBranch2|isStore2};
+            ins1_reg_props_o <= {(isOP2|isPSX2|isOPIMM2|isLoad2|isJAL2|isJALR2|isAUIPC2|isLUI2|((isCSRRW2|isCSRRC2|isCSRRS2)&isSystem2))&&(rv_instruction_i2[11:7]!=0), !(((isECALL2|isEBREAK2|isMRET2|isWFI2)&isSystem2)|isAUIPC2|isLUI2|isJAL2), isPSX2|isOP2|isCmpBranch2|isStore2};
             ins1_valid_o <= ins1_valid;
             btb_way_o <= btb_way;
             btb_idx_o <= btb_idx;

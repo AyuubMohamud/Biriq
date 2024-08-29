@@ -7,6 +7,12 @@ module EX02 (
     input   wire logic [5:0]                        alu_dest_i,
     input   wire logic                              alu_valid_i,
 
+    input   wire logic [31:0]                       valu_result,
+    input   wire logic [4:0]                        valu_rob_id_i,
+    input   wire logic                              valu_wb_valid_i,
+    input   wire logic [5:0]                        valu_dest_i,
+    input   wire logic                              valu_valid_i,
+
     input   wire logic  [31:0]                      brnch_result_i,
     input   wire logic                              brnch_wb_valid_i,
     input   wire logic  [5:0]                       brnch_wb_dest_i,
@@ -45,12 +51,12 @@ module EX02 (
     output  wire logic                              ins_cmp_v
 );
     
-    assign p0_we_data = brnch_wb_valid_i ? brnch_result_i : alu_result;
-    assign p0_we_dest = brnch_wb_valid_i ? brnch_wb_dest_i : alu_dest_i;
-    assign p0_wen = (brnch_wb_valid_i|alu_wb_valid_i)&!flush_i;
+    assign p0_we_data = valu_wb_valid_i ? valu_result : brnch_wb_valid_i ? brnch_result_i : alu_result;
+    assign p0_we_dest = valu_wb_valid_i ? valu_dest_i : brnch_wb_valid_i ? brnch_wb_dest_i : alu_dest_i;
+    assign p0_wen = (brnch_wb_valid_i|alu_wb_valid_i|valu_wb_valid_i)&!flush_i;
     assign excp_rob = brnch_rob_i; assign excp_code = |c1_btb_target_i[1:0] ? 5'b00000 : 5'b10000; assign excp_valid = brnch_rcu_excp_i;
     assign c1_btb_vpc_o = c1_btb_vpc_i; assign c1_btb_target_o = c1_btb_target_i[31:2]; assign c1_cntr_pred_o = c1_cntr_pred_i; assign c1_bnch_tkn_o = c1_bnch_tkn_i;
     assign c1_bnch_type_o = c1_bnch_type_i; assign c1_bnch_present_o = c1_bnch_present_i; assign wb_btb_way_o = c1_btb_way_i; assign wb_btb_bm_mod_o = c1_btb_bm_mod_i;
-    assign ins_completed = brnch_res_valid_i ? brnch_rob_i[4:0] : alu_rob_id_i;
-    assign ins_cmp_v = brnch_res_valid_i|alu_valid_i;
+    assign ins_completed = valu_valid_i ? valu_rob_id_i : brnch_res_valid_i ? brnch_rob_i[4:0] : alu_rob_id_i;
+    assign ins_cmp_v = valu_valid_i|brnch_res_valid_i|alu_valid_i;
 endmodule
