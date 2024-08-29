@@ -99,12 +99,11 @@ module branchUnit (
         result_o <= lui ? offset : auipc ? offset+{pc,2'b00} : {pc+30'h1,2'b00};
         wb_dest_o <= dest_i;
         rob_o <= rob_id_i;
-        if ((wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm)&& !flush_i && valid_i) begin
+        if (((wrongful_nbranch&(brnch_res|(branch_type[1:0]!=2'b00)))|wrongful_target|wrongful_type|wrongful_bm)&& !flush_i && valid_i) begin
             rcu_excp_o <= 1;
         end
-        else if (!(wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm) && brnch_res && !flush_i && valid_i) begin
+        else if (!(wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm) && (brnch_res) && !flush_i && valid_i) begin
             c1_btb_bm_mod_o <= 1;
-            c1_btb_vpc_o <= pc;
             rcu_excp_o <= 0;
         end
         else begin
@@ -113,9 +112,9 @@ module branchUnit (
         end
         c1_btb_way_o <= btb_way_i;
         c1_btb_vpc_o <= pc;
-        c1_btb_target_o <= excp_addr; //! SIP Target **if** taken
-        c1_cntr_pred_o <= bm_pred_i;  //! Bimodal counter prediction,
-        c1_bnch_tkn_o <= (brnch_res|(branch_type[1:0]!=2'b00)); //! Branch taken this cycle
+        c1_btb_target_o <= excp_addr;
+        c1_cntr_pred_o <= bm_pred_i;
+        c1_bnch_tkn_o <= (brnch_res|(branch_type[1:0]!=2'b00));
         c1_bnch_type_o <= branch_type;
         c1_bnch_present_o <= (brnch_res|(branch_type[1:0]!=2'b00));
     end

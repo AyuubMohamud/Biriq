@@ -23,7 +23,6 @@ module ciff (
     output  wire logic                  rob1_status_o
 );
     reg [31:0] rob_status_bits = 0;
-
     for (genvar i = 0; i < 32; i = i + 2) begin : rob0_x
         always_ff @(posedge cpu_clk_i) begin
             rob_status_bits[i] <= flush_i ? 1'b0 : (rob0_status==i)&&commit0  ? 1'b0 : (alu0_rob_slot_i==i)&&alu0_rob_complete_i ? 1'b1 : 

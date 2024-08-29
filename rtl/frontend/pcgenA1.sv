@@ -66,6 +66,7 @@ module pcgenA1 #(parameter [31:0] START_ADDR = 32'h0,parameter BPU_ENTRIES = 128
     reg idx [0:BPU_ENTRIES-1];
     reg valid0 [0:(BPU_ENTRIES/2)-1]; reg valid1 [0:(BPU_ENTRIES/2)-1];
     reg [taglen-1:0] tag0   [0:(BPU_ENTRIES/2)-1]; reg [taglen-1:0] tag1   [0:(BPU_ENTRIES/2)-1];
+
     initial begin
         tlb_stage_valid_o = 0;
         tlb_stage_pc_o = 0;
