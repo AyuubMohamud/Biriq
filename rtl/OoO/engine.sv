@@ -282,7 +282,7 @@ module engine (
     wire logic [5:0]  phys_reg0;
     wire logic [5:0]  phys_reg1;
 
-    rename renamer (cpu_clock_i, flush, ins0_port_i, ins0_dnagn_i, ins0_alu_type_i, ins0_alu_opcode_i, ins0_alu_imm_i, ins0_ios_type_i, ins0_ios_opcode_i, ins0_special_i, 
+    rename renamer (cpu_clock_i, rename_flush_o, flush, ins0_port_i, ins0_dnagn_i, ins0_alu_type_i, ins0_alu_opcode_i, ins0_alu_imm_i, ins0_ios_type_i, ins0_ios_opcode_i, ins0_special_i, 
     ins0_rs1_i, ins0_rs2_i, ins0_dest_i, ins0_imm_i, ins0_reg_props_i, ins0_dnr_i, ins0_mov_elim_i, ins0_excp_valid_i, ins0_excp_code_i, ins1_port_i, ins1_dnagn_i, 
     ins1_alu_type_i, ins1_alu_opcode_i, ins1_alu_imm_i, ins1_ios_type_i, ins1_ios_opcode_i, ins1_special_i, ins1_rs1_i, ins1_rs2_i, ins1_dest_i, ins1_imm_i, 
     ins1_reg_props_i, ins1_dnr_i, ins1_mov_elim_i, ins1_excp_valid_i, ins1_excp_code_i, ins1_valid_i, insbundle_pc_i, btb_btype_i, btb_bm_pred_i,
