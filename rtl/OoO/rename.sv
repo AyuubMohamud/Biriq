@@ -1,7 +1,7 @@
 module rename (
     input   wire logic                          cpu_clock_i,
     input   wire logic                          flush_i,
-
+    input   wire logic                          recovery_i,
     input   wire logic                          ins0_port_i,
     input   wire logic                          ins0_dnagn_i,
     input   wire logic [4:0]                    ins0_alu_type_i,
@@ -154,7 +154,7 @@ module rename (
     input  wire logic [5:0] i_rd_data1,
     input  wire logic i_empty1
 );
-    wire busy = i_empty0|i_empty1|memSys_full|(ms_p0_busy_i|ms_p1_busy_i)|rcu_busy|flush_i;
+    wire busy = i_empty0|i_empty1|memSys_full|(ms_p0_busy_i|ms_p1_busy_i)|rcu_busy;
     wire cyc_valid;
     wire logic                          ins0_port;
     wire logic                          ins0_dnagn;
@@ -220,11 +220,11 @@ module rename (
     wire logic [5:0]    p5_phys_reg;
     wire logic [4:0]    w0_logical_reg = ins0_dest;
     wire logic [5:0]    w0_phys_reg = ins0_mov_elim ? p0_phys_reg : i_rd_data0;
-    wire logic          w0_we = cyc_valid&!busy&(ins0_reg_props[2]|ins0_mov_elim)&!ins0_excp_valid&!(ins0_dest==0);
+    wire logic          w0_we = !flush_i&cyc_valid&!busy&(ins0_reg_props[2]|ins0_mov_elim)&!ins0_excp_valid&!(ins0_dest==0);
     wire logic [4:0]    w1_logical_reg = ins1_dest;
     wire logic [5:0]    w1_phys_reg = ins1_mov_elim ? p2_phys_reg : i_rd_data1;
-    wire logic          w1_we = cyc_valid&!busy&(ins1_reg_props[2]|ins1_mov_elim)&!ins1_excp_valid&ins1_valid&!(ins1_dest==0);
-    srmt speculative_register_remap_table (cpu_clock_i, flush_i, p0_logical_reg,p0_phys_reg,p1_logical_reg,p1_phys_reg,p2_logical_reg,p2_phys_reg,p3_logical_reg,
+    wire logic          w1_we = !flush_i&cyc_valid&!busy&(ins1_reg_props[2]|ins1_mov_elim)&!ins1_excp_valid&ins1_valid&!(ins1_dest==0);
+    srmt speculative_register_remap_table (cpu_clock_i, recovery_i, p0_logical_reg,p0_phys_reg,p1_logical_reg,p1_phys_reg,p2_logical_reg,p2_phys_reg,p3_logical_reg,
     p3_phys_reg,arch_reg0,phys_reg0,arch_reg1,phys_reg1,p4_logical_reg,p4_phys_reg,p5_logical_reg,p5_phys_reg,
     w0_logical_reg,w0_phys_reg,w0_we,w1_logical_reg,w1_phys_reg,w1_we);
 
@@ -233,13 +233,13 @@ module rename (
     assign ms_ins0_imm_o = ins0_alu_imm;
     assign ms_ins0_immediate_o = ins0_imm;
     assign ms_ins0_dest_o = ins0_dest==0 ? 0 : w0_phys_reg;
-    assign ms_ins0_valid = !ins0_dnagn&!ins0_port&cyc_valid&!busy&!ins0_mov_elim;
+    assign ms_ins0_valid = !ins0_dnagn&!ins0_port&cyc_valid&!flush_i&!busy&!ins0_mov_elim;
     assign ms_ins1_opcode_o = ins1_alu_opcode;
     assign ms_ins1_ins_type = ins1_alu_type;
     assign ms_ins1_imm_o = ins1_alu_imm;
     assign ms_ins1_immediate_o = ins1_imm;
     assign ms_ins1_dest_o = ins1_dest==0 ? 0 : w1_phys_reg;
-    assign ms_ins1_valid = !ins1_dnagn&!ins1_port&cyc_valid&!busy&!ins1_mov_elim&ins1_valid;
+    assign ms_ins1_valid = !ins1_dnagn&!ins1_port&cyc_valid&!flush_i&!busy&!ins1_mov_elim&ins1_valid;
     assign ms_pack_id = rcu_pack[3:0];
     assign ms_rn_pc_o = insbundle_pc;
     assign ms_rn_bm_pred_o = btb_bm_pred;
@@ -249,15 +249,15 @@ module rename (
     assign ms_rn_btb_way_o = btb_way;
     assign ms_rn_btb_idx_o = btb_idx;
     assign ms_rn_btb_pack = rcu_pack[3:0];
-    assign ms_rn_btb_wen = cyc_valid&!busy;
+    assign ms_rn_btb_wen = cyc_valid&!busy&!flush_i;
     assign ms_p0_data_o = {(btb_vld&!btb_idx)||((|ins0_alu_type[4:1])|(!ins0_alu_type_i[0])), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
-    assign ms_p0_vld_o = (!ins0_port|(btb_vld&!btb_idx))&!ins0_excp_valid&cyc_valid&!busy&!(ins0_mov_elim);
+    assign ms_p0_vld_o = (!ins0_port|(btb_vld&!btb_idx))&!ins0_excp_valid&cyc_valid&!busy&!flush_i&!(ins0_mov_elim);
     assign ms_p0_rs1_vld_o = ins0_reg_props[1];
     assign ms_p0_rs2_vld_o = ins0_reg_props[0];
     assign ms_p0_rs1_rdy = r0_i;
     assign ms_p0_rs2_rdy = r1_i;
     assign ms_p1_data_o = {(btb_vld&btb_idx)||((|ins1_alu_type[4:1])|(!ins1_alu_type_i[0])), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
-    assign ms_p1_vld_o = (!ins1_port|(btb_vld&btb_idx))&!ins1_excp_valid&ins1_valid&cyc_valid&!busy&!(ins1_mov_elim);
+    assign ms_p1_vld_o = (!ins1_port|(btb_vld&btb_idx))&!ins1_excp_valid&ins1_valid&cyc_valid&!flush_i&!busy&!(ins1_mov_elim);
     assign ms_p1_rs1_vld_o = ins1_reg_props[1];
     assign ms_p1_rs2_vld_o = ins1_reg_props[0];
     assign ms_p1_rs1_rdy = r2_i;
@@ -282,8 +282,8 @@ module rename (
     assign rcu_ins1_special= ins1_special;
     assign rcu_ins1_is_store= ins1_port&!ins1_dnagn&ins1_ios_type[3]&!ins1_excp_valid;
     assign rcu_ins1_valid= ins1_valid;
-    assign rcu_push_packet= cyc_valid&!busy;
-    assign memSys_renamer_pkt_vld_o= cyc_valid&!busy&((ins1_port&!ins1_dnagn&!(btb_vld&btb_idx)&!ins1_excp_valid&ins1_valid)||(ins0_port&!ins0_dnagn&!(btb_vld&!btb_idx)&!ins0_excp_valid));
+    assign rcu_push_packet= cyc_valid&!busy&!flush_i;
+    assign memSys_renamer_pkt_vld_o= cyc_valid&!busy&!flush_i&((ins1_port&!ins1_dnagn&!(btb_vld&btb_idx)&!ins1_excp_valid&ins1_valid)||(ins0_port&!ins0_dnagn&!(btb_vld&!btb_idx)&!ins0_excp_valid));
     assign memSys_pkt0_rs1_o=ins0_dnr ? {1'b0,ins0_rs1} : p0_phys_reg;
     assign memSys_pkt0_rs2_o=p1_phys_reg;
     assign memSys_pkt0_dest_i=ins0_dest==0 ? 0 : w0_phys_reg;

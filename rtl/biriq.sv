@@ -336,5 +336,5 @@ counter_overload);
     acp_d_corrupt,
     acp_d_valid,
     acp_d_ready);
-    assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = flush|rename_flush_o; assign exception_code_i[4] = 0;
+    assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = rename_flush_o; assign exception_code_i[4] = 0;
 endmodule

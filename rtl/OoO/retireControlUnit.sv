@@ -166,7 +166,7 @@ module retireControlUnit (
     rrt register_reference_counters (cpu_clock_i, cins0_new_preg, (commit_ins0|altcommit0)&(cins0_is_mov_elim|cins0_register_allocated),
     cins1_new_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), cins0_old_preg, (commit_ins0|altcommit0)&(cins0_is_mov_elim|cins0_register_allocated),
     cins1_old_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), safe_to_free0, safe_to_free1);
-    assign rcu_busy = full;
+    assign rcu_busy = full|(retire_control_state!=Normal);
     wire [29:0] currentPC = cpacket_pc[0] ? cpacket_pc : {cpacket_pc[29:1], partial_retire};
     wire [29:0] pcPlus4 = currentPC + 29'd1; // used in special types CSRRW, SFENCE, FENCE.I
     // Conditions of committing
