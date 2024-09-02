@@ -33,6 +33,7 @@ module decode (
     output       logic [2:0]            ins0_reg_props_o,
     output       logic                  ins0_dnr_o,
     output       logic                  ins0_mov_elim_o,
+    output       logic [1:0]            ins0_hint_o,
     output       logic                  ins0_excp_valid_o,
     output       logic [3:0]            ins0_excp_code_o,
     output       logic                  ins1_port_o,
@@ -50,6 +51,7 @@ module decode (
     output       logic [2:0]            ins1_reg_props_o,
     output       logic                  ins1_dnr_o,
     output       logic                  ins1_mov_elim_o,
+    output       logic [1:0]            ins1_hint_o,
     output       logic                  ins1_excp_valid_o,
     output       logic [3:0]            ins1_excp_code_o,
     output       logic                  ins1_valid_o,
@@ -178,7 +180,7 @@ module decode (
     wire [31:0] auipcImmediate2 = {rv_instruction_i2[31:12], 12'h000};
     wire [31:0] storeImmediate2 = {{20{rv_instruction_i2[31]}}, rv_instruction_i2[31:25], rv_instruction_i2[11:7]};
     initial valid_o = 0;
-    wire ins1_valid = !rv_ppc_i[0]&!(rv_btb_vld&(rv_target!={rv_ppc_i[29:1], 1'd1})&!btb_idx&(rv_btype[1] ? 1'b1 : rv_bm_pred[1]));
+    wire ins1_valid = !rv_ppc_i[0]&!(rv_btb_vld&(rv_target!={rv_ppc_i[29:1], 1'd1})&!btb_idx&(rv_btype!=2'b00 ? 1'b1 : rv_bm_pred[1]));
 
     wire [1:0] branches_decoded = {(isJAL2|isJALR2|isCmpBranch2)&ins1_valid, isJAL|isJALR|isCmpBranch};
     wire [1:0] branches_predicted = {rv_btb_vld&ins1_valid&btb_idx, rv_btb_vld&!btb_idx};
@@ -246,6 +248,8 @@ module decode (
             valid_o <= !shutdown_frontend&!btb_correction;
             ins0_dnr_o <= isSystem&(isCSRRC|isCSRRW|isCSRRS)&csr_imm;
             ins1_dnr_o <= isSystem&(isCSRRC2|isCSRRW2|isCSRRS2)&csr_imm2;
+            ins0_hint_o <= {(isJAL|isJALR)&(rv_instruction_i[11:7]==1), isJALR&(jalrImmediate==0)&(rv_instruction_i[19:15]==1)&(rv_instruction_i[11:7]==0)};
+            ins1_hint_o <= {(isJAL2|isJALR2)&(rv_instruction_i2[11:7]==1), isJALR2&(jalrImmediate2==0)&(rv_instruction_i2[19:15]==1)&(rv_instruction_i2[11:7]==0)};            
         end else if (!rn_busy_i&!rv_valid) begin
             valid_o <= 0;
         end

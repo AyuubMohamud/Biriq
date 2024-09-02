@@ -6,6 +6,7 @@ module mathSystem (
     input   wire logic [5:0]            ins0_ins_type,
     input   wire logic                  ins0_imm_i,
     input   wire logic [31:0]           ins0_immediate_i,
+    input   wire logic [1:0]            ins0_hint_i,
     input   wire logic [5:0]            ins0_dest_i,
     input   wire logic                  ins0_valid,
     input   wire logic [6:0]            ins1_opcode_i,
@@ -13,6 +14,7 @@ module mathSystem (
     input   wire logic                  ins1_imm_i,
     input   wire logic [31:0]           ins1_immediate_i,
     input   wire logic [5:0]            ins1_dest_i,
+    input   wire logic [1:0]            ins1_hint_i,
     input   wire logic                  ins1_valid,
     input   wire logic [3:0]            pack_id,
 
@@ -80,6 +82,8 @@ module mathSystem (
     output  wire logic                  c1_bnch_tkn_o,
     output  wire logic  [1:0]           c1_bnch_type_o,
     output  wire logic                  c1_bnch_present_o,
+    output  wire logic                  c1_call_affirm_o,
+    output  wire logic                  c1_ret_affirm_o,
     // BTB
     output  wire logic                  wb_btb_way_o,
     output  wire logic                  wb_btb_bm_mod_o
@@ -89,16 +93,18 @@ module mathSystem (
     wire logic                      alu0_imm_o;
     wire logic [31:0]               alu0_immediate_o;
     wire logic [5:0]                alu0_dest_o;
+    wire logic [1:0]                alu0_hint_o;
     wire logic [4:0]                alu0_rob_i;
     wire logic [6:0]                alu1_opcode_o;
     wire logic [5:0]                alu1_ins_type;
     wire logic                      alu1_imm_o;
     wire logic [31:0]               alu1_immediate_o;
     wire logic [5:0]                alu1_dest_o;
+    wire logic [1:0]                alu1_hint_o;
     wire logic [4:0]                alu1_rob_i;
-    iram instructionRAM (cpu_clock_i,ins0_opcode_i, ins0_ins_type, ins0_imm_i, ins0_immediate_i, ins0_dest_i, ins0_valid, ins1_opcode_i, ins1_ins_type, ins1_imm_i,
-    ins1_immediate_i, ins1_dest_i, ins1_valid, pack_id, alu0_opcode_o, alu0_ins_type, alu0_imm_o, alu0_immediate_o, alu0_dest_o, alu0_rob_i, alu1_opcode_o,
-    alu1_ins_type,  alu1_imm_o, alu1_immediate_o, alu1_dest_o, alu1_rob_i);
+    iram instructionRAM (cpu_clock_i,ins0_opcode_i, ins0_ins_type, ins0_imm_i, ins0_immediate_i, ins0_dest_i,ins0_hint_i, ins0_valid, ins1_opcode_i, ins1_ins_type, ins1_imm_i,
+    ins1_immediate_i, ins1_dest_i,ins1_hint_i, ins1_valid, pack_id, alu0_opcode_o, alu0_ins_type, alu0_imm_o, alu0_immediate_o, alu0_dest_o, alu0_hint_o,alu0_rob_i, alu1_opcode_o,
+    alu1_ins_type,  alu1_imm_o, alu1_immediate_o, alu1_dest_o, alu1_hint_o, alu1_rob_i);
     wire logic [3:0]            pack_i = alu0_rob_i[4:1];
     wire logic [29:0]           pc_o;
     wire logic  [1:0]           bm_pred_o;
@@ -122,6 +128,8 @@ module mathSystem (
     wire logic [29:0]                       bnch_pc;
     wire logic                              bnch_auipc;
     wire logic                              bnch_lui;
+    wire logic                              bnch_call;
+    wire logic                              bnch_ret;
     wire logic                              bnch_jal;
     wire logic                              bnch_jalr;
     wire logic [2:0]                        bnch_bnch_cond;
@@ -146,8 +154,8 @@ module mathSystem (
     wire logic [5:0]                        valu0_dest;
     wire logic                              valu0_valid;
     EX00 port0 (cpu_clock_i, flush_i, alu_data, alu_vld, ex00_rs1_o, ex00_rs2_o, ex00_rs1_data_i, ex00_rs2_data_i, alu0_rob_i, alu0_opcode_o,alu0_ins_type,
-    alu0_imm_o,alu0_immediate_o,alu0_dest_o, pc_o, bm_pred_o,btype_o,btb_vld_o,btb_target_o,btb_way_o,btb_idx_o, bnch_operand_1,bnch_operand_2, 
-    bnch_offset, bnch_pc, bnch_auipc, bnch_lui, bnch_jal, bnch_jalr, bnch_bnch_cond, bnch_rob_id_o,bnch_dest_o,bnch_bm_pred_o,bnch_btype_o,bnch_btb_vld_o,
+    alu0_imm_o,alu0_immediate_o,alu0_dest_o, alu0_hint_o,pc_o, bm_pred_o,btype_o,btb_vld_o,btb_target_o,btb_way_o,btb_idx_o, bnch_operand_1,bnch_operand_2, 
+    bnch_offset, bnch_pc, bnch_auipc, bnch_lui,bnch_call, bnch_ret, bnch_jal, bnch_jalr, bnch_bnch_cond, bnch_rob_id_o,bnch_dest_o,bnch_bm_pred_o,bnch_btype_o,bnch_btb_vld_o,
     bnch_btb_target_o,bnch_btb_way_o, bnch_valid_o,alu0_a,alu0_b,alu0_opc,alu0_rob_id_o,alu0_dest,alu0_valid,valu0_a,valu0_b,valu0_opc,valu0_rob_id_o,valu0_dest,valu0_valid,wkp_alu0, wkp_alu0_v);
     wire logic [31:0]               alu0_out_result;
     wire logic [4:0]                alu0_out_rob_id_o;
@@ -177,14 +185,19 @@ module mathSystem (
     wire logic                           brnch_out_c1_bnch_present_o;
     wire logic                           brnch_out_c1_btb_way_o;
     wire logic                           brnch_out_c1_btb_bm_mod_o;
-    branchUnit bu0 (cpu_clock_i, flush_i, bnch_operand_1, bnch_operand_2, bnch_offset, bnch_pc, bnch_auipc, bnch_lui, bnch_jal, bnch_jalr, bnch_bnch_cond,
+    wire logic                           brnch_out_c1_call_affirm_o;
+    wire logic                           brnch_out_c1_ret_affirm_o;
+    branchUnit bu0 (cpu_clock_i, flush_i, bnch_operand_1, bnch_operand_2, bnch_offset, bnch_pc, bnch_auipc, bnch_lui, bnch_call, bnch_ret,bnch_jal, bnch_jalr, bnch_bnch_cond,
     bnch_rob_id_o, bnch_dest_o, bnch_bm_pred_o, bnch_btype_o, bnch_btb_vld_o, bnch_btb_target_o, bnch_btb_way_o, bnch_valid_o, brnch_out_result_o,
     brnch_out_wb_valid_o, brnch_out_wb_dest_o, brnch_out_res_valid_o, brnch_out_rob_o, brnch_out_rcu_excp_o, brnch_out_c1_btb_vpc_o, brnch_out_c1_btb_target_o,
-    brnch_out_c1_cntr_pred_o, brnch_out_c1_bnch_tkn_o, brnch_out_c1_bnch_type_o, brnch_out_c1_bnch_present_o, brnch_out_c1_btb_way_o, brnch_out_c1_btb_bm_mod_o);
+    brnch_out_c1_cntr_pred_o, brnch_out_c1_bnch_tkn_o, brnch_out_c1_bnch_type_o, brnch_out_c1_bnch_present_o, brnch_out_c1_btb_way_o, brnch_out_c1_btb_bm_mod_o,brnch_out_c1_call_affirm_o,
+    brnch_out_c1_ret_affirm_o);
     EX02 wb0 (flush_i, alu0_out_result,alu0_out_rob_id_o,alu0_out_wb_valid_o,alu0_out_dest_o,alu0_out_valid_o, valu0_out_result,valu0_out_rob_id_o,valu0_out_wb_valid_o,valu0_out_dest_o,valu0_out_valid_o,brnch_out_result_o,
     brnch_out_wb_valid_o, brnch_out_wb_dest_o, brnch_out_res_valid_o, brnch_out_rob_o, brnch_out_rcu_excp_o, brnch_out_c1_btb_vpc_o, brnch_out_c1_btb_target_o,
-    brnch_out_c1_cntr_pred_o, brnch_out_c1_bnch_tkn_o, brnch_out_c1_bnch_type_o, brnch_out_c1_bnch_present_o, brnch_out_c1_btb_way_o, brnch_out_c1_btb_bm_mod_o, p0_we_data,
-    p0_we_dest, p0_wen, excp_rob, excp_code, excp_valid, c1_btb_vpc_o, c1_btb_target_o, c1_cntr_pred_o, c1_bnch_tkn_o, c1_bnch_type_o, c1_bnch_present_o, wb_btb_way_o, 
+    brnch_out_c1_cntr_pred_o, brnch_out_c1_bnch_tkn_o, brnch_out_c1_bnch_type_o, brnch_out_c1_bnch_present_o, brnch_out_c1_btb_way_o, brnch_out_c1_btb_bm_mod_o, brnch_out_c1_call_affirm_o,
+    brnch_out_c1_ret_affirm_o,p0_we_data,
+    p0_we_dest, p0_wen, excp_rob, excp_code, excp_valid, c1_btb_vpc_o, c1_btb_target_o, c1_cntr_pred_o, c1_bnch_tkn_o, c1_bnch_type_o, c1_bnch_present_o,c1_call_affirm_o,
+    c1_ret_affirm_o, wb_btb_way_o, 
     wb_btb_bm_mod_o, alu0_rob_id, alu0_complete);
     wire logic [31:0]                       alu1_a;
     wire logic [31:0]                       alu1_b;

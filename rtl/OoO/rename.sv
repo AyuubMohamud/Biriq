@@ -17,6 +17,7 @@ module rename (
     input   wire logic [2:0]                    ins0_reg_props_i,
     input   wire logic                          ins0_dnr_i,
     input   wire logic                          ins0_mov_elim_i,
+    input   wire logic [1:0]                    ins0_hint_i,
     input   wire logic                          ins0_excp_valid_i,
     input   wire logic [3:0]                    ins0_excp_code_i,
     input   wire logic                          ins1_port_i,
@@ -34,6 +35,7 @@ module rename (
     input   wire logic [2:0]                    ins1_reg_props_i,
     input   wire logic                          ins1_dnr_i,
     input   wire logic                          ins1_mov_elim_i,
+    input   wire logic [1:0]                    ins1_hint_i,
     input   wire logic                          ins1_excp_valid_i,
     input   wire logic [3:0]                    ins1_excp_code_i,
     input   wire logic                          ins1_valid_i,
@@ -80,12 +82,14 @@ module rename (
     output  wire logic                          ms_ins0_imm_o,
     output  wire logic [31:0]                   ms_ins0_immediate_o,
     output  wire logic [5:0]                    ms_ins0_dest_o,
+    output  wire logic [1:0]                    ms_ins0_hint_o,
     output  wire logic                          ms_ins0_valid,
     output  wire logic [6:0]                    ms_ins1_opcode_o,
     output  wire logic [5:0]                    ms_ins1_ins_type,
     output  wire logic                          ms_ins1_imm_o,
     output  wire logic [31:0]                   ms_ins1_immediate_o,
     output  wire logic [5:0]                    ms_ins1_dest_o,
+    output  wire logic [1:0]                    ms_ins1_hint_o,
     output  wire logic                          ms_ins1_valid,
     output  wire logic [3:0]                    ms_pack_id,
     output  wire logic [29:0]                   ms_rn_pc_o,
@@ -171,6 +175,7 @@ module rename (
     wire logic [2:0]                    ins0_reg_props;
     wire logic                          ins0_dnr;
     wire logic                          ins0_mov_elim;
+    wire logic [1:0]                    ins0_hint;
     wire logic                          ins0_excp_valid;
     wire logic [3:0]                    ins0_excp_code;
     wire logic                          ins1_port;
@@ -188,6 +193,7 @@ module rename (
     wire logic [2:0]                    ins1_reg_props;
     wire logic                          ins1_dnr;
     wire logic                          ins1_mov_elim;
+    wire logic [1:0]                    ins1_hint;
     wire logic                          ins1_excp_valid;
     wire logic [3:0]                    ins1_excp_code;
     wire logic                          ins1_valid;
@@ -198,14 +204,14 @@ module rename (
     wire logic                          btb_vld;
     wire logic                          btb_idx;
     wire logic                          btb_way;
-    skdbf #(.DW(238)) rnskid (cpu_clock_i, flush_i, busy, {ins0_port,ins0_dnagn,ins0_alu_type,ins0_alu_opcode,ins0_alu_imm,ins0_ios_type,ins0_ios_opcode,ins0_special,
+    skdbf #(.DW(242)) rnskid (cpu_clock_i, flush_i, busy, {ins0_port,ins0_dnagn,ins0_alu_type,ins0_alu_opcode,ins0_alu_imm,ins0_ios_type,ins0_ios_opcode,ins0_special,
     ins0_rs1,ins0_rs2,ins0_dest,ins0_imm,ins0_reg_props,ins0_dnr,ins0_mov_elim,ins0_excp_valid,ins0_excp_code,ins1_port,ins1_dnagn,ins1_alu_type,ins1_alu_opcode,ins1_alu_imm,
     ins1_ios_type,ins1_ios_opcode,ins1_special,ins1_rs1,ins1_rs2,ins1_dest,ins1_imm,ins1_reg_props,ins1_dnr,ins1_mov_elim,ins1_excp_valid,ins1_excp_code,ins1_valid,
-    insbundle_pc,btb_btype,btb_bm_pred,btb_target,btb_vld,btb_idx,btb_way}, cyc_valid, rn_busy_o, {ins0_port_i,ins0_dnagn_i,ins0_alu_type_i,ins0_alu_opcode_i,
+    insbundle_pc,btb_btype,btb_bm_pred,btb_target,btb_vld,btb_idx,btb_way,ins0_hint,ins1_hint}, cyc_valid, rn_busy_o, {ins0_port_i,ins0_dnagn_i,ins0_alu_type_i,ins0_alu_opcode_i,
     ins0_alu_imm_i,ins0_ios_type_i,ins0_ios_opcode_i,ins0_special_i,ins0_rs1_i,ins0_rs2_i,ins0_dest_i,ins0_imm_i,ins0_reg_props_i,ins0_dnr_i,ins0_mov_elim_i,
     ins0_excp_valid_i,ins0_excp_code_i,ins1_port_i,ins1_dnagn_i,ins1_alu_type_i,ins1_alu_opcode_i,ins1_alu_imm_i,ins1_ios_type_i,ins1_ios_opcode_i,ins1_special_i,
     ins1_rs1_i,ins1_rs2_i,ins1_dest_i,ins1_imm_i,ins1_reg_props_i,ins1_dnr_i,ins1_mov_elim_i,ins1_excp_valid_i,ins1_excp_code_i,ins1_valid_i,insbundle_pc_i,btb_btype_i,
-    btb_bm_pred_i,btb_target_i,btb_vld_i,btb_idx_i,btb_way_i}, valid_i);
+    btb_bm_pred_i,btb_target_i,btb_vld_i,btb_idx_i,btb_way_i,ins0_hint_i,ins1_hint_i}, valid_i);
     wire logic [4:0]    p0_logical_reg = ins0_rs1;
     wire logic [5:0]    p0_phys_reg;
     wire logic [4:0]    p1_logical_reg = ins0_rs2;
@@ -233,12 +239,14 @@ module rename (
     assign ms_ins0_imm_o = ins0_alu_imm;
     assign ms_ins0_immediate_o = ins0_imm;
     assign ms_ins0_dest_o = ins0_dest==0 ? 0 : w0_phys_reg;
+    assign ms_ins0_hint_o = ins0_hint;
     assign ms_ins0_valid = !ins0_dnagn&!ins0_port&cyc_valid&!flush_i&!busy&!ins0_mov_elim;
     assign ms_ins1_opcode_o = ins1_alu_opcode;
     assign ms_ins1_ins_type = ins1_alu_type;
     assign ms_ins1_imm_o = ins1_alu_imm;
     assign ms_ins1_immediate_o = ins1_imm;
     assign ms_ins1_dest_o = ins1_dest==0 ? 0 : w1_phys_reg;
+    assign ms_ins1_hint_o = ins1_hint;
     assign ms_ins1_valid = !ins1_dnagn&!ins1_port&cyc_valid&!flush_i&!busy&!ins1_mov_elim&ins1_valid;
     assign ms_pack_id = rcu_pack[3:0];
     assign ms_rn_pc_o = insbundle_pc;
@@ -250,13 +258,13 @@ module rename (
     assign ms_rn_btb_idx_o = btb_idx;
     assign ms_rn_btb_pack = rcu_pack[3:0];
     assign ms_rn_btb_wen = cyc_valid&!busy&!flush_i;
-    assign ms_p0_data_o = {(btb_vld&!btb_idx)||((|ins0_alu_type[4:1])|(!ins0_alu_type_i[0])), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
+    assign ms_p0_data_o = {(btb_vld&!btb_idx)||((|ins0_alu_type[4:1])|(!(|ins0_alu_type))), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
     assign ms_p0_vld_o = (!ins0_port|(btb_vld&!btb_idx))&!ins0_excp_valid&cyc_valid&!busy&!flush_i&!(ins0_mov_elim);
     assign ms_p0_rs1_vld_o = ins0_reg_props[1];
     assign ms_p0_rs2_vld_o = ins0_reg_props[0];
     assign ms_p0_rs1_rdy = r0_i;
     assign ms_p0_rs2_rdy = r1_i;
-    assign ms_p1_data_o = {(btb_vld&btb_idx)||((|ins1_alu_type[4:1])|(!ins1_alu_type_i[0])), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
+    assign ms_p1_data_o = {(btb_vld&btb_idx)||((|ins1_alu_type[4:1]|(!(|ins1_alu_type)))), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
     assign ms_p1_vld_o = (!ins1_port|(btb_vld&btb_idx))&!ins1_excp_valid&ins1_valid&cyc_valid&!flush_i&!busy&!(ins1_mov_elim);
     assign ms_p1_rs1_vld_o = ins1_reg_props[1];
     assign ms_p1_rs2_vld_o = ins1_reg_props[0];

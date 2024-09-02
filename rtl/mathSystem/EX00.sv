@@ -17,6 +17,7 @@ module EX00 (
     input   wire logic                              imm_i,
     input   wire logic [31:0]                       immediate_i,
     input   wire logic [5:0]                        dest_i,
+    input   wire logic [1:0]                        hint_i,
     input   wire logic [29:0]                       pc_i,
     // Branch info
     input   wire logic  [1:0]                       bm_pred_i,
@@ -32,6 +33,8 @@ module EX00 (
     output       logic [29:0]                       bnch_pc,
     output       logic                              bnch_auipc,
     output       logic                              bnch_lui,
+    output       logic                              bnch_call,
+    output       logic                              bnch_ret,
     output       logic                              bnch_jal,
     output       logic                              bnch_jalr,
     output       logic [2:0]                        bnch_bnch_cond,
@@ -91,6 +94,8 @@ module EX00 (
             wakeup_dest <= dest_i;
             bnch_valid_o <= ((|ins_type[4:1])||(!ins_type[0]&!ins_type[5]));
             wakeup_valid <= (|ins_type);
+            bnch_call <= hint_i[1];
+            bnch_ret <= hint_i[0];
         end else begin
             alu_valid <= 0; bnch_valid_o <= 0; valu_valid <= 0;
         end

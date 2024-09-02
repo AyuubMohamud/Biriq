@@ -1,5 +1,5 @@
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0) (
+parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -124,6 +124,7 @@ counter_overload);
     logic [2:0]                    ins0_reg_props_o;
     logic                          ins0_dnr_o;
     logic                          ins0_mov_elim_o;
+    logic [1:0]                    ins0_hint_o;
     logic                          ins0_excp_valid_o;
     logic [3:0]                    ins0_excp_code_o;
     logic                          ins1_port_o;
@@ -141,6 +142,7 @@ counter_overload);
     logic [2:0]                    ins1_reg_props_o;
     logic                          ins1_dnr_o;
     logic                          ins1_mov_elim_o;
+    logic [1:0]                    ins1_hint_o;
     logic                          ins1_excp_valid_o;
     logic [3:0]                    ins1_excp_code_o;
     logic                          ins1_valid_o;
@@ -161,28 +163,32 @@ counter_overload);
     wire logic                     c1_btb_mod_i = c1_btb_mod_o;
     wire logic                     c1_btb_way_i;
     wire logic                     c1_btb_bm_i;
-    frontend #(START_ADDR,BPU_ENTRIES) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
+    wire logic                     c1_call_affirm_i;
+    wire logic                     c1_ret_affirm_i;
+    frontend #(START_ADDR,BPU_ENTRIES,BPU_ENABLE_RAS,BPU_RAS_ENTRIES) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
     enable_counter_overload,
     counter_overload, real_privilege,tw,icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
     icache_a_mask,icache_a_data,icache_a_corrupt,icache_a_valid,icache_a_ready,icache_d_opcode,icache_d_param,icache_d_size,icache_d_denied,icache_d_data,
     icache_d_corrupt,icache_d_valid,icache_d_ready, ins0_port_o, ins0_dnagn_o, ins0_alu_type_o, ins0_alu_opcode_o, ins0_alu_imm_o, ins0_ios_type_o, ins0_ios_opcode_o, 
-    ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_excp_valid_o, ins0_excp_code_o, 
+    ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_hint_o,ins0_excp_valid_o, ins0_excp_code_o, 
     ins1_port_o, ins1_dnagn_o, ins1_alu_type_o, ins1_alu_opcode_o, ins1_alu_imm_o, ins1_ios_type_o, ins1_ios_opcode_o, ins1_special_o, ins1_rs1_o, ins1_rs2_o, 
-    ins1_dest_o, ins1_imm_o, ins1_reg_props_o, ins1_dnr_o,  ins1_mov_elim_o, ins1_excp_valid_o, ins1_excp_code_o, ins1_valid_o, insbundle_pc_o, btb_btype_o, 
+    ins1_dest_o, ins1_imm_o, ins1_reg_props_o, ins1_dnr_o,  ins1_mov_elim_o, ins1_hint_o,ins1_excp_valid_o, ins1_excp_code_o, ins1_valid_o, insbundle_pc_o, btb_btype_o, 
     btb_bm_pred_o, btb_target_o, btb_vld_o, btb_idx_o, btb_way_o, valid_o, rn_busy_i, c1_btb_vpc_i,c1_btb_target_i,c1_cntr_pred_i,c1_bnch_tkn_i,
-    c1_bnch_type_i,c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i);
+    c1_bnch_type_i,c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i,c1_call_affirm_i,c1_ret_affirm_i);
 
     wire logic [6:0]                        ms_ins0_opcode_o;
     wire logic [5:0]                        ms_ins0_ins_type;
     wire logic                              ms_ins0_imm_o;
     wire logic [31:0]                       ms_ins0_immediate_o;
     wire logic [5:0]                        ms_ins0_dest_o;
+    wire logic [1:0]                        ms_ins0_hint_o;
     wire logic                              ms_ins0_valid;
     wire logic [6:0]                        ms_ins1_opcode_o;
     wire logic [5:0]                        ms_ins1_ins_type;
     wire logic                              ms_ins1_imm_o;
     wire logic [31:0]                       ms_ins1_immediate_o;
     wire logic [5:0]                        ms_ins1_dest_o;
+    wire logic [1:0]                        ms_ins1_hint_o;
     wire logic                              ms_ins1_valid;
     wire logic [3:0]                        ms_pack_id;
     wire logic [29:0]                       ms_rn_pc_o;
@@ -284,33 +290,34 @@ counter_overload);
     wire logic [5:0]    r5_vec_indx;
     wire logic          r5;
     wire stb_emp;
+    wire alu0_call,alu0_ret;
     engine calveraEngine (cpu_clock_i, ins0_port_o, ins0_dnagn_o, ins0_alu_type_o, ins0_alu_opcode_o, ins0_alu_imm_o, ins0_ios_type_o, ins0_ios_opcode_o, 
-    ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_excp_valid_o, ins0_excp_code_o, 
+    ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_hint_o,ins0_excp_valid_o, ins0_excp_code_o, 
     ins1_port_o, ins1_dnagn_o, ins1_alu_type_o, ins1_alu_opcode_o, ins1_alu_imm_o, ins1_ios_type_o, ins1_ios_opcode_o, ins1_special_o, ins1_rs1_o, ins1_rs2_o, 
-    ins1_dest_o, ins1_imm_o, ins1_reg_props_o, ins1_dnr_o,  ins1_mov_elim_o, ins1_excp_valid_o, ins1_excp_code_o, ins1_valid_o, insbundle_pc_o, btb_btype_o, 
-    btb_bm_pred_o, btb_target_o, btb_vld_o, btb_idx_o, btb_way_o, valid_o, rn_busy_i,ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_dest_o,
-    ms_ins0_valid,ms_ins1_opcode_o,ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_valid,ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o
+    ins1_dest_o, ins1_imm_o, ins1_reg_props_o, ins1_dnr_o,  ins1_mov_elim_o, ins1_hint_o,ins1_excp_valid_o, ins1_excp_code_o, ins1_valid_o, insbundle_pc_o, btb_btype_o, 
+    btb_bm_pred_o, btb_target_o, btb_vld_o, btb_idx_o, btb_way_o, valid_o, rn_busy_i,ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_dest_o,ms_ins0_hint_o,
+    ms_ins0_valid,ms_ins1_opcode_o,ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_hint_o,ms_ins1_valid,ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o
     ,ms_rn_btb_vld_o,ms_rn_btb_target_o,ms_rn_btb_way_o,ms_rn_btb_idx_o,ms_rn_btb_pack,ms_rn_btb_wen,ms_p0_data_o,ms_p0_vld_o,ms_p0_rs1_vld_o,
     ms_p0_rs2_vld_o,ms_p0_rs1_rdy,ms_p0_rs2_rdy,ms_p1_data_o,ms_p1_vld_o,ms_p1_rs1_vld_o,ms_p1_rs2_vld_o,ms_p1_rs1_rdy,ms_p1_rs2_rdy,ms_p0_busy_i,ms_p1_busy_i,
     memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,memSys_pkt0_ios_type_o,memSys_pkt0_ios_opcode_o,
     memSys_pkt0_rob_o,memSys_pkt0_vld_o,memSys_pkt1_rs1_o,memSys_pkt1_rs2_o,memSys_pkt1_dest_o,memSys_pkt1_immediate_o,memSys_pkt1_ios_type_o,memSys_pkt1_ios_opcode_o,
     memSys_pkt1_vld_o,memSys_full,real_privilege,  mie_o, tmu_mip_o, 
-    alu0_rob_slot_i,alu0_rob_complete_i,alu1_rob_slot_i, alu1_rob_complete_i,agu0_rob_slot_i,agu0_rob_complete_i,ldq_rob_slot_i,ldq_rob_complete_i,alu0_reg_ready,alu0_reg_dest,
+    alu0_rob_slot_i,alu0_rob_complete_i,alu0_call,alu0_ret,alu1_rob_slot_i, alu1_rob_complete_i,agu0_rob_slot_i,agu0_rob_complete_i,ldq_rob_slot_i,ldq_rob_complete_i,alu0_reg_ready,alu0_reg_dest,
     alu1_reg_ready,alu1_reg_dest,stb_c0,stb_c1,stb_emp,
     alu_excp_i,alu_excp_code_i,rob_i,alu_c1_btb_vpc_i, alu_c1_btb_target_i,alu_c1_cntr_pred_i,alu_c1_bnch_tkn_i,alu_c1_bnch_type_i,alu_c1_bnch_present_i,
     completed_rob_id,exception_code_i,exception_addr,exception_i, icache_idle, mem_lock, icache_flush, flush, flush_addr, rcu_lock,
     oldest_instruction,rename_flush_o,ins_commit0,ins_commit1,mret, take_exception,take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,
-    mepc_o,mtvec_o,c1_btb_vpc_o, c1_btb_target_o, c1_cntr_pred_o,c1_bnch_tkn_o,c1_bnch_type_o,c1_btb_mod_o,p0_we_i, p0_we_data, p0_we_dest, p1_we_i, 
+    mepc_o,mtvec_o,c1_btb_vpc_o, c1_btb_target_o, c1_cntr_pred_o,c1_bnch_tkn_o,c1_bnch_type_o,c1_btb_mod_o,c1_call_affirm_i,c1_ret_affirm_i,p0_we_i, p0_we_data, p0_we_dest, p1_we_i, 
     p1_we_data, p1_we_dest, p2_we_i, p2_we_data, p2_we_dest, p0_rd_src, p0_rd_datas, p1_rd_src, p1_rd_datas, p2_rd_src, p2_rd_datas, p3_rd_src, p3_rd_datas, p4_rd_src, 
     p4_rd_datas, p5_rd_src, p5_rd_datas,r4_vec_indx, r4, r5_vec_indx,r5);
 
-    mathSystem maths (cpu_clock_i, full_flush, ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,
-    ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_valid,ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o,ms_rn_btb_vld_o
+    mathSystem maths (cpu_clock_i, full_flush, ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_hint_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,
+    ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_hint_o,ms_ins1_valid,ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o,ms_rn_btb_vld_o
     ,ms_rn_btb_target_o,ms_rn_btb_way_o,ms_rn_btb_idx_o,ms_rn_btb_pack,ms_rn_btb_wen,ms_p0_data_o,ms_p0_vld_o,ms_p0_rs1_vld_o,ms_p0_rs2_vld_o,
     ms_p0_rs1_rdy,ms_p0_rs2_rdy,ms_p1_data_o,ms_p1_vld_o,ms_p1_rs1_vld_o,ms_p1_rs2_vld_o,ms_p1_rs1_rdy,ms_p1_rs2_rdy,ms_p0_busy_i,ms_p1_busy_i, p2_we_i, p2_we_dest,
     alu0_rob_complete_i, alu0_rob_slot_i, alu1_rob_complete_i, alu1_rob_slot_i,alu0_reg_ready, alu0_reg_dest, alu1_reg_ready, alu1_reg_dest, p0_we_data, p0_we_dest, 
     p0_we_i, p1_we_data, p1_we_dest, p1_we_i, p0_rd_src,p1_rd_src,p0_rd_datas,p1_rd_datas,p2_rd_src,p3_rd_src,p2_rd_datas,p3_rd_datas, rob_i, alu_excp_code_i, alu_excp_i,
-    alu_c1_btb_vpc_i,alu_c1_btb_target_i,alu_c1_cntr_pred_i,alu_c1_bnch_tkn_i,alu_c1_bnch_type_i,alu_c1_bnch_present_i, c1_btb_way_i, c1_btb_bm_i);
+    alu_c1_btb_vpc_i,alu_c1_btb_target_i,alu_c1_cntr_pred_i,alu_c1_bnch_tkn_i,alu_c1_bnch_type_i,alu_c1_bnch_present_i,alu0_call,alu0_ret, c1_btb_way_i, c1_btb_bm_i);
 
     memorySystem memSys (cpu_clock_i, full_flush, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
     memSys_pkt0_ios_type_o,memSys_pkt0_ios_opcode_o,memSys_pkt0_rob_o,memSys_pkt0_vld_o,memSys_pkt1_rs1_o,memSys_pkt1_rs2_o,memSys_pkt1_dest_o,memSys_pkt1_immediate_o,

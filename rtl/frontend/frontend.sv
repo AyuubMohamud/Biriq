@@ -1,5 +1,5 @@
 module frontend #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32) 
+parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32) 
 (
     input   wire logic                          core_clock_i,
     input   wire logic                          core_reset_i,
@@ -51,6 +51,7 @@ parameter [31:0] BPU_ENTRIES = 32)
     output       logic [2:0]            ins0_reg_props_o,
     output       logic                  ins0_dnr_o,
     output       logic                  ins0_mov_elim_o,
+    output       logic [1:0]            ins0_hint_o,
     output       logic                  ins0_excp_valid_o,
     output       logic [3:0]            ins0_excp_code_o,
     output       logic                  ins1_port_o,
@@ -68,6 +69,7 @@ parameter [31:0] BPU_ENTRIES = 32)
     output       logic [2:0]            ins1_reg_props_o,
     output       logic                  ins1_dnr_o,
     output       logic                  ins1_mov_elim_o,
+    output       logic [1:0]            ins1_hint_o,
     output       logic                  ins1_excp_valid_o,
     output       logic [3:0]            ins1_excp_code_o,
     output       logic                  ins1_valid_o,
@@ -81,14 +83,16 @@ parameter [31:0] BPU_ENTRIES = 32)
     output       logic                  valid_o,
     input   wire logic                  rn_busy_i,
 
-    input   wire logic [29:0]                   c1_btb_vpc_i,
-    input   wire logic [29:0]                   c1_btb_target_i,
-    input   wire logic [1:0]                    c1_cntr_pred_i,
-    input   wire logic                          c1_bnch_tkn_i,
-    input   wire logic [1:0]                    c1_bnch_type_i,
-    input   wire logic                          c1_btb_mod_i,
-    input   wire logic                          c1_btb_way_i,
-    input   wire logic                          c1_btb_bm_i
+    input   wire logic [29:0]           c1_btb_vpc_i,
+    input   wire logic [29:0]           c1_btb_target_i,
+    input   wire logic [1:0]            c1_cntr_pred_i,
+    input   wire logic                  c1_bnch_tkn_i,
+    input   wire logic [1:0]            c1_bnch_type_i,
+    input   wire logic                  c1_btb_mod_i,
+    input   wire logic                  c1_btb_way_i,
+    input   wire logic                  c1_btb_bm_i,
+    input   wire logic                  c1_call_affirm_i,
+    input   wire logic                  c1_ret_affirm_i
 );
     wire logic              if2_busy_i;
     wire logic              if2_vld_o;
@@ -100,10 +104,11 @@ parameter [31:0] BPU_ENTRIES = 32)
     wire logic              if2_btb_hit;
     wire logic              if2_btb_way;
     wire branch_correct; wire [29:0] branch_correct_pc;
-    pcgenA1 #(START_ADDR, BPU_ENTRIES) pcgenstage (core_clock_i, core_reset_i,core_flush_i|branch_correct, core_flush_i ? core_flush_pc : branch_correct_pc, enable_branch_pred,
+    pcgenA1 #(START_ADDR, BPU_ENTRIES, BPU_ENABLE_RAS, BPU_RAS_ENTRIES) pcgenstage (core_clock_i, core_reset_i,core_flush_i|branch_correct, core_flush_i ? core_flush_pc : branch_correct_pc, enable_branch_pred,
     enable_counter_overload,
     counter_overload, if2_busy_i, branch_correct, branch_correct_pc,
-    c1_btb_vpc_i, c1_btb_target_i, c1_cntr_pred_i, c1_bnch_tkn_i, c1_bnch_type_i, c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i,
+    c1_btb_vpc_i, c1_btb_target_i, c1_cntr_pred_i, c1_bnch_tkn_i, c1_bnch_type_i, c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i,c1_call_affirm_i,
+    c1_ret_affirm_i,
     if2_vld_o, if2_sip_vpc_o, if2_btype_o, if2_bm_pred_o, if2_btb_target_o, if2_btb_index, if2_btb_hit, if2_btb_way);
 
     wire logic                      pdc_hit_o;
@@ -142,6 +147,7 @@ ins0_imm_o,
 ins0_reg_props_o,
 ins0_dnr_o,
 ins0_mov_elim_o,
+ins0_hint_o,
 ins0_excp_valid_o,
 ins0_excp_code_o,
 ins1_port_o,
@@ -159,6 +165,7 @@ ins1_imm_o,
 ins1_reg_props_o,
 ins1_dnr_o,
 ins1_mov_elim_o,
+ins1_hint_o,
 ins1_excp_valid_o,
 ins1_excp_code_o,
 ins1_valid_o,

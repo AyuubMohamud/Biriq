@@ -8,6 +8,8 @@ module branchUnit (
     input   wire logic [29:0]               pc,
     input   wire logic                      auipc,
     input   wire logic                      lui,
+    input   wire logic                      call,
+    input   wire logic                      ret,
     input   wire logic                      jal,
     input   wire logic                      jalr,
     input   wire logic [2:0]                bnch_cond,
@@ -34,7 +36,9 @@ module branchUnit (
     output  logic  [1:0]                    c1_bnch_type_o,
     output  logic                           c1_bnch_present_o,
     output  logic                           c1_btb_way_o,
-    output  logic                           c1_btb_bm_mod_o
+    output  logic                           c1_btb_bm_mod_o,
+    output  logic                           c1_call_affirm_o,
+    output  logic                           c1_ret_affirm_o
 );
 
     wire eq;
@@ -84,12 +88,13 @@ module branchUnit (
                        mt|eq; 
     wire [31:0] excp_addr;
     wire [31:0] first_operand = jalr ? operand_1 : {pc,2'b00};
-    wire [31:0] second_operand = jal|jalr|brnch_res&&!(lui|auipc) ? offset : 32'd4;
+    wire [31:0] second_operand = (jal|jalr|brnch_res)&&!(lui|auipc) ? offset : 32'd4;
 
     assign excp_addr = first_operand+second_operand;
     wire wrongful_nbranch = !btb_vld_i&&!(lui|auipc);
     wire wrongful_target = {btb_target_i,2'b00}!=excp_addr && btb_vld_i;
-    wire [1:0] branch_type = jal|jalr ? 2'b10 : 2'b00;
+    //wire [1:0] branch_type = call ? 2'b01 : ret ? 2'b11 : jal|jalr ? 2'b10 : 2'b00;
+    wire [1:0] branch_type = call ? 2'b01 : ret ? 2'b11 : jal|jalr ? 2'b10 : 2'b00;
     wire wrongful_type = branch_type!=btype_i && btb_vld_i;
     wire wrongful_bm = (brnch_res^bm_pred_i[1]) && btb_vld_i && branch_type==2'b00;    
     initial rcu_excp_o = 0; initial wb_valid_o = 0; initial res_valid_o = 0;                
@@ -101,13 +106,20 @@ module branchUnit (
         rob_o <= rob_id_i;
         if (((wrongful_nbranch&(brnch_res|(branch_type[1:0]!=2'b00)))|wrongful_target|wrongful_type|wrongful_bm)&& !flush_i && valid_i) begin
             rcu_excp_o <= 1;
+            c1_btb_bm_mod_o <= 0;
+            c1_call_affirm_o <= 0;
+            c1_ret_affirm_o <= 0;
         end
-        else if (!(wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm) && (brnch_res) && !flush_i && valid_i) begin
-            c1_btb_bm_mod_o <= 1;
+        else if (!(wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm) && btb_vld_i && !flush_i && valid_i) begin
+            c1_btb_bm_mod_o <= !(call|ret);
+            c1_call_affirm_o <= call;
+            c1_ret_affirm_o <= ret;
             rcu_excp_o <= 0;
         end
         else begin
             c1_btb_bm_mod_o <= 0;
+            c1_call_affirm_o <= 0;
+            c1_ret_affirm_o <= 0;
             rcu_excp_o <= 0;
         end
         c1_btb_way_o <= btb_way_i;

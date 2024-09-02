@@ -15,6 +15,7 @@ module engine (
     input   wire logic [2:0]                        ins0_reg_props_i,
     input   wire logic                              ins0_dnr_i,
     input   wire logic                              ins0_mov_elim_i,
+    input   wire logic [1:0]                        ins0_hint_i,
     input   wire logic                              ins0_excp_valid_i,
     input   wire logic [3:0]                        ins0_excp_code_i,
     input   wire logic                              ins1_port_i,
@@ -32,6 +33,7 @@ module engine (
     input   wire logic [2:0]                        ins1_reg_props_i,
     input   wire logic                              ins1_dnr_i,
     input   wire logic                              ins1_mov_elim_i,
+    input   wire logic [1:0]                        ins1_hint_i,
     input   wire logic                              ins1_excp_valid_i,
     input   wire logic [3:0]                        ins1_excp_code_i,
     input   wire logic                              ins1_valid_i,
@@ -49,12 +51,14 @@ module engine (
     output  wire logic                              ms_ins0_imm_o,
     output  wire logic [31:0]                       ms_ins0_immediate_o,
     output  wire logic [5:0]                        ms_ins0_dest_o,
+    output  wire logic [1:0]                        ms_ins0_hint_o,
     output  wire logic                              ms_ins0_valid,
     output  wire logic [6:0]                        ms_ins1_opcode_o,
     output  wire logic [5:0]                        ms_ins1_ins_type,
     output  wire logic                              ms_ins1_imm_o,
     output  wire logic [31:0]                       ms_ins1_immediate_o,
     output  wire logic [5:0]                        ms_ins1_dest_o,
+    output  wire logic [1:0]                        ms_ins1_hint_o,
     output  wire logic                              ms_ins1_valid,
     output  wire logic [3:0]                        ms_pack_id,
     output  wire logic [29:0]                       ms_rn_pc_o,
@@ -105,6 +109,8 @@ module engine (
 
     input   wire logic [4:0]                        alu0_rob_slot_i,
     input   wire logic                              alu0_rob_complete_i,
+    input   wire logic                              alu0_call_i,
+    input   wire logic                              alu0_ret_i,
 
     input   wire logic [4:0]                        alu1_rob_slot_i,
     input   wire logic                              alu1_rob_complete_i,
@@ -167,6 +173,9 @@ module engine (
     output  wire logic                              c1_bnch_tkn_o,
     output  wire logic [1:0]                        c1_bnch_type_o,
     output  wire logic                              c1_btb_mod_o,
+
+    output  wire logic                              c1_call_affirm_o,
+    output  wire logic                              c1_ret_affirm_o,    
 
     input       wire logic              p0_we_i,
     input       wire logic [31:0]       p0_we_data,
@@ -249,11 +258,15 @@ module engine (
     wire logic [4:0]            rob0_status;
     wire logic                  commit0;
     wire logic                  rob0_status_o;
+    wire logic                  rob0_call_o;
+    wire logic                  rob0_ret_o;
     wire logic [4:0]            rob1_status;
     wire logic                  commit1;
     wire logic                  rob1_status_o;
-    ciff ciff (cpu_clock_i, flush, alu0_rob_slot_i, alu0_rob_complete_i, alu1_rob_slot_i, alu1_rob_complete_i, agu0_rob_slot_i,
-    agu0_rob_complete_i, ldq_rob_slot_i, ldq_rob_complete_i, rob0_status, commit0, rob0_status_o, rob1_status, commit1, rob1_status_o);
+    wire logic                  rob1_call_o;
+    wire logic                  rob1_ret_o;
+    ciff ciff (cpu_clock_i, flush, alu0_rob_slot_i, alu0_rob_complete_i,alu0_call_i,alu0_ret_i, alu1_rob_slot_i, alu1_rob_complete_i, agu0_rob_slot_i,
+    agu0_rob_complete_i, ldq_rob_slot_i, ldq_rob_complete_i, rob0_status, commit0, rob0_status_o, rob0_call_o,rob0_ret_o,rob1_status, commit1, rob1_status_o,rob1_call_o,rob1_ret_o);
     wire logic [29:0] packet_pc;
     wire logic        ins0_is_mov_elim;
     wire logic        ins0_register_allocated;
@@ -283,13 +296,13 @@ module engine (
     wire logic [5:0]  phys_reg1;
 
     rename renamer (cpu_clock_i, rename_flush_o, flush, ins0_port_i, ins0_dnagn_i, ins0_alu_type_i, ins0_alu_opcode_i, ins0_alu_imm_i, ins0_ios_type_i, ins0_ios_opcode_i, ins0_special_i, 
-    ins0_rs1_i, ins0_rs2_i, ins0_dest_i, ins0_imm_i, ins0_reg_props_i, ins0_dnr_i, ins0_mov_elim_i, ins0_excp_valid_i, ins0_excp_code_i, ins1_port_i, ins1_dnagn_i, 
+    ins0_rs1_i, ins0_rs2_i, ins0_dest_i, ins0_imm_i, ins0_reg_props_i, ins0_dnr_i, ins0_mov_elim_i,ins0_hint_i, ins0_excp_valid_i, ins0_excp_code_i, ins1_port_i, ins1_dnagn_i, 
     ins1_alu_type_i, ins1_alu_opcode_i, ins1_alu_imm_i, ins1_ios_type_i, ins1_ios_opcode_i, ins1_special_i, ins1_rs1_i, ins1_rs2_i, ins1_dest_i, ins1_imm_i, 
-    ins1_reg_props_i, ins1_dnr_i, ins1_mov_elim_i, ins1_excp_valid_i, ins1_excp_code_i, ins1_valid_i, insbundle_pc_i, btb_btype_i, btb_bm_pred_i,
+    ins1_reg_props_i, ins1_dnr_i, ins1_mov_elim_i,ins1_hint_i, ins1_excp_valid_i, ins1_excp_code_i, ins1_valid_i, insbundle_pc_i, btb_btype_i, btb_bm_pred_i,
      btb_target_i, btb_vld_i, btb_idx_i, btb_way_i, valid_i, rn_busy_o,  packet_pc,ins0_is_mov_elim,ins0_register_allocated,ins0_arch_reg,ins0_old_preg,
      ins0_new_preg,ins0_excp_code,ins0_excp_valid,ins0_special,ins0_is_store,ins1_is_mov_elim,ins1_register_allocated,ins1_arch_reg,ins1_old_preg,ins1_new_preg,
      ins1_excp_code,ins1_excp_valid,ins1_special,ins1_is_store,ins1_valid,push_packet,rcu_busy,rcu_pack,arch_reg0,arch_reg1,phys_reg0,phys_reg1, ms_ins0_opcode_o,ms_ins0_ins_type,
-     ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_valid,
+     ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_dest_o,ms_ins0_hint_o,ms_ins0_valid,ms_ins1_opcode_o,ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_hint_o,ms_ins1_valid,
      ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o,ms_rn_btb_vld_o,ms_rn_btb_target_o,ms_rn_btb_way_o,ms_rn_btb_idx_o,ms_rn_btb_pack,
      ms_rn_btb_wen,ms_p0_data_o,ms_p0_vld_o,ms_p0_rs1_vld_o,ms_p0_rs2_vld_o,ms_p0_rs1_rdy,ms_p0_rs2_rdy,ms_p1_data_o,ms_p1_vld_o,ms_p1_rs1_vld_o,ms_p1_rs2_vld_o,
      ms_p1_rs1_rdy,ms_p1_rs2_rdy,ms_p0_busy_i,ms_p1_busy_i,memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
@@ -299,10 +312,10 @@ module engine (
     retireControlUnit rcu0 (cpu_clock_i, cpm, mie, machine_interrupts, packet_pc, ins0_is_mov_elim, 
     ins0_register_allocated, ins0_arch_reg, ins0_old_preg, ins0_new_preg, ins0_excp_code, ins0_excp_valid, ins0_special, ins0_is_store, ins1_is_mov_elim, 
     ins1_register_allocated, ins1_arch_reg, ins1_old_preg, ins1_new_preg, ins1_excp_code, ins1_excp_valid, ins1_special, ins1_is_store, ins1_valid, push_packet, 
-    rcu_busy, rcu_pack, arch_reg0, arch_reg1, phys_reg0, phys_reg1,rob0_status,commit0,rob0_status_o,rob1_status,commit1,rob1_status_o, stb_c0, stb_c1, stb_emp,
+    rcu_busy, rcu_pack, arch_reg0, arch_reg1, phys_reg0, phys_reg1,rob0_status,commit0,rob0_status_o,rob0_call_o,rob0_ret_o,rob1_status,commit1,rob1_status_o,rob1_call_o,rob1_ret_o, stb_c0, stb_c1, stb_emp,
     i_wr_en0,i_wr_data0,i_wr_en1,i_wr_data1,alu_excp_i, alu_excp_code_i, rob_i, c1_btb_vpc_i, c1_btb_target_i, c1_cntr_pred_i, c1_bnch_tkn_i, c1_bnch_type_i, c1_bnch_present_i,
     completed_rob_id, exception_code_i, exception_addr, exception_i, icache_idle, mem_block_i, icache_flush, flush, flush_address, rcu_block,
     oldest_instruction, rename_flush_o, ins_commit0, ins_commit1,mret, take_exception, take_interrupt, tmu_epc_o, tmu_mtval_o, tmu_mcause_o, mepc_i, 
-    mtvec_i, c1_btb_vpc_o,  c1_btb_target_o,  c1_cntr_pred_o, c1_bnch_tkn_o, c1_bnch_type_o, c1_btb_mod_o
+    mtvec_i, c1_btb_vpc_o,  c1_btb_target_o,  c1_cntr_pred_o, c1_bnch_tkn_o, c1_bnch_type_o, c1_btb_mod_o,c1_call_affirm_o,c1_ret_affirm_o
     );
 endmodule

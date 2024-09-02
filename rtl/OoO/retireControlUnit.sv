@@ -39,9 +39,13 @@ module retireControlUnit (
     output  wire logic [4:0]                        rob0_status,
     output  wire logic                              commit0,
     input   wire logic                              rob0_status_i,
+    input   wire logic                              rob0_call_i,
+    input   wire logic                              rob0_ret_i,
     output  wire logic [4:0]                        rob1_status,
     output  wire logic                              commit1,
     input   wire logic                              rob1_status_i,
+    input   wire logic                              rob1_call_i,
+    input   wire logic                              rob1_ret_i,
     // Store Queue/Buffer
     output  wire logic                              sqb_commit0,
     output  wire logic                              sqb_commit1,
@@ -98,7 +102,10 @@ module retireControlUnit (
     output  wire logic [1:0]                        c1_cntr_pred_o, //! Bimodal counter prediction,
     output  wire logic                              c1_bnch_tkn_o, //! Branch taken this cycle
     output  wire logic [1:0]                        c1_bnch_type_o,
-    output  wire logic                              c1_btb_mod_o
+    output  wire logic                              c1_btb_mod_o,
+
+    output  wire logic                              c1_call_affirm_o,
+    output  wire logic                              c1_ret_affirm_o
 );
     wire full;
     wire empty;
@@ -280,4 +287,6 @@ module retireControlUnit (
     assign c1_bnch_tkn_o = c1_bnch_tkn;
     assign c1_bnch_type_o = c1_bnch_type;
     assign c1_btb_mod_o = (retire_control_state==Await)&&icache_idle&&btb_mod;
+    assign c1_call_affirm_o = (rob0_call_i&commit_ins0)|(rob1_call_i&commit_ins1);
+    assign c1_ret_affirm_o = (rob0_ret_i&commit_ins0)|(rob1_ret_i&commit_ins1);
 endmodule

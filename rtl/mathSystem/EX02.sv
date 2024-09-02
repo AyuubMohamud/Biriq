@@ -27,6 +27,8 @@ module EX02 (
     input   wire logic                              c1_bnch_present_i,
     input   wire logic                              c1_btb_way_i,
     input   wire logic                              c1_btb_bm_mod_i,
+    input   wire logic                              c1_call_affirm_i,
+    input   wire logic                              c1_ret_affirm_i,
     // update bimodal counters here OR tell control unit to correct exec path
 
     output  wire logic [31:0]                       p0_we_data,
@@ -42,7 +44,8 @@ module EX02 (
     output  wire logic                              c1_bnch_tkn_o,
     output  wire logic  [1:0]                       c1_bnch_type_o,
     output  wire logic                              c1_bnch_present_o,
-    
+    output  wire logic                              c1_call_affirm_o,
+    output  wire logic                              c1_ret_affirm_o,
     // to the btb
     output  wire logic                              wb_btb_way_o,
     output  wire logic                              wb_btb_bm_mod_o,
@@ -59,4 +62,5 @@ module EX02 (
     assign c1_bnch_type_o = c1_bnch_type_i; assign c1_bnch_present_o = c1_bnch_present_i; assign wb_btb_way_o = c1_btb_way_i; assign wb_btb_bm_mod_o = c1_btb_bm_mod_i;
     assign ins_completed = valu_valid_i ? valu_rob_id_i : brnch_res_valid_i ? brnch_rob_i[4:0] : alu_rob_id_i;
     assign ins_cmp_v = valu_valid_i|brnch_res_valid_i|alu_valid_i;
+    assign c1_call_affirm_o = c1_call_affirm_i&brnch_res_valid_i; assign c1_ret_affirm_o = c1_ret_affirm_i&brnch_res_valid_i;
 endmodule
