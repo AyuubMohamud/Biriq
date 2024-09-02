@@ -79,7 +79,10 @@ module AGU0 (
     end
     wire misaligned = bm==4'b0110;
     always_ff @(posedge cpu_clock_i) begin
-        if (!enqueue_full_i&!lq_full_i&lsu_vld&!misaligned&lsu_op[3]) begin
+        if (flush_i) begin
+            enqueue_en_o <= 0;
+        end
+        else if (!enqueue_full_i&!lq_full_i&lsu_vld&!misaligned&lsu_op[3]) begin
             enqueue_address_o <= lsu_addr[31:2];
             enqueue_bm_o <= bm;
             enqueue_data_o <= store_data;
@@ -99,7 +102,10 @@ module AGU0 (
     end
     initial lq_valid_o = 0; initial excp_valid = 0; initial enqueue_en_o = 0;
     always_ff @(posedge cpu_clock_i) begin
-        if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld) begin
+        if (flush_i) begin
+            lq_valid_o <= 0;
+        end
+        else if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld) begin
             lq_addr_o <= lsu_addr;
             lq_dest_o <= lsu_dest;
             lq_ld_type_o <= lsu_op[2:0];
