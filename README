@@ -1,7 +1,7 @@
 This is a yet to be fully verified 2-way superscalar, out-of-order RV32IMB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
 
 Properties:
-- A configurable BTB storing both targets and bimodal prediction counters.
+- A configurable BTB/RAS storing both targets and bimodal prediction counters.
 - 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines.
 - 10-entry Store Buffer/Queue (holds both speculative and commited results)
 - A branch mispredict recovery delay of 16 cycles.
@@ -15,7 +15,7 @@ Queue capacities:
 Up to 16 memory/mul/div/csr instructions
 up to 12 ALU/Branch instructions.
 
-Branches are scheduled on the second time round to avoid a ALU instruction taking a branch capable slot over a branch.
+Branches are scheduled on the second time round to avoid a ALU instruction taking a branch capable slot over a branch within the UIQ.
 The ALU/Branch scheduler is unified to enable efficient use of CPU resources.
 All ALU's support most of the base integer and all bit manipulation instructions alongside Zicond.
 
@@ -31,7 +31,7 @@ From here on it splits into three pipelines: Integer, Memory and Mul/Div/CSR.
 Integer: Register Read, Execute, Writeback\
 Loads: AGEN, Detect unaligned, Cache Read and conflict detect, Writeback
 
-When a load conflicts with more than one store, or is a Load to a strongly ordered uncached unidempotent region (address > 0x7FFFFFFF) it is held until it is the oldest instruction in the system and forces the RCU not to take exceptions/interrupts whilst it executes.
+When a load conflicts with more than one store it is held until it is the oldest instruction in the system and forces the RCU not to take exceptions/interrupts whilst it executes. This property holds regardless of whether the load is to the CPU's memory or IO region.
 
 Stores: AGEN, Detect unaligned, Enqueue (into store buffer)
 
@@ -43,13 +43,14 @@ Improvements:
 - Add ebreak into decoder (done)
 - Make divider and multiplier out of pipe (done)
 - Add in timeout wait (done)
-- Fix RAS
+- Fix RAS (done)
 - Fix the load pipeline, and improve non-blocking cache (done, but needs more testing)
-- Add PMP for NAPOT only with 256 byte granules
-- Add in SIMD on integer registers
+- Add PMP for NAPOT only with >1024 byte granules
+- Add in SIMD on integer registers (done)
 - Add configurable PMAs
 - Add atomic instructions for both IO and non IO regions
 - Add in coherent I/O by means of a port into the data cache (complete)
+- Make dcache/icache more bus agnostic to enable different bus implementations (AXI, AHB, Wishbone)
 - Make more parameters configurable
 
 This core supports a regular TileLink Uncached Heavyweight bus at 32-bit data width, and 32-bit address width.
