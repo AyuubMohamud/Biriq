@@ -1,4 +1,4 @@
-This is a yet to be fully verified 2-way superscalar, out-of-order RV32IMB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
+This is a yet to be fully verified 2-way superscalar, out-of-order speculative RV32IMFB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
 
 Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
@@ -23,7 +23,7 @@ Pipeline is as follows:
 - IF1: generate PC and predict.
 - ICache: fetch instruction from cache or miss and fill.
 - Predecode: Prepare and decode operands as necessary to simplify rename.
-- Rename: Move elimination/Resource allocation/Dispatch to Schedulers
+- READ: Rename/Eliminate(MOV's from instruction stream)/Allocation(of free registers and scheduler slots)/Dispatch to Schedulers
 - Issue: Issue to a specific functional unit.
 
 From here on it splits into three pipelines: Integer, Memory and Mul/Div/CSR.
@@ -33,9 +33,12 @@ Loads: AGEN, Detect unaligned, Cache Read and conflict detect, Writeback
 
 When a load conflicts with more than one store it is held until it is the oldest instruction in the system and forces the RCU not to take exceptions/interrupts whilst it executes. This property holds regardless of whether the load is to the CPU's memory or IO region.
 
+Loads to the IO region, whilst weakly ordered (in the sense that later loads can come ahead of earlier stores), they are not allowed to execute speculatively and stops the ROB
+from executing interrupts during that time.
+
 Stores: AGEN, Detect unaligned, Enqueue (into store buffer)
 
-Multiplies and Divides get sent to the complex unit which blocks until it completes.
+Multiplies and Divides get sent to the complex unit which stores instruction information in a seperate register, whilst letting non-M instructions execute in the meanwhile, and only writing back on a cycle where the wb_valid of the load unit is low.
 
 Special instructions FENCE.I, MRET, WFI do not get assigned to any functional unit but rather go straight to the RCU, where they are held until they are the oldest instruction to be committed, where the RCU will proceed to execute them.
 
@@ -46,7 +49,7 @@ Improvements:
 - Fix RAS (done)
 - Fix the load pipeline, and improve non-blocking cache (done, but needs more testing)
 - Add PMP for NAPOT only with >1024 byte granules
-- Add in SIMD on integer registers (done)
+- Add in F extension (but for most significant 24 bits)
 - Add configurable PMAs
 - Add atomic instructions for both IO and non IO regions
 - Add in coherent I/O by means of a port into the data cache (complete)
