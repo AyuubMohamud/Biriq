@@ -1,4 +1,4 @@
-This is a yet to be fully verified 2-way superscalar, out-of-order speculative RV32IMFB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
+This is a yet to be fully verified 2-way superscalar, out-of-order speculative RV32IMB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
 
 Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
@@ -48,11 +48,12 @@ Improvements:
 - Add in timeout wait (done)
 - Fix RAS (done)
 - Fix the load pipeline, and improve non-blocking cache (done, but needs more testing)
-- Add PMP for NAPOT only with >1024 byte granules
-- Add in F extension (but for most significant 24 bits)
-- Add configurable PMAs
-- Add atomic instructions for both IO and non IO regions
 - Add in coherent I/O by means of a port into the data cache (complete)
+- Optimise multiplier
+- Add in supervisor mode.
+- Add configurable PMAs
+- Add PMP for NAPOT only with >1024 byte granules
+- Add atomic instructions for both IO and non IO regions
 - Make dcache/icache more bus agnostic to enable different bus implementations (AXI, AHB, Wishbone)
 - Make more parameters configurable
 
