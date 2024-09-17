@@ -1,4 +1,4 @@
-Biriq Frontend
+Frontend
 
 The frontend is in-order and consists of the following stages:
 - PC Generation
@@ -6,7 +6,7 @@ The frontend is in-order and consists of the following stages:
 - Decode
 
 General overview:\
-The Biriq frontend does not predict individual branches but rather predicts instructions packets. An instruction packet is simply just
+The frontend does not predict individual branches but rather predicts instructions packets. An instruction packet is simply just
 two instructions at a 64-bit aligned address. The frontend predicts which instructions are the actual taken branch inside a packet and
 masks off any instructions that are predicted not to be executed.
 
