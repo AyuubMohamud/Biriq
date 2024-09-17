@@ -50,13 +50,12 @@ Improvements:
 - Fix the load pipeline, and improve non-blocking cache (done, but needs more testing)
 - Add in coherent I/O by means of a port into the data cache (complete)
 - Optimise multiplier
-- Add in supervisor mode.
 - Add configurable PMAs
 - Add PMP for NAPOT only with >1024 byte granules
 - Add atomic instructions for both IO and non IO regions
 - Make dcache/icache more bus agnostic to enable different bus implementations (AXI, AHB, Wishbone)
 - Make more parameters configurable
-
+- Add in supervisor mode.
 This core supports a regular TileLink Uncached Heavyweight bus at 32-bit data width, and 32-bit address width.
 
 This core is licenced under the CERN OHL v2.0 - Weakly Reciprocal.
