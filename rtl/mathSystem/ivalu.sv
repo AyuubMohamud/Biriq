@@ -18,15 +18,17 @@ module ivalu (
     wire [31:0] vadder;
     wire [31:0] vmisc;
     wire [31:0] vcmper;
+    wire [31:0] vshifter;
     ivadder vadder0 (a, b, op[2:0], op[6], vadder);
     ivcmper vcmper0 (a, b, op[3:0], op[6], vcmper);
     ivmisc ivmisc0 (a, b, op[1:0], op[6], vmisc);
-
+    ivshifter ivshift0 (a,b,op[6], op[2:0], vshifter);
     always_ff @(posedge core_clock_i) begin
         case (op[5:4])
             2'b00: result_o <= vadder;
             2'b01: result_o <= vcmper;
             2'b10: result_o <= vmisc;
+            2'b11: result_o <= vshifter;
         endcase
         valid_o <= !core_reset_i&valid_i;
         dest_o <= dest_i;
