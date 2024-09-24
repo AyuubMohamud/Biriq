@@ -51,7 +51,7 @@ module EX10 (
             valu_dest <= dest_i;
             valu_valid <= psx_i;
         end else begin
-            alu_valid <= 0;
+            alu_valid <= 0; valu_valid <= 0;
         end
     end
 
