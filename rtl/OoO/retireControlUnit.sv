@@ -218,7 +218,7 @@ module retireControlUnit (
     assign ins_commit0 = commit_ins0;
     assign ins_commit1 = commit_ins1;    reg wfi = 0;
     assign mret = !interrupt_pending&((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
-    assign take_interrupt = interrupt_pending&&(!empty)&&!mem_block_i&(retire_control_state==Normal);
+    assign take_interrupt = interrupt_pending&&(!empty)&&!mem_block_i&(retire_control_state==Normal)&&(((commit_ins0|commit_ins1)|(altcommit0|altcommit1)|wfi));
     assign take_exception = !interrupt_pending&(excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
     assign tmu_epc_o = wfi ? pcPlus4 : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
@@ -230,10 +230,12 @@ module retireControlUnit (
     // Special[2] == MRET
     // Special[1] == FENCE.I
     // Special[0] == WFI
+
+    // Focusing ONLY on interrupts
     always_ff @(posedge cpu_clock_i) begin
         case (retire_control_state)
             Normal: begin
-                if (interrupt_pending&&(!empty)&&!mem_block_i) begin
+                if (interrupt_pending&&(!empty)&&!mem_block_i&&(((commit_ins0|commit_ins1)|(altcommit0|altcommit1))|wfi)) begin
                     retire_control_state <= Await;
                     wfi <= 0;
                     flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
