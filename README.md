@@ -1,5 +1,7 @@
 This is a yet to be fully verified 2-way superscalar, out-of-order speculative RV32IMB_Zicond_Zifencei_Zicsr implementation with Machine and User support.
 
+With SIMD extensions, the CPU fits to under 10000 LUTs in a Digilent Arty A100T, whilst also running at over 80Mhz (this is at the lowest speed grade of FPGA).
+
 Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
 - 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines.
