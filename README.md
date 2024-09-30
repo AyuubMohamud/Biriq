@@ -1,17 +1,21 @@
+# BiriqII
 This is a yet to be fully verified 2-way superscalar, out-of-order speculative RV32IMB_Zicond_Zifencei_Zicsr_XPSX implementation with Machine and User support.
 
-With SIMD extensions, the CPU fits to under 10000 LUTs in a Digilent Arty A100T, whilst also running at over 80Mhz (this is at the lowest speed grade of FPGA).
+With SIMD extensions, the CPU fits to around 10000 LUTs in a Digilent Arty A100T, whilst also running at over 80Mhz (this is at the lowest speed grade of FPGA).
 
 Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
 - 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines.
-- 10-entry Store Buffer/Queue (holds both speculative and commited results)
+- 10-entry Store Buffer/Queue (holds both speculative and commited results).
 - A branch mispredict recovery delay of 16 cycles.
 - Move elimniation supported using the pseudo-instruction mov present in RISC-V assembler.
 - Non-blocking Loads.
+- Store Forwarding in the case where one store overlaps any number of bytes in a load.
 - 64 physical registers with PR0 mapped permanently to $zero.
 - Forwarding for both integer ALU's and branch unit.
 - Up to 32 instructions in flight.
+- SIMD instructions on both Integer ALU Ports.
+- Dual ported, dual issue integer scheduler for maximum effeciency in scheduling integer/branch instructions
 
 Queue capacities:
 Up to 16 memory/mul/div/csr instructions
@@ -19,7 +23,7 @@ up to 12 ALU/Branch instructions.
 
 Branches are scheduled on the second time round to avoid a ALU instruction taking a branch capable slot over a branch within the UIQ.
 The ALU/Branch scheduler is unified to enable efficient use of CPU resources.
-All ALU's support most of the base integer and all bit manipulation instructions alongside Zicond.
+All ALU's support most of the base integer and all B extension instructions alongside Zicond.
 
 Pipeline is as follows:
 - IF1: generate PC and predict.
@@ -49,15 +53,16 @@ Improvements:
 - Make divider and multiplier out of pipe (done)
 - Add in timeout wait (done)
 - Fix RAS (done)
-- Fix the load pipeline, and improve non-blocking cache (done, but needs more testing)
-- Add in coherent I/O by means of a port into the data cache (complete)
+- Fix the load pipeline, and improve non-blocking cache (done)
+- Add in coherent I/O by means of a port into the data cache (needs more testing)
+- Make LUI run on both Integer Ports.
 - Optimise multiplier
 - Add configurable PMAs
 - Add PMP for NAPOT only with >1024 byte granules
 - Add atomic instructions for both IO and non IO regions
 - Make dcache/icache more bus agnostic to enable different bus implementations (AXI, AHB, Wishbone)
 - Make more parameters configurable
-- Add in supervisor mode.
+
 This core supports a regular TileLink Uncached Heavyweight bus at 32-bit data width, and 32-bit address width.
 
 This core is licenced under the CERN OHL v2.0 - Weakly Reciprocal.

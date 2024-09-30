@@ -1,29 +1,29 @@
 module csrfile #(parameter [31:0] HARTID = 0) (
     input   wire logic                          cpu_clock_i,
     // CSR Interface
-    input   wire logic [31:0]                   tmu_data_i,
-    input   wire logic [11:0]                   tmu_address_i,
-    input   wire logic [1:0]                    tmu_opcode_i,
-    input   wire logic                          tmu_wr_en,
+    input   wire logic [31:0]                   csrfile_data_i,
+    input   wire logic [11:0]                   csrfile_address_i,
+    input   wire logic [1:0]                    csrfile_opcode_i,
+    input   wire logic                          csrfile_wr_en,
     //  001 - CSRRW, 010 - CSRRS, 011 - CSRRC,
-    input   wire logic                          tmu_valid_i,
-    output       logic                          tmu_done_o,
-    output       logic                          tmu_excp_o,
-    output       logic [31:0]                   tmu_data_o,
+    input   wire logic                          csrfile_valid_i,
+    output       logic                          csrfile_done_o,
+    output       logic                          csrfile_excp_o,
+    output       logic [31:0]                   csrfile_data_o,
     // exception returns
     input   wire logic                          mret,
     // exception handling    
     input   wire logic                          take_exception,
     input   wire logic                          take_interrupt,
-    input   wire logic [29:0]                   tmu_epc_i,
-    input   wire logic [31:0]                   tmu_mtval_i,
-    input   wire logic [3:0]                    tmu_mcause_i,
+    input   wire logic [29:0]                   csrfile_epc_i,
+    input   wire logic [31:0]                   csrfile_mtval_i,
+    input   wire logic [3:0]                    csrfile_mcause_i,
 
-    input   wire logic                          tmu_msip_i,
-    input   wire logic                          tmu_mtip_i,
-    input   wire logic                          tmu_meip_i,
+    input   wire logic                          csrfile_msip_i,
+    input   wire logic                          csrfile_mtip_i,
+    input   wire logic                          csrfile_meip_i,
     // Signals for IQ state machine
-    output  wire logic [2:0]                    tmu_mip_o,
+    output  wire logic [2:0]                    csrfile_mip_o,
     output  wire logic                          mie_o,
     input   wire logic                          inc_commit0,
     input   wire logic                          inc_commit1,
@@ -69,25 +69,25 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     reg [1:0] mcountinhibit = 0; localparam MCOUNTERINHIBIT = 12'h320; 
     assign tw = mstatus[5];
     // Vendor-specific CSRs
-    reg [2:0] siriusBrnchCtrl = 3'b100; localparam BRNCHCTRL = 12'h800;
-    assign enable_branch_pred = siriusBrnchCtrl[2];
-    assign enable_counter_overload = siriusBrnchCtrl[1];
-    assign counter_overload = siriusBrnchCtrl[0];
+    reg [2:0] biriqBrnchCtrl = 3'b100; localparam BRNCHCTRL = 12'h800;
+    assign enable_branch_pred = biriqBrnchCtrl[2];
+    assign enable_counter_overload = biriqBrnchCtrl[1];
+    assign counter_overload = biriqBrnchCtrl[0];
     assign real_privilege = current_privilege_mode;
-    assign tmu_mip_o = {tmu_meip_i, tmu_mtip_i, tmu_msip_i}&{mie[2], mie[1], mie[0]};
+    assign csrfile_mip_o = {csrfile_meip_i, csrfile_mtip_i, csrfile_msip_i}&{mie[2], mie[1], mie[0]};
     assign mprv_o = mstatus[4];
     logic [31:0] read_data; logic exists;
     always_comb begin
-        case (tmu_address_i)
+        case (csrfile_address_i)
             MVENDORID: begin read_data = 32'h0; exists = 1; end
             MIMPID: begin read_data = 32'h0;exists = 1; end
             MARCHID: begin read_data = 32'h0;exists = 1; end
             MHARTID: begin read_data = HARTID;exists = 1; end
             MCONFIGPTR: begin read_data = 32'h0;exists = 1; end
             MSTATUS: begin read_data = {14'h0, mstatus[4], 4'd0, mstatus[3:2], 3'd0, mstatus[1], 3'd0, mstatus[0], 3'd0};exists = 1; end
-            MISA: begin read_data = 32'h40141100;exists = 1; end
+            MISA: begin read_data = 32'h40901101;exists = 1; end
             MIE: begin read_data = {20'h0,mie[2], 3'd0, mie[1], 3'd0, mie[0], 3'd0};exists = 1; end
-            MIP: begin read_data = {20'h0,mip[2]|tmu_meip_i, 3'd0, mip[1]|tmu_mtip_i, 3'd0, mip[0]|tmu_msip_i, 3'd0};exists = 1;end
+            MIP: begin read_data = {20'h0,mip[2]|csrfile_meip_i, 3'd0, mip[1]|csrfile_mtip_i, 3'd0, mip[0]|csrfile_msip_i, 3'd0};exists = 1;end
             MTVEC: begin read_data = mtvec;exists = 1;end
             MTVAL: begin read_data = mtval;exists = 1;end
             MSTATUSH: begin read_data = 32'h0;exists = 1;end
@@ -106,14 +106,14 @@ module csrfile #(parameter [31:0] HARTID = 0) (
             CYCLEH: begin read_data = cycle[63:32];exists = 1;end
             INSTRET: begin read_data = instret[31:0];exists = 1;end
             INSTRETH: begin read_data = instret[63:32];exists = 1;end
-            BRNCHCTRL: begin read_data = {29'd0, siriusBrnchCtrl}; exists = 1; end
+            BRNCHCTRL: begin read_data = {29'd0, biriqBrnchCtrl}; exists = 1; end
             default: begin
                 read_data = 0; exists = 0;
             end
         endcase
     end
-    wire [31:0] bit_sc = 1 << tmu_data_i[4:0];
-    wire [31:0] new_data = tmu_opcode_i==2'b01 ? tmu_data_i : tmu_opcode_i==2'b10 ? read_data|bit_sc : read_data&~(bit_sc);
+    wire [31:0] bit_sc = 1 << csrfile_data_i[4:0];
+    wire [31:0] new_data = csrfile_opcode_i==2'b01 ? csrfile_data_i : csrfile_opcode_i==2'b10 ? read_data|bit_sc : read_data&~(bit_sc);
     always_ff @(posedge cpu_clock_i) begin
         if ((mret|take_exception|take_interrupt)) begin
             casez ({mret,take_exception, take_interrupt})
@@ -131,8 +131,8 @@ module csrfile #(parameter [31:0] HARTID = 0) (
                     mstatus[1] <= 1'b1;
                     mstatus[3:2] <= {current_privilege_mode,current_privilege_mode};
                     mstatus[0] <= 0; // mie
-                    mepc<=tmu_epc_i;
-                    mcause<={1'b1, tmu_mcause_i[3:0]};
+                    mepc<=csrfile_epc_i;
+                    mcause<={1'b1, csrfile_mcause_i[3:0]};
                     mtval <= 0;
                     current_privilege_mode <= 1;
                 end
@@ -140,17 +140,17 @@ module csrfile #(parameter [31:0] HARTID = 0) (
                     mstatus[1] <= mstatus[0];
                     mstatus[3:2] <= {current_privilege_mode,current_privilege_mode};
                     mstatus[0] <= 0;
-                    mepc<=tmu_epc_i;
-                    mcause<={1'b0,tmu_mcause_i[3:0]};
-                    mtval <= tmu_mtval_i;current_privilege_mode <= 1;
+                    mepc<=csrfile_epc_i;
+                    mcause<={1'b0,csrfile_mcause_i[3:0]};
+                    mtval <= csrfile_mtval_i;current_privilege_mode <= 1;
                 end
                 default: begin
                     
                 end
             endcase
             // MAP: 17 -> 4, 12:11 -> 3:2 7 -> 1 mstatus -> 0
-        end else if (tmu_valid_i && tmu_wr_en && (current_privilege_mode)) begin
-            case (tmu_address_i)
+        end else if (csrfile_valid_i && csrfile_wr_en && (current_privilege_mode)) begin
+            case (csrfile_address_i)
                 MSTATUS: begin
                     mstatus[5] <= new_data[21];
                     mstatus[4] <= new_data[17];
@@ -175,8 +175,8 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        if (tmu_valid_i&&tmu_wr_en&&(current_privilege_mode)) begin
-            case (tmu_address_i)
+        if (csrfile_valid_i&&csrfile_wr_en&&(current_privilege_mode)) begin
+            case (csrfile_address_i)
                 MSCRATCH: begin
                     mscratch <= new_data;
                 end
@@ -207,10 +207,10 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        if (tmu_valid_i&&tmu_wr_en&&(current_privilege_mode)&&(tmu_address_i==MCYCLE)) begin
+        if (csrfile_valid_i&&csrfile_wr_en&&(current_privilege_mode)&&(csrfile_address_i==MCYCLE)) begin
             cycle[31:0] <= new_data;
         end 
-        else if (tmu_valid_i&&tmu_wr_en&&(current_privilege_mode)&&(tmu_address_i==MCYCLEH)) begin
+        else if (csrfile_valid_i&&csrfile_wr_en&&(current_privilege_mode)&&(csrfile_address_i==MCYCLEH)) begin
             cycle[63:32] <= new_data;
         end else if (!mcountinhibit[0]) begin
             cycle <= cycle + 1;
@@ -218,10 +218,10 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     end
     wire [63:0] constant = inc_commit0&inc_commit1 ? 64'd2 : 64'd1;
     always_ff @(posedge cpu_clock_i) begin
-        if (tmu_valid_i&&tmu_wr_en&&(current_privilege_mode)&&(tmu_address_i==MINSTRET)) begin
+        if (csrfile_valid_i&&csrfile_wr_en&&(current_privilege_mode)&&(csrfile_address_i==MINSTRET)) begin
             instret[31:0] <= new_data;
         end 
-        else if (tmu_valid_i&&tmu_wr_en&&(current_privilege_mode)&&(tmu_address_i==MINSTRETH)) begin
+        else if (csrfile_valid_i&&csrfile_wr_en&&(current_privilege_mode)&&(csrfile_address_i==MINSTRETH)) begin
             instret[63:32] <= new_data;
         end else if ((inc_commit0)&!mcountinhibit[1]) begin
             instret <= instret + constant;
@@ -229,23 +229,23 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        if (tmu_valid_i&&tmu_wr_en&&(tmu_address_i==BRNCHCTRL)) begin
-            siriusBrnchCtrl <= new_data[2:0];
+        if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==BRNCHCTRL)) begin
+            biriqBrnchCtrl <= new_data[2:0];
         end
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        tmu_data_o <= read_data;
+        csrfile_data_o <= read_data;
     end
     assign mepc_o = mepc; assign mtvec_o = mtvec;
-    initial tmu_done_o = 0;
+    initial csrfile_done_o = 0;
     always_ff @(posedge cpu_clock_i) begin
-        if (tmu_valid_i) begin
-            tmu_done_o <= 1;
-            tmu_excp_o <= ~((exists&&({current_privilege_mode,current_privilege_mode}>=tmu_address_i[9:8])&&!(tmu_wr_en&&(&tmu_address_i[11:10]))));
+        if (csrfile_valid_i) begin
+            csrfile_done_o <= 1;
+            csrfile_excp_o <= ~((exists&&({current_privilege_mode,current_privilege_mode}>=csrfile_address_i[9:8])&&!(csrfile_wr_en&&(&csrfile_address_i[11:10]))));
         end
         else begin
-            tmu_done_o <= 0;
+            csrfile_done_o <= 0;
         end
     end
 endmodule

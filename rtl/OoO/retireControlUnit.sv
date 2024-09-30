@@ -150,7 +150,7 @@ module retireControlUnit (
     reg        c1_bnch_present = 0;
     localparam Normal = 3'b000; localparam ReclaimAndRecover = 3'b111; // flush held high for 16 cycles
     localparam WipeInstructionCache = 3'b001; localparam WaitForInterrupt = 3'b010;
-    localparam Await = 3'b110;
+    localparam Await = 3'b110; localparam TakeInterrupt = 3'b011;
     reg [2:0] retire_control_state = Normal;
 
     sfifospecial #(.DW(89)) instruction_information_buffer (
@@ -218,26 +218,28 @@ module retireControlUnit (
     assign ins_commit0 = commit_ins0;
     assign ins_commit1 = commit_ins1;    reg wfi = 0;
     assign mret = !interrupt_pending&((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
-    assign take_interrupt = interrupt_pending&&(!empty)&&!mem_block_i&(retire_control_state==Normal)&&(((commit_ins0|commit_ins1)|(altcommit0|altcommit1)|wfi));
-    assign take_exception = !interrupt_pending&(excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
+    assign take_interrupt = retire_control_state==TakeInterrupt;
+    assign take_exception = (excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
     assign tmu_epc_o = wfi ? pcPlus4 : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
     assign altcommit = ((backendException&exception_code[4])||((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])))
-    && (retire_control_state==Normal)&!mem_block_i&!empty&!interrupt_pending&!excp_special[0];
+    && (retire_control_state==Normal)&!mem_block_i&!empty&!excp_special[0];
     reg btb_mod;
 
     // Special[3] == CSR writes
-    // Special[2] == MRET
+    // Special[2] == MRET (interrupts wont take place)
     // Special[1] == FENCE.I
     // Special[0] == WFI
 
-    // Focusing ONLY on interrupts
+    // On the cycle of a successful commit of any type (not an alternate commit), an interrupt can be taken
+    // This does mean the processor can be deadlocked with an infinite sequence of CSR writes/FENCE.Is but this is a bit of an impossibility
+    // Note Altcommit is mutually exclusive with a regular commit
     always_ff @(posedge cpu_clock_i) begin
         case (retire_control_state)
             Normal: begin
-                if (interrupt_pending&&(!empty)&&!mem_block_i&&(((commit_ins0|commit_ins1)|(altcommit0|altcommit1))|wfi)) begin
-                    retire_control_state <= Await;
-                    wfi <= 0;
+                if (interrupt_pending&&(!empty)&&!mem_block_i&&((commit_ins0|commit_ins1)|wfi)) begin
+                    retire_control_state <= TakeInterrupt;
+                    wfi <= 1;
                     flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
                 end
                 else if ((excp_excp_valid|backendException)&!mem_block_i&!empty) begin
@@ -260,6 +262,10 @@ module retireControlUnit (
                     retire_control_state <= Normal;
                     wfi <= 1;
                 end
+            end
+            TakeInterrupt: begin
+                retire_control_state <= Await;
+                wfi <= 0;
             end
             ReclaimAndRecover: begin
                 wfi <= 0;
