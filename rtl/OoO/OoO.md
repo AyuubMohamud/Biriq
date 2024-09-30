@@ -21,7 +21,7 @@ Holds physical register numbers speculated to point to data for a certain archit
 ## Register Reference Table
 This holds the active count of how many times a physical register is referenced in the Committed Register Remap Table. When the reference count goes to 0, safe_to_free goes high and the physical register is put back into the freelist.
 ## Integer Register File
-This is the 6r3w 32-bit integer register file with 64 entries.
+This is the 6r3w 32-bit integer register file with 64 entries. This multiport RAM is made of XOR'ed LUTRAMs.
 ## Freelist
 Two fifos with balancing logic. Holds free physical registers. Never fills up. (Or **should** never fill up)
 ## Interrupt Router
@@ -30,3 +30,7 @@ Take the meip, mtip and msip signals and prioritise them as per the RISC-V spec.
 Set to 0 on instruction commit, set to 1 when an instruction has been executed (doesn't have to be without exceptions).
 ## Rename Module
 The rename module renames the registers in a RISC-V instruction, and delivers the instruction to either the memory scheduler or the MEU.
+## Retire Control Unit
+This unit is responsible for the atomic commit of RISC-V instructions, and for scheduling interrupts in a correct fashion.
+
+Atomic commit in this case means that an instruction only commits if it is successful, and ensuring that instructions past those that take an exception do not alter architectural state. Atomic commit also allows interrupts to work in an out of order machine.

@@ -6,11 +6,11 @@ This part of the CPU alone executes all non-Memory and non-System operations inc
 
 ## Unified Integer Queue
 This part of the MEU holds instructions due for execution, uniquely identified at any given cycle with their RCU number.\
-The Unified Integer Queue is a dual-enqueue, dual-dequeue and dual-compacting scheduler. This means it stores entires in age order, considering older instructions before considering newer ones. Despite the cost of the scheme compared to a simpler free-slot scheduler, it is well worth it due to the earlier execution of older instructions compared to the age-agnostic free slot scheme.
+The Unified Integer Queue is a dual-enqueue, dual-dequeue and dual-compacting scheduler. This means it stores entires in age order, considering older instructions before considering newer ones. Despite the cost of the scheme compared to a simpler free-slot scheduler, it is well worth it due to the earlier execution of older instructions compared to the age-agnostic free slot scheme. It also frees up to two slots every cycle.
 
 ![Stylised Scheduler](scheduler.drawio.png)
 
-Note that every instruction that goes through this unit is a single cycle instruction, regardless whether it is a branch/alu/simd instruction. This includes complex instructions like clz/ctz/cpop. All instructions except LUI, AUIPC, and Branches are executable on both Integer ports. (I'm planning to let LUI run on both ports)
+Note that every instruction that goes through this unit is a single cycle instruction, regardless of whether it is a branch/alu/simd instruction. This includes complex instructions like clz/ctz/cpop. All instructions except LUI, AUIPC, and Branches are executable on both Integer ports. (I'm planning to let LUI run on both ports)
 
 ## IRAM
 This RAM holds information regarding the destination register, instruction, immediate, whether the instruction uses the immediate etc.
