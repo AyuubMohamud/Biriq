@@ -35,7 +35,7 @@ module EX10 (
     assign rob_o = data_i[4:0];
     assign rs1_o = data_i[11:6];
     assign rs2_o = data_i[17:12];
-    initial alu_valid = 0;
+    initial alu_valid = 0; initial valu_valid = 0;
     always_ff @(posedge cpu_clock_i) begin
         if (valid_i&!flush_i) begin
             alu_a <= rs1_data_i;
