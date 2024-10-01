@@ -213,12 +213,12 @@ module retireControlUnit (
     interrupt_router interrupts (cpm, mie, machine_interrupts, interrupt_pending, int_type);
     wire logic backendException = exception_valid && (partial_retire ? rob1_status==exception_rob[4:0] : rob0_status==exception_rob[4:0]) && !empty;
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
-    assign rcu_block = retire_control_state!=Normal;
+    assign rcu_block = retire_control_state!=Normal && retire_control_state!=TakeInterrupt;
     assign rename_flush_o = (retire_control_state==Await) && icache_idle;
     assign ins_commit0 = commit_ins0;
     assign ins_commit1 = commit_ins1;    reg wfi = 0;
-    assign mret = !interrupt_pending&((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
-    assign take_interrupt = retire_control_state==TakeInterrupt;
+    assign mret = ((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
+    assign take_interrupt = retire_control_state==TakeInterrupt && !empty;
     assign take_exception = (excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
     assign tmu_epc_o = wfi ? pcPlus4 : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
@@ -239,7 +239,6 @@ module retireControlUnit (
             Normal: begin
                 if (interrupt_pending&&(!empty)&&!mem_block_i&&((commit_ins0|commit_ins1)|wfi)) begin
                     retire_control_state <= TakeInterrupt;
-                    wfi <= 1;
                     flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
                 end
                 else if ((excp_excp_valid|backendException)&!mem_block_i&!empty) begin
@@ -264,8 +263,10 @@ module retireControlUnit (
                 end
             end
             TakeInterrupt: begin
-                retire_control_state <= Await;
-                wfi <= 0;
+                if (!empty) begin
+                    retire_control_state <= Await;
+                    wfi <= 0;
+                end
             end
             ReclaimAndRecover: begin
                 wfi <= 0;

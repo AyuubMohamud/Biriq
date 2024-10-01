@@ -94,7 +94,7 @@ module AGU0 (
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        if (!enqueue_full_i&!lq_full_i&lsu_op[3]&lsu_vld&!misaligned) begin
+        if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld&!misaligned) begin
             conflict_address_o <= lsu_addr[31:2];
             conflict_bm_o <= bm;
         end
