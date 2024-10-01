@@ -17,6 +17,7 @@ module EX10 (
     input   wire logic [31:0]                       immediate_i,
     input   wire logic [5:0]                        dest_i,
     input   wire logic                              psx_i,
+    input   wire logic                              lui_i,
 
     output       logic [31:0]                       alu_a,
     output       logic [31:0]                       alu_b,
@@ -38,9 +39,9 @@ module EX10 (
     initial alu_valid = 0; initial valu_valid = 0;
     always_ff @(posedge cpu_clock_i) begin
         if (valid_i&!flush_i) begin
-            alu_a <= rs1_data_i;
-            alu_b <= imm_i ? immediate_i :  rs2_data_i;
-            alu_opc <= opcode_i;
+            alu_a <= lui_i ? 32'd0 : rs1_data_i;
+            alu_b <= imm_i|lui_i ? immediate_i :  rs2_data_i;
+            alu_opc <= lui_i ? 7'd0 : opcode_i;
             alu_rob_id <= data_i[4:0];
             alu_dest <= dest_i;
             alu_valid <= !psx_i;

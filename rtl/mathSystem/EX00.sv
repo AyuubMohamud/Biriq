@@ -70,12 +70,12 @@ module EX00 (
     initial wakeup_valid = 0; initial alu_valid = 0;
     always_ff @(posedge cpu_clock_i) begin
         if (valid_i&!flush_i) begin
-            alu_a <= rs1_data_i;
-            alu_b <= imm_i ? immediate_i :  rs2_data_i;
-            alu_opc <= opcode_i;
+            alu_a <= ins_type[3] ? 32'd0 : rs1_data_i;
+            alu_b <= imm_i|ins_type[3] ? immediate_i :  rs2_data_i;
+            alu_opc <= ins_type[3] ? 7'd0 : opcode_i;
             alu_rob_id <= data_i[4:0];
             alu_dest <= dest_i;
-            alu_valid <= ins_type[0];
+            alu_valid <= ins_type[0]|ins_type[3];
             valu_a <= rs1_data_i;
             valu_b <= rs2_data_i;
             valu_opc <= opcode_i;
@@ -85,14 +85,14 @@ module EX00 (
             bnch_operand_1 <= rs1_data_i; bnch_operand_2 <= rs2_data_i;
             bnch_offset <= immediate_i; 
             bnch_pc <= {pc_i[29:1], pc_i[0] ? 1'b1 : data_i[0]};
-            bnch_auipc <= ins_type[4]; bnch_lui <= ins_type[3]; bnch_jal <= ins_type[1]; bnch_jalr <= ins_type[2];
+            bnch_auipc <= ins_type[4]; bnch_lui <= 0; bnch_jal <= ins_type[1]; bnch_jalr <= ins_type[2];
             bnch_bnch_cond <= opcode_i[2:0]; bnch_rob_id_o <= data_i[5:0]; bnch_dest_o <= dest_i; bnch_bm_pred_o <= bm_pred_i;
             bnch_btype_o <= btype_i;
             bnch_btb_vld_o <= btb_vld_i&(btb_idx_i==(pc_i[0] ? 1'b1 : data_i[0]));
             bnch_btb_target_o <= btb_target_i;
             bnch_btb_way_o <= btb_way_i; // mask off appropriately
             wakeup_dest <= dest_i;
-            bnch_valid_o <= ((|ins_type[4:1])||(!ins_type[0]&!ins_type[5]));
+            bnch_valid_o <= ((|ins_type[2:1])||ins_type[4]||(!ins_type[0]&!ins_type[5]&!ins_type[3]));
             wakeup_valid <= (|ins_type);
             bnch_call <= hint_i[1];
             bnch_ret <= hint_i[0];

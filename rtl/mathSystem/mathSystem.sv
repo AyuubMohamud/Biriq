@@ -212,7 +212,7 @@ module mathSystem (
     wire logic [5:0]                        valu1_dest;
     wire logic                              valu1_valid;
     EX10 port1 (cpu_clock_i, flush_i, alu2_data, alu2_vld, ex10_rs1_o, ex10_rs2_o, ex10_rs1_data_i, ex10_rs2_data_i, alu1_rob_i, alu1_opcode_o, alu1_imm_o,
-    alu1_immediate_o, alu1_dest_o,alu1_ins_type[5],alu1_a, alu1_b, alu1_opc, alu1_rob_id_o,  alu1_dest, alu1_valid,valu1_a,valu1_b,valu1_opc,valu1_rob_id_o,valu1_dest,valu1_valid);
+    alu1_immediate_o, alu1_dest_o,alu1_ins_type[5],alu1_ins_type[3],alu1_a, alu1_b, alu1_opc, alu1_rob_id_o,  alu1_dest, alu1_valid,valu1_a,valu1_b,valu1_opc,valu1_rob_id_o,valu1_dest,valu1_valid);
     wire logic [31:0] alu1_out_result;
     wire logic [4:0]  alu1_out_rob_id_o;
     wire logic        alu1_out_wb_valid_o;

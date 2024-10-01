@@ -258,13 +258,13 @@ module rename (
     assign ms_rn_btb_idx_o = btb_idx;
     assign ms_rn_btb_pack = rcu_pack[3:0];
     assign ms_rn_btb_wen = cyc_valid&!busy&!flush_i;
-    assign ms_p0_data_o = {(btb_vld&!btb_idx)||((|ins0_alu_type[4:1])|(!(|ins0_alu_type))), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
+    assign ms_p0_data_o = {(btb_vld&!btb_idx)||((|ins0_alu_type[2:1])|(ins0_alu_type[4])|(!(|ins0_alu_type))), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
     assign ms_p0_vld_o = (!ins0_port|(btb_vld&!btb_idx))&!ins0_excp_valid&cyc_valid&!busy&!flush_i&!(ins0_mov_elim);
     assign ms_p0_rs1_vld_o = ins0_reg_props[1];
     assign ms_p0_rs2_vld_o = ins0_reg_props[0];
     assign ms_p0_rs1_rdy = r0_i;
     assign ms_p0_rs2_rdy = r1_i;
-    assign ms_p1_data_o = {(btb_vld&btb_idx)||((|ins1_alu_type[4:1]|(!(|ins1_alu_type)))), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
+    assign ms_p1_data_o = {(btb_vld&btb_idx)||((|ins1_alu_type[2:1]|(ins1_alu_type[4])|(!(|ins1_alu_type)))), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
     assign ms_p1_vld_o = (!ins1_port|(btb_vld&btb_idx))&!ins1_excp_valid&ins1_valid&cyc_valid&!flush_i&!busy&!(ins1_mov_elim);
     assign ms_p1_rs1_vld_o = ins1_reg_props[1];
     assign ms_p1_rs2_vld_o = ins1_reg_props[0];
