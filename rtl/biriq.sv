@@ -1,5 +1,5 @@
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0) (
+parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0, parameter ENTRIES = 8) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -319,7 +319,7 @@ counter_overload);
     p0_we_i, p1_we_data, p1_we_dest, p1_we_i, p0_rd_src,p1_rd_src,p0_rd_datas,p1_rd_datas,p2_rd_src,p3_rd_src,p2_rd_datas,p3_rd_datas, rob_i, alu_excp_code_i, alu_excp_i,
     alu_c1_btb_vpc_i,alu_c1_btb_target_i,alu_c1_cntr_pred_i,alu_c1_bnch_tkn_i,alu_c1_bnch_type_i,alu_c1_bnch_present_i,alu0_call,alu0_ret, c1_btb_way_i, c1_btb_bm_i);
 
-    memorySystem memSys (cpu_clock_i, full_flush, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
+    memorySystem #(ACP_RS, ENTRIES) memSys (cpu_clock_i, full_flush, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
     memSys_pkt0_ios_type_o,memSys_pkt0_ios_opcode_o,memSys_pkt0_rob_o,memSys_pkt0_vld_o,memSys_pkt1_rs1_o,memSys_pkt1_rs2_o,memSys_pkt1_dest_o,memSys_pkt1_immediate_o,
     memSys_pkt1_ios_type_o,memSys_pkt1_ios_opcode_o,memSys_pkt1_vld_o,memSys_full, p4_rd_datas, p4_rd_src, p5_rd_datas, p5_rd_src, r4_vec_indx,r4,r5_vec_indx,r5,
     tmu_data_i, tmu_address_i, tmu_opcode_i, tmu_wr_en, tmu_valid_i, tmu_done_o, tmu_excp_o, tmu_data_o, rcu_lock, oldest_instruction, mem_lock, agu0_rob_slot_i,
