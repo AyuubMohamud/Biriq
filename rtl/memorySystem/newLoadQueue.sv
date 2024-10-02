@@ -23,8 +23,8 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     input   wire logic                          conflict_res_valid_i,
     // sram
     output  wire logic                          bram_rd_en,
-    output  wire logic [10:0]                   bram_rd_addr,
-    input   wire logic [31:0]                   bram_rd_data,
+    output  wire logic [9:0]                    bram_rd_addr,
+    input   wire logic [63:0]                   bram_rd_data_64,
     output  wire logic [23:0]                   load_cache_set_o,
     input   wire logic                          load_set_valid_i,
     input   wire logic                          load_set_i,
@@ -122,6 +122,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     reg [5:0] nx2_dest;
     reg [5:0] nx2_rob;
     reg [2:0] nx2_op;
+    reg nx64sel = 0;
     reg [31:0] nx2_cdat; reg [3:0] nx2_bm; reg nx2_io;    
     always_ff @(posedge core_clock_i) begin
         nx2_vd <= core_flush_i ? 1'b0 : (wk_dequeue|so_dequeue)|(lsu_vld&!(wk_enqueue|so_enqueue)&!busy&!rob_lock);
@@ -131,10 +132,12 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
         nx2_cdat <= conflict_data; nx2_bm <= conflict_bm&{4{!(wk_dequeue|so_dequeue)&(conflict_res_valid&conflict_resolvable)}};
         nx2_addr <= wk_dequeue ? wlsu_addr[1:0] : so_dequeue ? slsu_addr[1:0] : lsu_addr[1:0];
         nx2_io <= so_dequeue; nx2_io_data <= dc_data;
+        nx64sel <= wk_dequeue ? wlsu_addr[2] : lsu_addr[2];
     end
     assign lsu_lock = dc_req|nx2_vd; // completion of i/o request
-    assign bram_rd_en = 1; assign bram_rd_addr = {load_set_i, wk_dequeue ? wlsu_addr[11:2] : lsu_addr[11:2]};
+    assign bram_rd_en = 1; assign bram_rd_addr = {load_set_i, wk_dequeue ? wlsu_addr[11:3] : lsu_addr[11:3]};
     wire [31:0] data = nx2_io ? nx2_io_data : memdata;
+    wire [31:0] bram_rd_data = nx64sel ? bram_rd_data_64[63:32] : bram_rd_data_64[31:0];
     wire [31:0] root_mem_data = {nx2_bm[3] ? nx2_cdat[31:24] : bram_rd_data[31:24], nx2_bm[2] ? nx2_cdat[23:16] : bram_rd_data[23:16],
     nx2_bm[1] ? nx2_cdat[15:8] : bram_rd_data[15:8], nx2_bm[0] ? nx2_cdat[7:0] : bram_rd_data[7:0]};
     assign memdata = nx2_op[1:0]==2'b10 ?  root_mem_data : nx2_op[1:0]==1 ? (nx2_addr[1] ? {16'h0000, root_mem_data[31:16]} :

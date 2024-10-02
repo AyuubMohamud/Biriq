@@ -1,4 +1,4 @@
-module memorySystem #(parameter ACP_RS = 1, parameter ENTRIES = 8) (
+module memorySystem #(parameter ACP_RS = 1) (
     input   wire logic                          cpu_clk_i,
     input   wire logic                          flush_i,
 
@@ -170,12 +170,12 @@ module memorySystem #(parameter ACP_RS = 1, parameter ENTRIES = 8) (
     lq_full,lq_addr,lq_ld_type,lq_dest,lq_rob,lq_valid,enqueue_full,enqueue_address,enqueue_data,enqueue_bm,enqueue_io,enqueue_en,enqueue_rob,conflict_address,conflict_bm,
     excp_pc,excp_valid,excp_code,excp_rob);
 
-    newStoreBuffer #(.PHYS(32), .ENTRIES(ENTRIES)) storeBuffer0 (cpu_clk_i, flush_i, enqueue_address,enqueue_data,enqueue_bm,enqueue_io, enqueue_en, enqueue_rob, enqueue_full, ins_rob, ins_cmp,commit0, commit1,
+    newStoreBuffer #(.PHYS(32), .ENTRIES(10)) storeBuffer0 (cpu_clk_i, flush_i, enqueue_address,enqueue_data,enqueue_bm,enqueue_io, enqueue_en, enqueue_rob, enqueue_full, ins_rob, ins_cmp,commit0, commit1,
     conflict_address, conflict_bm, conflict_data_c,conflict_bm_c,conflict_resolvable,conflict_res_valid,cache_done,store_address,store_data,store_bm,store_valid,
     store_buffer_empty);
     wire        bram_rd_en;
-    wire [10:0] bram_rd_addr;
-    wire [31:0] bram_rd_data;
+    wire [9:0] bram_rd_addr;
+    wire [63:0] bram_rd_data;
     wire [23:0] load_cache_set;
     wire        load_set_valid;
     wire        load_set;

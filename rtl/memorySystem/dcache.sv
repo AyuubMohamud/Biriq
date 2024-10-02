@@ -16,8 +16,8 @@ module dcache #(parameter ACP_RS = 1) (
     output  wire logic                          dc_cmp,
     // sram
     input   wire logic                          bram_rd_en,
-    input   wire logic [10:0]                   bram_rd_addr,
-    output  wire logic [31:0]                   bram_rd_data,
+    input   wire logic [9:0]                    bram_rd_addr,
+    output  wire logic [63:0]                   bram_rd_data,
     
     // TileLink Bus Master Uncached Heavyweight
     output       logic [2:0]                    dcache_a_opcode,
@@ -116,19 +116,21 @@ module dcache #(parameter ACP_RS = 1) (
     localparam SERVICE_COHERENT = 3'b111;
     reg [2:0] cache_fsm = IDLE;
     reg [4:0] counter = 0; 
-    wire [3:0] wr_en; wire [10:0] wr_addr; wire [31:0] wr_data; 
+    wire [7:0] wr_en; wire [9:0] wr_addr; wire [63:0] wr_data; 
     wire [1:0] match_tags; wire match_line; wire [1:0] match_vld; wire [1:0] match;
     assign match_tags = {tags1[dcache_a_address[11:7]]==dcache_a_address[30:12], tags0[dcache_a_address[11:7]]==dcache_a_address[30:12]};
     assign match_vld = {valid1[dcache_a_address[11:7]], valid0[dcache_a_address[11:7]]};
     assign match = match_tags & match_vld;
     
     assign match_line = match[1];
+    reg [31:0] buffer;
     dbraminst dsram (cpu_clock_i, bram_rd_en, bram_rd_addr, bram_rd_data, wr_en, wr_addr, wr_data);
-
+    wire [3:0] wr_en32 = {((|match)&(cache_fsm==STORE_CMP)&store_bm_i[3]),
+    ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[2]), ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[1]), 
+    ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[0])};
     wire cache_fill = (cache_fsm==LOAD_CMP)&(dcache_d_valid)&(!dc_addr[31]);
-    assign wr_en = {cache_fill|((|match)&(cache_fsm==STORE_CMP)&store_bm_i[3]), cache_fill
-    |((|match)&(cache_fsm==STORE_CMP)&store_bm_i[2]), cache_fill|((|match)&(cache_fsm==STORE_CMP)&store_bm_i[1]), 
-    cache_fill|((|match)&(cache_fsm==STORE_CMP)&store_bm_i[0])};
+    wire [7:0] wr_en64 = store_address_i[0] ? {wr_en32, 4'h0} : {4'h0, wr_en32};
+    assign wr_en = {8{(cache_fill&counter[0]&dcache_d_valid)}}|wr_en64;
     wire [1:0] ld_vld = {valid1[load_cache_set_i[4:0]], valid0[load_cache_set_i[4:0]]};
     wire [1:0] ld_mtch = {tags1[load_cache_set_i[4:0]]==load_cache_set_i[23:5], tags0[load_cache_set_i[4:0]]==load_cache_set_i[23:5]} &
     ld_vld;
@@ -136,8 +138,8 @@ module dcache #(parameter ACP_RS = 1) (
     assign load_set_valid_o = |ld_mtch;
     assign replacement_bitvec = &match_vld ? rr : match_vld==2'b00 ? 2'b01 : match_vld==2'b01 ? 2'b10 : 2'b01;
     assign replacement_enc = replacement_bitvec[1];
-    assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter} : {match_line, store_address_i[9:0]};
-    assign wr_data = cache_fsm==LOAD_CMP ? dcache_d_data : store_data_i;
+    assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter[4:1]} : {match_line, store_address_i[9:1]};
+    assign wr_data = cache_fsm==LOAD_CMP ? {dcache_d_data, buffer} : {store_data_i,store_data_i};
     assign dc_cmp = ((dc_addr[31]|dc_uncached)&(cache_fsm==IO_LD_CMP))|((cache_fsm==MEM_LD_CMP));
     assign cache_done = cache_fsm==STORE_CMP && dcache_d_valid; assign dcache_d_ready = 1'b1;
     logic [1:0] recover_low_order; logic [1:0] op; logic [31:0] recovered_data;
@@ -227,6 +229,9 @@ module dcache #(parameter ACP_RS = 1) (
                         valid1[dc_addr[11:7]] <= replacement_bitvec[1] ? 1'b1 : valid1[dc_addr[11:7]];
                     end else begin
                         counter <= counter + 1'b1;
+                    end
+                    if (!counter[0]) begin
+                        buffer <= dcache_d_data;
                     end
                 end
             end
