@@ -39,7 +39,7 @@ module gates (
     end
     wire [31:0] ct_operand; //! Bit reversed version for ctz or clz
     for (genvar i = 0; i < 32; i++) begin : _clz
-        assign ct_operand[i] = op[2] ? a[i] : a[31-i];
+        assign ct_operand[i] = !op[2] ? a[i] : a[31-i];
     end
     logic [5:0] res; //! ctz/clz result
     
