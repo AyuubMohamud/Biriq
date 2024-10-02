@@ -59,7 +59,9 @@ Improvements:
 - Fix RAS (done)
 - Fix the load pipeline, and improve non-blocking cache (done)
 - Add in coherent I/O by means of a port into the data cache (needs more testing)
-- Make LUI run on both Integer Ports.
+- Make LUI run on both Integer Ports. (done)
+- Make Data Cache 64-bit (done).
+- Make data cache and instruction cache use 64-bit bus.
 - Optimise multiplier
 - Add configurable PMAs
 - Add PMP for NAPOT only with >1024 byte granules
