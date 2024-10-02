@@ -127,7 +127,6 @@ module mathSystem (
     wire logic [31:0]                       bnch_offset;
     wire logic [29:0]                       bnch_pc;
     wire logic                              bnch_auipc;
-    wire logic                              bnch_lui;
     wire logic                              bnch_call;
     wire logic                              bnch_ret;
     wire logic                              bnch_jal;
@@ -155,7 +154,7 @@ module mathSystem (
     wire logic                              valu0_valid;
     EX00 port0 (cpu_clock_i, flush_i, alu_data, alu_vld, ex00_rs1_o, ex00_rs2_o, ex00_rs1_data_i, ex00_rs2_data_i, alu0_rob_i, alu0_opcode_o,alu0_ins_type,
     alu0_imm_o,alu0_immediate_o,alu0_dest_o, alu0_hint_o,pc_o, bm_pred_o,btype_o,btb_vld_o,btb_target_o,btb_way_o,btb_idx_o, bnch_operand_1,bnch_operand_2, 
-    bnch_offset, bnch_pc, bnch_auipc, bnch_lui,bnch_call, bnch_ret, bnch_jal, bnch_jalr, bnch_bnch_cond, bnch_rob_id_o,bnch_dest_o,bnch_bm_pred_o,bnch_btype_o,bnch_btb_vld_o,
+    bnch_offset, bnch_pc, bnch_auipc,bnch_call, bnch_ret, bnch_jal, bnch_jalr, bnch_bnch_cond, bnch_rob_id_o,bnch_dest_o,bnch_bm_pred_o,bnch_btype_o,bnch_btb_vld_o,
     bnch_btb_target_o,bnch_btb_way_o, bnch_valid_o,alu0_a,alu0_b,alu0_opc,alu0_rob_id_o,alu0_dest,alu0_valid,valu0_a,valu0_b,valu0_opc,valu0_rob_id_o,valu0_dest,valu0_valid,wkp_alu0, wkp_alu0_v);
     wire logic [31:0]               alu0_out_result;
     wire logic [4:0]                alu0_out_rob_id_o;
@@ -187,7 +186,7 @@ module mathSystem (
     wire logic                           brnch_out_c1_btb_bm_mod_o;
     wire logic                           brnch_out_c1_call_affirm_o;
     wire logic                           brnch_out_c1_ret_affirm_o;
-    branchUnit bu0 (cpu_clock_i, flush_i, bnch_operand_1, bnch_operand_2, bnch_offset, bnch_pc, bnch_auipc, bnch_lui, bnch_call, bnch_ret,bnch_jal, bnch_jalr, bnch_bnch_cond,
+    branchUnit bu0 (cpu_clock_i, flush_i, bnch_operand_1, bnch_operand_2, bnch_offset, bnch_pc, bnch_auipc, bnch_call, bnch_ret,bnch_jal, bnch_jalr, bnch_bnch_cond,
     bnch_rob_id_o, bnch_dest_o, bnch_bm_pred_o, bnch_btype_o, bnch_btb_vld_o, bnch_btb_target_o, bnch_btb_way_o, bnch_valid_o, brnch_out_result_o,
     brnch_out_wb_valid_o, brnch_out_wb_dest_o, brnch_out_res_valid_o, brnch_out_rob_o, brnch_out_rcu_excp_o, brnch_out_c1_btb_vpc_o, brnch_out_c1_btb_target_o,
     brnch_out_c1_cntr_pred_o, brnch_out_c1_bnch_tkn_o, brnch_out_c1_bnch_type_o, brnch_out_c1_bnch_present_o, brnch_out_c1_btb_way_o, brnch_out_c1_btb_bm_mod_o,brnch_out_c1_call_affirm_o,
