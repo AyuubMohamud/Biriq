@@ -5,6 +5,7 @@
 | mv rd, rs1 | 0* | 2 |
 | Zba,Zbb,Zbs instructions | 1 | 2 |
 | All arithmeitc instructions | 1 | 2 |
+| Zicond instructions | 1 | 2 |
 | lui rd, imm | 1 | 2 |
 | auipc rd, imm | 1 | 1 |
 | All branch instructions | 1 | 1 |
