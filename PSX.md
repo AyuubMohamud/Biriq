@@ -36,7 +36,7 @@ CLEU8, CLEU16 func7 = 0x16 : Bitfield becomes 1 on condition LESS THAN UNSIGNED 
 
 CGTU8, CGTU16 func7 = 0x17 : Bitfield becomes 1 on condition GREATER THAN UNSIGNED OR EQUAL
 
-CLZ8, CLZ16 func7 = 0x20 rs2 = 0 : count leading zeros
+CTZ8, CTZ16 func7 = 0x20 rs2 = 0 : count trailing zeros
 
 PLC8, PLC16 func7 = 0x21 rs2 = 0 : population count
 

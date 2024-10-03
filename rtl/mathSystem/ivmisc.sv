@@ -21,23 +21,23 @@ module ivmisc (
     wire [31:0] plc_result = size ? {11'h0, plc1_16, 11'h0, plc0_16} : 
     {4'h0, plc3, 4'h0, plc2, 4'h0, plc1, 4'h0, plc0};
 
-    wire [3:0] clz0;
-    wire [3:0] clz1;
-    wire [3:0] clz2;
-    wire [3:0] clz3;
+    wire [3:0] ctz0;
+    wire [3:0] ctz1;
+    wire [3:0] ctz2;
+    wire [3:0] ctz3;
 
     
-    clz8 clz8_0 (a[7:0], clz0  );
-    clz8 clz8_1 (a[15:8], clz1  );
-    clz8 clz8_2 (a[23:16], clz2 );
-    clz8 clz8_3 (a[31:24], clz3 );
+    ctz8 ctz8_0 (a[7:0], ctz0  );
+    ctz8 ctz8_1 (a[15:8], ctz1  );
+    ctz8 ctz8_2 (a[23:16], ctz2 );
+    ctz8 ctz8_3 (a[31:24], ctz3 );
 
-    wire [31:0] clz_8 = {{4'h0, clz3},{4'h0, clz2},{4'h0, clz1},{4'h0, clz0}};
-    wire [31:0] clz_16 = {
-    {clz3[3]&clz2[3]? 16'd16 : !clz2[3] ? {12'h0, clz2} : {11'h0, clz3, 1'h0}},
-    {clz1[3]&clz0[3]? 16'd16 : !clz0[3] ? {12'h0, clz0} : {11'h0, clz1, 1'h0}}
+    wire [31:0] ctz_8 = {{4'h0, ctz3},{4'h0, ctz2},{4'h0, ctz1},{4'h0, ctz0}};
+    wire [31:0] ctz_16 = {
+    {ctz3[3]&ctz2[3]? 16'd16 : !ctz2[3] ? {12'h0, ctz2} : {11'h0, ctz3, 1'h0}},
+    {ctz1[3]&ctz0[3]? 16'd16 : !ctz0[3] ? {12'h0, ctz0} : {11'h0, ctz1, 1'h0}}
     };
-    wire [31:0] clz_result = size ? clz_16 : clz_8;
+    wire [31:0] ctz_result = size ? ctz_16 : ctz_8;
 
     wire [1:0] byte_select_index [0:7];
     assign byte_select_index[0] = !size ? b[1:0]   : {b[0],1'b0};
@@ -51,6 +51,6 @@ module ivmisc (
     end
 
 
-    assign result_o = op[1:0] == 2'b00 ? clz_result : op[1:0]==2'b01 ? plc_result : sel_result;
+    assign result_o = op[1:0] == 2'b00 ? ctz_result : op[1:0]==2'b01 ? plc_result : sel_result;
 
 endmodule

@@ -1,4 +1,4 @@
-module clz8 (
+module ctz8 (
     input   wire logic [7:0] a,
     output       logic [3:0] b
 );
