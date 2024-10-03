@@ -36,7 +36,7 @@ The cache is 2-way set associative, with a cache line size of 128 bytes, contain
 
 ## Decode
 
-This stage takes a RISC-V instructions and translates them into the necessary control signals that the CPU's backend can easily use. This mainly applies
+This stage takes the RISC-V instructions and translates them into the necessary control signals that the CPU's backend can easily use. This mainly applies
 to the RISC-V arithmetic instructions, which are translated from their func7/func3 forms into a standard encoding used by the CPU's backend.
 
 Also detected here are ECALL and EBREAK, which are translated into the appropriate exception code.
