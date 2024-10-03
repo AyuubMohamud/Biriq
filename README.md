@@ -2,12 +2,14 @@
 This is a yet to be fully verified 2-way superscalar, out-of-order speculative RV32IMB_Zicond_Zifencei_Zicsr_XPSX implementation with Machine and User support.
 
 With SIMD extensions, the CPU fits to around 10000 LUTs in a Digilent Arty A100T (depending on configuration), whilst also running at over 80Mhz (this is at the lowest speed grade of FPGA).
+![Synthesis Results](VivadoSynthesisResultat82_5Mhz.png)
+Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, SRAM, FLASH, PLIC, CLINT and interconnect all attached together.
 
 Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
 - 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines.
 - Configurable entry Store Buffer/Queue (holds both speculative and commited results).
-- A branch mispredict recovery delay of 16 cycles.
+- A branch mispredict recovery delay of 16 cycles, with backend recovery in parallel with frontend recovery.
 - Move elimniation supported using the pseudo-instruction mov present in RISC-V assembler.
 - Non-blocking Loads.
 - Store Forwarding in the case where one store overlaps any number of bytes in a load.
