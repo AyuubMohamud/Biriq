@@ -41,7 +41,7 @@ to the RISC-V arithmetic instructions, which are translated from their func7/fun
 
 Also detected here are ECALL and EBREAK, which are translated into the appropriate exception code.
 
-Another type of instruction detected in the decode stage is move eliminations. These are encoded in RISC-V as
+Another type of instruction detected in the decode stage are move eliminations. These are encoded in RISC-V as
 
 `addi rd, rs1, 0`
 
