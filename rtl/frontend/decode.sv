@@ -247,7 +247,7 @@ module decode (
             insbundle_pc_o <= rv_ppc_i;
             valid_o <= !shutdown_frontend&!btb_correction;
             ins0_dnr_o <= isSystem&(isCSRRC|isCSRRW|isCSRRS)&csr_imm;
-            ins1_dnr_o <= isSystem&(isCSRRC2|isCSRRW2|isCSRRS2)&csr_imm2;
+            ins1_dnr_o <= isSystem2&(isCSRRC2|isCSRRW2|isCSRRS2)&csr_imm2;
             ins0_hint_o <= {(isJAL|isJALR)&(rv_instruction_i[11:7]==1), isJALR&(jalrImmediate==0)&(rv_instruction_i[19:15]==1)&(rv_instruction_i[11:7]==0)};
             ins1_hint_o <= {(isJAL2|isJALR2)&(rv_instruction_i2[11:7]==1), isJALR2&(jalrImmediate2==0)&(rv_instruction_i2[19:15]==1)&(rv_instruction_i2[11:7]==0)};            
         end else if (!rn_busy_i&!rv_valid) begin

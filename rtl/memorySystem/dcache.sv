@@ -95,6 +95,7 @@ module dcache #(parameter ACP_RS = 1) (
     wire [31:0] working_acp_address;
     wire working_acp_valid;
     wire acp_busy;
+    localparam IDLE = 3'b000;    reg [2:0] cache_fsm = IDLE;
     skdbf #(ACP_RS+43+32) skidbuffer (cpu_clock_i, 1'b0, cache_fsm!=IDLE, {
         working_acp_source,
         working_acp_size,
@@ -107,14 +108,14 @@ module dcache #(parameter ACP_RS = 1) (
     }, acp_a_valid);
     assign acp_a_ready = ~acp_busy;
     reg [3:0] size = 0; reg [ACP_RS-1:0] source = 0;
-    localparam IDLE = 3'b000;
+
     localparam LOAD_CMP = 3'b001;
     localparam IO_LD_CMP = 3'b010;
     localparam STORE_CMP = 3'b100;
     localparam MEM_LD_CMP = 3'b011;
     localparam VICTIM = 3'b101;
     localparam SERVICE_COHERENT = 3'b111;
-    reg [2:0] cache_fsm = IDLE;
+
     reg [4:0] counter = 0; 
     wire [7:0] wr_en; wire [9:0] wr_addr; wire [63:0] wr_data; 
     wire [1:0] match_tags; wire match_line; wire [1:0] match_vld; wire [1:0] match;
