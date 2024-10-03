@@ -18,6 +18,7 @@
 Latencies measured from the start of the cycle after Register Read
 
 0* The mv pseudo instruction is recognised by the CPU and eliminated from the instruction stream, (only present in RCU and not scheduler/pipeline).
+Note that chaining dependent mov's together does not change this, it is handled by the rename logic.
 
 3* The store instructions results are placed in a store buffer, hence commit to the memory system eventually with variable latencies taken to store.
 
