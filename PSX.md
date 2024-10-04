@@ -36,11 +36,11 @@ CLEU8, CLEU16 func7 = 0x16 : Bitfield becomes 1 on condition LESS THAN UNSIGNED 
 
 CGTU8, CGTU16 func7 = 0x17 : Bitfield becomes 1 on condition GREATER THAN UNSIGNED OR EQUAL
 
-CTZ8, CTZ16 func7 = 0x20 rs2 = 0 : count trailing zeros
+MLL16 func7: 0x20: Signed Multiply two 16-bit values store lower 16 bits of both products
 
-PLC8, PLC16 func7 = 0x21 rs2 = 0 : population count
+MLH16 func7: 0x21: Signed Multiply two 16-bit values store higher 16 bits of both products
 
-SEL8, SEL16 func7 = 0x22 : Byteselect
+DOT2D func7: 0x22: Signed dot product of two 16-bit vectors -> rd = rs1[31:16] x rs2[31:16] + rs1[15:0] x rs2[15:0]
 
 SLL8, SLL16 func7 = 0x30 : Shift left
 
