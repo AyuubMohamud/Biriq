@@ -46,11 +46,11 @@ SLL8, SLL16 func7 = 0x30 : Shift left
 
 SRL8, SRL16 func7 = 0x31 : Shift right
 
-ROR8, ROR16 func7 = 0x32 : Rotate right
+ROL8, ROL16 func7 = 0x32 : Rotate left
 
-ROR8, ROR16 func7 = 0x33 : Rotate left
+ROR8, ROR16 func7 = 0x33 : Rotate right
 
-SRA8, SRA16 func7 = 0x33 : Signed shift right
+SRA8, SRA16 func7 = 0x35 : Signed shift right
 
 size determined by 6th bit of func7 (op[6] ? 16-bit ops : 8-bit ops)
 
