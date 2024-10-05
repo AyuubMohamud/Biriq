@@ -57,10 +57,10 @@ module ivcmper (
                 mts_16_0 = 0; mtu_16_0 = 1;
             end
             3'b110: begin
-                mts_16_0 = 1; mtu_16_0 = 0;
+                mts_16_0 = 0; mtu_16_0 = 0;
             end
             3'b111: begin
-                mts_16_0 = 0; mtu_16_0 = 1;
+                mts_16_0 = 1; mtu_16_0 = 1;
             end
         endcase
     end
@@ -87,10 +87,10 @@ module ivcmper (
                 mts_16_1 = 0; mtu_16_1 = 1;
             end
             3'b110: begin
-                mts_16_1 = 1; mtu_16_1 = 0;
+                mts_16_1 = 0; mtu_16_1 = 0;
             end
             3'b111: begin
-                mts_16_1 = 0; mtu_16_1 = 1;
+                mts_16_1 = 1; mtu_16_1 = 1;
             end
         endcase
     end
@@ -117,10 +117,10 @@ module ivcmper (
                 mts_8_0 = 0; mtu_8_0 = 1;
             end
             3'b110: begin
-                mts_8_0 = 1; mtu_8_0 = 0;
+                mts_8_0 = 0; mtu_8_0 = 0;
             end
             3'b111: begin
-                mts_8_0 = 0; mtu_8_0 = 1;
+                mts_8_0 = 1; mtu_8_0 = 1;
             end
         endcase
     end
@@ -147,10 +147,10 @@ module ivcmper (
                 mts_8_1 = 0; mtu_8_1 = 1;
             end
             3'b110: begin
-                mts_8_1 = 1; mtu_8_1 = 0;
+                mts_8_1 = 0; mtu_8_1 = 0;
             end
             3'b111: begin
-                mts_8_1 = 0; mtu_8_1 = 1;
+                mts_8_1 = 1; mtu_8_1 = 1;
             end
         endcase
     end
@@ -177,10 +177,10 @@ module ivcmper (
                 mts_8_2 = 0; mtu_8_2 = 1;
             end
             3'b110: begin
-                mts_8_2 = 1; mtu_8_2 = 0;
+                mts_8_2 = 0; mtu_8_2 = 0;
             end
             3'b111: begin
-                mts_8_2 = 0; mtu_8_2 = 1;
+                mts_8_2 = 1; mtu_8_2 = 1;
             end
         endcase
     end
@@ -207,10 +207,10 @@ module ivcmper (
                 mts_8_3 = 0; mtu_8_3 = 1;
             end
             3'b110: begin
-                mts_8_3 = 1; mtu_8_3 = 0;
+                mts_8_3 = 0; mtu_8_3 = 0;
             end
             3'b111: begin
-                mts_8_3 = 0; mtu_8_3 = 1;
+                mts_8_3 = 1; mtu_8_3 = 1;
             end
         endcase
     end

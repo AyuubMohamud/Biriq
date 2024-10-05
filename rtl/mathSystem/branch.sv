@@ -66,10 +66,10 @@ module branch (
                 mts = 0; mtu = 1;
             end
             3'b110: begin
-                mts = 1; mtu = 0;
+                mts = 0; mtu = 0;
             end
             3'b111: begin
-                mts = 0; mtu = 1;
+                mts = 1; mtu = 1;
             end
         endcase
     end
