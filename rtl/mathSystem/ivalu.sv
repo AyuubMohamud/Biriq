@@ -21,7 +21,7 @@ module ivalu (
     wire [31:0] vshifter;
     ivadder vadder0 (a, b, op[2:0], op[6], vadder);
     ivcmper vcmper0 (a, b, op[3:0], op[6], vcmper);
-    ivmul ivmul0 (a, b, op[1:0], vmisc);
+    ivmul ivmul0 (a, b, op[2:0], vmisc);
     ivshifter ivshift0 (a,b,op[6], op[2:0], vshifter);
     always_ff @(posedge core_clock_i) begin
         case (op[5:4])

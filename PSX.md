@@ -36,11 +36,21 @@ CLEU8, CLEU16 func7 = 0x16 : Bitfield becomes 1 on condition LESS THAN UNSIGNED 
 
 CGTU8, CGTU16 func7 = 0x17 : Bitfield becomes 1 on condition GREATER THAN UNSIGNED OR EQUAL
 
-MLL16 func7: 0x20: Signed Multiply two 16-bit values store lower 16 bits of both products
+MLL16 func7 = 0x20 : Signed Multiply two 16-bit values store lower 16 bits of both products
 
-MLH16 func7: 0x21: Signed Multiply two 16-bit values store higher 16 bits of both products
+MLH16 func7 = 0x21 : Signed Multiply two 16-bit values store higher 16 bits of both products
 
-DOT2D func7: 0x22: Signed dot product of two 16-bit vectors -> rd = rs1[31:16] x rs2[31:16] + rs1[15:0] x rs2[15:0]
+DOT2D func7 = 0x22 : Signed dot product of two 16-bit vectors -> rd = rs1[31:16] x rs2[31:16] + rs1[15:0] x rs2[15:0]
+
+USAD8 func7 = 0x23 : Unsigned sum of absolute differences 8-bit
+
+USAD16 func7 = 0x25 : Unsigned sum of absolute differences 16-bit
+
+PACK16 func7 = 0x24 : Lower half of a and b packed together with a in most significant 16 bits
+
+PSB func7 = 0x26 : for every byte -> byte[7] ? 0 : rs1\[byte]
+
+PACK8 func7 = 0x27 : {a[7:0],b[7:0]}
 
 SLL8, SLL16 func7 = 0x30 : Shift left
 
@@ -52,6 +62,6 @@ ROR8, ROR16 func7 = 0x33 : Rotate right
 
 SRA8, SRA16 func7 = 0x35 : Signed shift right
 
-size determined by 6th bit of func7 (op[6] ? 16-bit ops : 8-bit ops)
+size sometimes determined by 6th bit of func7 (op[6] ? 16-bit ops : 8-bit ops)
 
 OP-PSX resides in CUSTOM-1
