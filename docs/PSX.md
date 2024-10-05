@@ -15,7 +15,7 @@ Simply drag sw/binutils/riscv-opc.c to binutils/opcodes and sw/binutils/riscv-op
 ## Instructions
 ### Addition/Subtraction 
 #### psx.add16 rd, rs1, rs2
-Add two packed 16-bit values in rs1 to two packed 16-bit values in rs2
+Add two packed 16-bit values in rs1 to two packed 16-bit values in rs2.
 ```C++
 void psx_add16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = rs1[0] + rs2[0];
@@ -24,7 +24,7 @@ void psx_add16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.add8 rd, rs1, rs2
-Add four packed 8-bit values in rs1 to four packed 8-bit values in rs2
+Add four packed 8-bit values in rs1 to four packed 8-bit values in rs2.
 ```C++
 void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rs1[0] + rs2[0];
@@ -35,7 +35,7 @@ void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.sub16 rd, rs1, rs2
-Subtract two packed 16-bit values in rs1 from two packed 16-bit values in rs2
+Subtract two packed 16-bit values in rs1 from two packed 16-bit values in rs2.
 ```C++
 void psx_add16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = rs1[0] - rs2[0];
@@ -44,7 +44,7 @@ void psx_add16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.sub8 rd, rs1, rs2
-Subtract four packed 8-bit values in rs1 from four packed 8-bit values in rs2
+Subtract four packed 8-bit values in rs1 from four packed 8-bit values in rs2.
 ```C++
 void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rs1[0] - rs2[0];
@@ -55,7 +55,7 @@ void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.kadd16 rd, rs1, rs2
-Add two packed 16-bit values in rs1 to two packed 16-bit values in rs2 and perform signed saturation
+Add two packed 16-bit values in rs1 to two packed 16-bit values in rs2 and perform signed saturation.
 ```C++
 void psx_kadd16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = saturate_signed(rs1[0] + rs2[0]);
@@ -64,7 +64,7 @@ void psx_kadd16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.kadd8 rd, rs1, rs2
-Add four packed 8-bit values in rs1 to four packed 8-bit values in rs2 and perform signed saturation
+Add four packed 8-bit values in rs1 to four packed 8-bit values in rs2 and perform signed saturation.
 ```C++
 void psx_kadd8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] =  saturate_signed(rs1[0] + rs2[0]);
@@ -75,7 +75,7 @@ void psx_kadd8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.kuadd16 rd, rs1, rs2
-Add two packed 16-bit values in rs1 to two packed 16-bit values in rs2 and perform unsigned saturation
+Add two packed 16-bit values in rs1 to two packed 16-bit values in rs2 and perform unsigned saturation.
 ```C++
 void psx_kuadd16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = saturate_unsigned(rs1[0] + rs2[0]);
@@ -84,7 +84,7 @@ void psx_kuadd16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.kuadd8 rd, rs1, rs2
-Add four packed 8-bit values in rs1 to four packed 8-bit values in rs2 and perform unsigned saturation
+Add four packed 8-bit values in rs1 to four packed 8-bit values in rs2 and perform unsigned saturation.
 ```C++
 void psx_kuadd8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] =  saturate_unsigned(rs1[0] + rs2[0]);
@@ -95,7 +95,7 @@ void psx_kuadd8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.ksub16 rd, rs1, rs2
-Subtract two packed 16-bit values in rs1 from two packed 16-bit values in rs2 and perform signed saturation
+Subtract two packed 16-bit values in rs1 from two packed 16-bit values in rs2 and perform signed saturation.
 ```C++
 void psx_ksub16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = saturate_signed(rs1[0] - rs2[0]);
@@ -104,7 +104,7 @@ void psx_ksub16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.ksub8 rd, rs1, rs2
-Subtract four packed 8-bit values in rs1 from four packed 8-bit values in rs2 and perform signed saturation
+Subtract four packed 8-bit values in rs1 from four packed 8-bit values in rs2 and perform signed saturation.
 ```C++
 void psx_ksub8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] =  saturate_signed(rs1[0] - rs2[0]);
@@ -115,7 +115,7 @@ void psx_ksub8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.kusub16 rd, rs1, rs2
-Subtract two packed 16-bit values in rs1 from two packed 16-bit values in rs2 and perform unsigned saturation
+Subtract two packed 16-bit values in rs1 from two packed 16-bit values in rs2 and perform unsigned saturation.
 ```C++
 void psx_kusub16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = saturate_unsigned(rs1[0] - rs2[0]);
@@ -124,7 +124,7 @@ void psx_kusub16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.kusub8 rd, rs1, rs2
-Subtract four packed 8-bit values in rs1 from four packed 8-bit values in rs2 and perform unsigned saturation
+Subtract four packed 8-bit values in rs1 from four packed 8-bit values in rs2 and perform unsigned saturation.
 ```C++
 void psx_kusub8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] =  saturate_unsigned(rs1[0] - rs2[0]);
@@ -136,7 +136,7 @@ void psx_kusub8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 ```
 ### Maximum/Minimum
 #### psx.max16 rd, rs1, rs2
-Return the signed maximum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Return the signed maximum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_max16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     for (uint32_t count = 0; count < 2; count++) {
@@ -150,7 +150,7 @@ void psx_max16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.max8 rd, rs1, rs2
-Return the signed maximum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Return the signed maximum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_max8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     for (uint32_t count = 0; count < 4; count++) {
@@ -164,7 +164,7 @@ void psx_max8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.umax16 rd, rs1, rs2
-Return the unsigned maximum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Return the unsigned maximum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_umax16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     for (uint32_t count = 0; count < 2; count++) {
@@ -178,7 +178,7 @@ void psx_umax16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.umax8 rd, rs1, rs2
-Return the unsigned maximum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Return the unsigned maximum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_umax8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     for (uint32_t count = 0; count < 4; count++) {
@@ -192,7 +192,7 @@ void psx_umax8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.min16 rd, rs1, rs2
-Return the signed minimum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Return the signed minimum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_min16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     for (uint32_t count = 0; count < 2; count++) {
@@ -206,7 +206,7 @@ void psx_min16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.min8 rd, rs1, rs2
-Return the signed minimum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Return the signed minimum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_min8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     for (uint32_t count = 0; count < 4; count++) {
@@ -220,7 +220,7 @@ void psx_min8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.umin16 rd, rs1, rs2
-Return the unsigned minimum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Return the unsigned minimum between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_umin16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     for (uint32_t count = 0; count < 2; count++) {
@@ -234,7 +234,7 @@ void psx_umin16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.umax8 rd, rs1, rs2
-Return the unsigned minimum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Return the unsigned minimum between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_umin8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     for (uint32_t count = 0; count < 4; count++) {
@@ -249,7 +249,7 @@ void psx_umin8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 ```
 ### Comparison
 #### psx.ceq16 rd, rs1, rs2
-Compare for equlity between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for equlity between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_ceq16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = (rs1[0]==rs2[0]) ? 0xFF : 0x00;
@@ -258,7 +258,7 @@ void psx_ceq16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.ceq8 rd, rs1, rs2
-Compare for equlity between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for equlity between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_ceq8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = (rs1[0]==rs2[0]) ? 0xFF : 0x00;
@@ -269,7 +269,7 @@ void psx_ceq8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.cne16 rd, rs1, rs2
-Compare for inequlity between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for inequlity between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_cne16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = (rs1[0]!=rs2[0]) ? 0xFF : 0x00;
@@ -278,7 +278,7 @@ void psx_cne16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.cne8 rd, rs1, rs2
-Compare for inequlity between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for inequlity between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_cne8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = (rs1[0]!=rs2[0]) ? 0xFF : 0x00;
@@ -289,7 +289,7 @@ void psx_cne8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.clt16 rd, rs1, rs2
-Compare for signed less than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for signed less than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_clt16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = ((int16_t)rs1[0]<(int16_t)rs2[0]) ? 0xFF : 0x00;
@@ -298,7 +298,7 @@ void psx_clt16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.clt8 rd, rs1, rs2
-Compare for signed less than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for signed less than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_clt8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = ((int16_t)rs1[0]<(int16_t)rs2[0]) ? 0xFF : 0x00;
@@ -309,7 +309,7 @@ void psx_clt8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.cle16 rd, rs1, rs2
-Compare for signed less than or equals between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for signed less than or equals between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_cle16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = ((int16_t)rs1[0]<(int16_t)rs2[0]) ? 0xFF : 0x00;
@@ -318,7 +318,7 @@ void psx_cle16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.cle8 rd, rs1, rs2
-Compare for signed less than or equals between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for signed less than or equals between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_cle8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = ((int16_t)rs1[0]<=(int16_t)rs2[0]) ? 0xFF : 0x00;
@@ -329,7 +329,7 @@ void psx_cle8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.cgt16 rd, rs1, rs2
-Compare for signed greater than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for signed greater than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_cgt16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = ((int16_t)rs1[0]>(int16_t)rs2[0]) ? 0xFF : 0x00;
@@ -338,7 +338,7 @@ void psx_cgt16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.cgt8 rd, rs1, rs2
-Compare for signed greater than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for signed greater than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_cgt8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = ((int16_t)rs1[0]>(int16_t)rs2[0]) ? 0xFF : 0x00;
@@ -349,7 +349,7 @@ void psx_cgt8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.cltu16 rd, rs1, rs2
-Compare for unsigned less than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for unsigned less than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_cltu16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = (rs1[0]<rs2[0]) ? 0xFF : 0x00;
@@ -358,7 +358,7 @@ void psx_cltu16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.cltu8 rd, rs1, rs2
-Compare for unsigned less than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for unsigned less than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_cltu8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = (rs1[0]<rs2[0]) ? 0xFF : 0x00;
@@ -369,7 +369,7 @@ void psx_cltu8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.cleu16 rd, rs1, rs2
-Compare for unsigned less than or equals between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for unsigned less than or equals between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_cleu16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = (rs1[0]<rs2[0]) ? 0xFF : 0x00;
@@ -378,7 +378,7 @@ void psx_cleu16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.cleu8 rd, rs1, rs2
-Compare for unsigned less than or equals between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for unsigned less than or equals between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_cleu8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = (rs1[0]<=rs2[0]) ? 0xFF : 0x00;
@@ -389,7 +389,7 @@ void psx_cleu8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.cgtu16 rd, rs1, rs2
-Compare for unsigned greater than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2
+Compare for unsigned greater than between two packed 16-bit values in rs1 and two packed 16-bit values in rs2.
 ```C++
 void psx_cgtu16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = (rs1[0]>rs2[0]) ? 0xFF : 0x00;
@@ -398,7 +398,7 @@ void psx_cgtu16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.cgtu8 rd, rs1, rs2
-Compare for unsigned greater than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2
+Compare for unsigned greater than between four packed 8-bit values in rs1 and four packed 8-bit values in rs2.
 ```C++
 void psx_cgt8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = (rs1[0]>rs2[0]) ? 0xFF : 0x00;
@@ -410,7 +410,7 @@ void psx_cgt8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 ```
 ### Multiplications and Dot Products
 #### psx.mll16 rd, rs1, rs2
-Signed multiplication of two packed 16-bit values in rs1 and two packed 16-bit values in rs2 returning lower 16-bits
+Signed multiplication of two packed 16-bit values in rs1 and two packed 16-bit values in rs2 returning lower 16-bits.
 ```C++
 void psx_mll16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = ((uint32_t)rs1[0]*(uint32_t)rs2[0])&0x0000FFFF;
@@ -419,7 +419,7 @@ void psx_mll16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.mlh16 rd, rs1, rs2
-Signed multiplication of two packed 16-bit values in rs1 and two packed 16-bit values in rs2 returning higher 16-bits
+Signed multiplication of two packed 16-bit values in rs1 and two packed 16-bit values in rs2 returning higher 16-bits.
 ```C++
 void psx_mlh16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = ((uint32_t)rs1[0]*(uint32_t)rs2[0])>>16;
@@ -428,7 +428,7 @@ void psx_mlh16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.dot2d rd, rs1, rs2
-Signed multiplication of two packed 16-bit values in rs1 and two packed 16-bit values in rs2 and addition of both results together into a 32-bit accumulator
+Signed multiplication of two packed 16-bit values in rs1 and two packed 16-bit values in rs2 and addition of both results together into a 32-bit accumulator.
 ```C++
 void psx_dot2d(uint16_t[2] rs1, uint16_t[2] rs2, uint32_t rd) {
     rd = ((uint32_t)rs1[0]*(uint32_t)rs2[0])+((uint32_t)rs1[1]*(uint32_t)rs2[1]);
@@ -437,7 +437,7 @@ void psx_dot2d(uint16_t[2] rs1, uint16_t[2] rs2, uint32_t rd) {
 ```
 ### Shifts and Rotates
 #### psx.sll16 rd, rs1, rs2
-Shift left two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2
+Shift left two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2.
 ```C++
 void psx_sll16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = rs1[0] << rs2[0];
@@ -446,7 +446,7 @@ void psx_sll16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.sll8 rd, rs1, rs2
-Shift left four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2
+Shift left four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2.
 ```C++
 void psx_sll8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rs1[0] << rs2[0];
@@ -457,7 +457,7 @@ void psx_sll8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.srl16 rd, rs1, rs2
-Shift right two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2
+Shift right two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2.
 ```C++
 void psx_srl16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = rs1[0] >> rs2[0];
@@ -466,7 +466,7 @@ void psx_srl16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.srl8 rd, rs1, rs2
-Shift right four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2
+Shift right four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2.
 ```C++
 void psx_srl8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rs1[0] >> rs2[0];
@@ -477,7 +477,7 @@ void psx_srl8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.sra16 rd, rs1, rs2
-Signed shift right two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2
+Signed shift right two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2.
 ```C++
 void psx_sra16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] = rs1[0] >>> rs2[0];
@@ -486,7 +486,7 @@ void psx_sra16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.sra8 rd, rs1, rs2
-Signed shift right four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2
+Signed shift right four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2.
 ```C++
 void psx_sra8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rs1[0] >>> rs2[0];
@@ -497,7 +497,7 @@ void psx_sra8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.rol16 rd, rs1, rs2
-Rotate left two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2
+Rotate left two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2.
 ```C++
 void psx_rol16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] =  rotate_left(rs1[0],rs2[0]);
@@ -506,7 +506,7 @@ void psx_rol16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.rol8 rd, rs1, rs2
-Rotate left four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2
+Rotate left four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2.
 ```C++
 void psx_rol8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rotate_left(rs1[0],rs2[0]);
@@ -517,7 +517,7 @@ void psx_rol8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 }
 ```
 #### psx.ror16 rd, rs1, rs2
-Rotate right two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2
+Rotate right two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2.
 ```C++
 void psx_ror16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
     rd[0] =  rotate_right(rs1[0],rs2[0]);
@@ -526,7 +526,7 @@ void psx_ror16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
 }
 ```
 #### psx.ror8 rd, rs1, rs2
-Rotate right four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2
+Rotate right four packed 8-bit values in rs1 by a shift amount inside four packed 8-bit values in rs2.
 ```C++
 void psx_ror8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rotate_right(rs1[0],rs2[0]);
@@ -538,7 +538,7 @@ void psx_ror8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 ```
 ### Permutations
 #### psx.perm8 rd, rs1, rs2
-Select bytes from rs1 using byte indexes from rs2
+Select bytes from rs1 using byte indexes from rs2.
 ```C++
 void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
     rd[0] = rs2[0]&0x80000000 ? 0x00 : rs1[rs2[0]];
