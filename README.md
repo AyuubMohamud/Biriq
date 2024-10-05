@@ -50,8 +50,8 @@ Multiplies and Divides get sent to the complex unit which stores instruction inf
 
 Special instructions FENCE.I, MRET, WFI do not get assigned to any functional unit but rather go straight to the RCU, where they are held until they are the oldest instruction to be committed, where the RCU will proceed to execute them.
 
-Currently the PMA Map of this core is:
-0x00000000 - 0x7FFFFFFF (inclusive) -> Weakly ordered, idempotent memory (RVWMO)
+Currently the PMA Map of this core is:\
+0x00000000 - 0x7FFFFFFF (inclusive) -> Weakly ordered, idempotent memory (RVWMO)\
 0x80000000 - 0xFFFFFFFF (inclusive) -> Weakly ordered, non-idempotent memory (RVWMO)
 
 Improvements:
