@@ -13,7 +13,7 @@
 //  | INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A                  |
 //  | PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.           |
 //  |                                                                                       |
-//  | Source location: https://github.com/AyuubMohamud/Sirius                               |
+//  | Source location: https://github.com/AyuubMohamud/Biriq                                |
 //  |                                                                                       |
 //  | As per CERN-OHL-W v2 section 4, should You produce hardware based on this             |
 //  | source, You must where practicable maintain the Source Location visible               |
@@ -57,7 +57,7 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
     output       logic                      tlb_btb_hit,
     output       logic                      tlb_btb_way
 );
-    localparam taglen = $clog2(BPU_ENTRIES/2) % 2 == 1 ? (29-$clog2(BPU_ENTRIES/2))/2  : (29-$clog2(BPU_ENTRIES/2)+1)/2;
+    localparam taglen = $clog2(BPU_ENTRIES/2) % 2 == 1 ? (29-$clog2(BPU_ENTRIES/2))/2  : (29-$clog2(BPU_ENTRIES/2)+1)/2; //! Generate tag lengths appropriate for two way btb search
     //! Program counter
     reg [29:0] program_counter = START_ADDR[31:2];
     wire misaligned = program_counter[0];

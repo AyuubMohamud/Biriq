@@ -1,16 +1,29 @@
 // This is the scheduler for port1, simple 1-clk integer instrctions and branch integer instructions.
-// Store Scheduler
+// SPDX-FileCopyrightText: 2024 Ayuub Mohamud <ayuub.mohamud@outlook.com>
+// SPDX-License-Identifier: CERN-OHL-W-2.0
+
+//  -----------------------------------------------------------------------------------------
+//  | Copyright (C) Ayuub Mohamud 2024.                                                     |
+//  |                                                                                       |
+//  | This source describes Open Hardware (RTL) and is licensed under the CERN-OHL-W v2.    |
+//  |                                                                                       |
+//  | You may redistribute and modify this source and make products using it under          |
+//  | the terms of the CERN-OHL-W v2 (https://ohwr.org/cern_ohl_w_v2.txt).                  |
+//  |                                                                                       |
+//  | This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY,                   |
+//  | INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A                  |
+//  | PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.           |
+//  |                                                                                       |
+//  | Source location: https://github.com/AyuubMohamud/Biriq                                |
+//  |                                                                                       |
+//  | As per CERN-OHL-W v2 section 4, should You produce hardware based on this             |
+//  | source, You must where practicable maintain the Source Location visible               |
+//  | in the same manner as is done within this source.                                     |
+//  |                                                                                       |
+//  -----------------------------------------------------------------------------------------
+
 `default_nettype none
-/*
-    Instructions guaranteed to modify global/local memory state upon commit time, aka AMOs, LR/SC, CSR accesses, SFences go here.
-    I/O reads are the only exception and whilst strongly ordered, reside in the load queue.
-    Only system control flow modification instructions do not reside here.
-    LR is AGEN level instruction only
-    SC is AGEN and DATA
-    CSR accesses are AGEN AND DATA
-    SFences are AGEN and DATA
-    AMOs are AGEN and DATA
-*/
+
 module unifiedIntQueue (
     input   wire logic          cpu_clk_i,
     input   wire logic          flush_i,
