@@ -552,8 +552,8 @@ void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 Pack together a 16 bit value from the low 8-bits of rs1 and rs2.
 ```C++
 void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
-    rd[0] = rs1[0];
-    rd[1] = rs2[0];
+    rd[0] = rs2[0];
+    rd[1] = rs1[0];
     rd[2] = 0x00;
     rd[3] = 0x00;
     return;
@@ -563,8 +563,8 @@ void psx_add8(uint8_t[4] rs1, uint8_t[4] rs2, uint8_t[4] rd) {
 Pack together a 32 bit value from the low 16-bits of rs1 and rs2.
 ```C++
 void psx_add16(uint16_t[2] rs1, uint16_t[2] rs2, uint16_t[2] rd) {
-    rd[0] = rs1[0];
-    rd[1] = rs2[0];
+    rd[0] = rs2[0];
+    rd[1] = rs1[0];
     return;
 }
 ```
