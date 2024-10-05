@@ -1,7 +1,7 @@
 # Packed SIMD eXtensions 
 
 ## Adding PSX to binutils
-Simply drag sw/riscv-opc.c to binutils/opcodes and sw/riscv-opc.h binutils/include/opcodes
+Simply drag sw/binutils/riscv-opc.c to binutils/opcodes and sw/binutils/riscv-opc.h to binutils/include/opcodes
 
 ## Table of Contents
 
