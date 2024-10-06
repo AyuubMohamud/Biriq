@@ -11,7 +11,7 @@ Simply drag sw/binutils/riscv-opc.c to binutils/opcodes and sw/binutils/riscv-op
 - [Multiplications and Dot Products](#multiplications-and-dot-products)
 - [Shifts and Rotates](#shifts-and-rotates)
 - [Permuations](#permutations)
-- [Unsigned sum of absolute differences](#unsigned-sum-of-absolute-differences)
+- [Unsigned Sum of Absolute Differences](#unsigned-sum-of-absolute-differences)
 ## Instructions
 ### Addition/Subtraction 
 #### psx.add16 rd, rs1, rs2
