@@ -9,7 +9,7 @@ Simply drag sw/binutils/riscv-opc.c to binutils/opcodes and sw/binutils/riscv-op
 - [Maximum/Minimum](#maximumminimum)
 - [Comparisons](#comparison)
 - [Multiplications and Dot Products](#multiplications-and-dot-products)
-- [Shifts and Rotates](#shifts-and-rotates)
+- [Shifts and Rotatations](#shifts-and-rotates)
 - [Permuations](#permutations)
 - [Unsigned Sum of Absolute Differences](#unsigned-sum-of-absolute-differences)
 ## Instructions
@@ -435,7 +435,7 @@ void psx_dot2d(uint16_t[2] rs1, uint16_t[2] rs2, uint32_t rd) {
     return;
 }
 ```
-### Shifts and Rotates
+### Shifts and Rotatations
 #### psx.sll16 rd, rs1, rs2
 Shift left two packed 16-bit values in rs1 by a shift amount inside two packed 16-bit values in rs2.
 ```C++
