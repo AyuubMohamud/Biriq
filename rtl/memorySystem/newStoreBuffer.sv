@@ -59,13 +59,7 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
     reg [ENTRIES-1:0] vld = 0;
 
     wire enqueue_full = &vld;
-    wire logic [PHYS-3:0]           working_enqueue_address_i;
-    wire logic [31:0]               working_enqueue_data_i;
-    wire logic [3:0]                working_enqueue_bm_i;
-    wire logic                      working_enqueue_io_i;
-    wire logic [4:0]                working_enqueue_rob_i; wire working_valid;
-    skdbf #(.DW(72)) stskdbf (cpu_clk_i, flush_i, enqueue_full, {working_enqueue_address_i, working_enqueue_data_i, working_enqueue_bm_i, working_enqueue_io_i,
-    working_enqueue_rob_i}, working_valid, enqueue_full_o, {enqueue_address_i, enqueue_data_i, enqueue_bm_i, enqueue_io_i, enqueue_rob_i}, enqueue_en_i);
+    assign enqueue_full_o = enqueue_full;
     // conflict resolver
     logic [31:0] conflict_dq_id;
     logic [ENTRIES-1:0] conflicts;
@@ -230,11 +224,11 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
         end
     end
     always_ff @(posedge cpu_clk_i) begin
-        physical_addresses[ENTRIES-1] <= shift[ENTRIES-1] ? working_enqueue_address_i : physical_addresses[ENTRIES-1];
-        bitmask[ENTRIES-1] <= shift[ENTRIES-1] ? working_enqueue_bm_i : bitmask[ENTRIES-1];
-        data[ENTRIES-1] <= shift[ENTRIES-1] ? working_enqueue_data_i : data[ENTRIES-1];
-        io[ENTRIES-1] <= shift[ENTRIES-1] ? working_enqueue_io_i : io[ENTRIES-1];
-        vld[ENTRIES-1] <= shift[ENTRIES-1] ? !flush_i&working_valid : vldl[ENTRIES-1]; 
+        physical_addresses[ENTRIES-1] <= shift[ENTRIES-1] ? enqueue_address_i : physical_addresses[ENTRIES-1];
+        bitmask[ENTRIES-1] <= shift[ENTRIES-1] ? enqueue_bm_i : bitmask[ENTRIES-1];
+        data[ENTRIES-1] <= shift[ENTRIES-1] ? enqueue_data_i : data[ENTRIES-1];
+        io[ENTRIES-1] <= shift[ENTRIES-1] ? enqueue_io_i : io[ENTRIES-1];
+        vld[ENTRIES-1] <= shift[ENTRIES-1] ? !flush_i&enqueue_en_i : vldl[ENTRIES-1]; 
         speculative[ENTRIES-1] <= shift[ENTRIES-1] ? 1'b1 : spec[ENTRIES-1];
     end
 
@@ -268,5 +262,5 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
     end
     assign no_nonspec = !(|((~speculative)&vld));// inner expression 1 when there are valid instructions that are not speculative, since the other modules use
     // store buffer empty, store buffer empty is high when inner expression is 0
-    assign complete_vld = working_valid&!enqueue_full; assign complete = working_enqueue_rob_i;
+    assign complete_vld = enqueue_en_i&!enqueue_full; assign complete = enqueue_rob_i;
 endmodule
