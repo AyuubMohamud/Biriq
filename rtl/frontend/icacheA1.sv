@@ -140,10 +140,10 @@ module icacheA1 (
                 end else if (block&!dec_busy_i) begin
                     dec_vld_o <= 0;
                 end else if (!dec_busy_i) begin
-                    if (((!req_not_found)&working_valid)) begin
+                    if (((!req_not_found|working_addr[29])&working_valid)) begin
                         dec_vpc_o <= working_addr;
-                        dec_excp_code_o <= 0;
-                        dec_excp_vld_o <= 0;
+                        dec_excp_code_o <= 1;
+                        dec_excp_vld_o <= working_addr[29];
                         dec_btb_index_o <= working_btb_index;
                         dec_btb_btype_o <= working_type;
                         dec_btb_bm_pred_o <= working_bimodal_prediction;
@@ -151,9 +151,11 @@ module icacheA1 (
                         dec_btb_vld_o <= working_btb_vld;
                         dec_btb_way_o <= btb_way;
                         dec_vld_o <= 1;
-                    end else if (req_not_found&working_valid) begin
+                    end else if (req_not_found&!working_addr[29]&working_valid) begin
                         random_sample <= rr;
                         cache_fsm <= MISS_REQ;
+                        dec_vld_o <= 0;
+                    end else if (!working_valid) begin
                         dec_vld_o <= 0;
                     end
                 end

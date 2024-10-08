@@ -174,7 +174,7 @@ module memory_scheduler (
                 complex_data <= result_i;
                 complex_await <= 1;
             end
-        end else if (packet_type[0]&!empty) begin
+        end else if (packet_type[0]&packet_is_issueable) begin // check rs1 and rs2 are ready
             cu_valid_o <= 1; cu_opcode_o <= packet_opcode; cu_operand1_o <= rs1_data; cu_operand2_o <= rs2_data;
             complex_performing <= 1;
             complex_rob <= packet_rob[4:0]; complex_dest <= packet_dest;

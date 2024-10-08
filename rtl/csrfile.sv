@@ -103,7 +103,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     always_comb begin
         case (csrfile_address_i)
             MVENDORID: begin read_data = 32'h0; exists = 1; end
-            MIMPID: begin read_data = 32'h0;exists = 1; end
+            MIMPID: begin read_data = 32'h2;exists = 1; end
             MARCHID: begin read_data = 32'h0;exists = 1; end
             MHARTID: begin read_data = HARTID;exists = 1; end
             MCONFIGPTR: begin read_data = 32'h0;exists = 1; end
