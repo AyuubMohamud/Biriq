@@ -11,7 +11,7 @@
 //  |                                                                                       |
 //  | This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY,                   |
 //  | INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A                  |
-//  | PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.           |
+//  | PARTICULAR PURPOSE. Please see the CERN-OHL-W v2 for applicable conditions.           |
 //  |                                                                                       |
 //  | Source location: https://github.com/AyuubMohamud/Biriq                                |
 //  |                                                                                       |
