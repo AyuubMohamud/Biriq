@@ -74,7 +74,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     localparam MISA = 12'h301;
     reg [2:0] mie = 0; localparam MIE = 12'h304;
     reg [31:0] mtvec = 0; localparam MTVEC = 12'h305;
-    reg [1:0] mcounteren = 0; localparam MCOUNTEREN = 12'h306;
+    reg [2:0] mcounteren = 0; localparam MCOUNTEREN = 12'h306;
     localparam MSTATUSH = 12'h310;
 
     reg [31:0] mscratch = 0; localparam MSCRATCH = 12'h340;
@@ -124,11 +124,11 @@ module csrfile #(parameter [31:0] HARTID = 0) (
             MCYCLEH: begin read_data = cycle[63:32];exists = 1;end
             MINSTRET: begin read_data = instret[31:0];exists = 1;end
             MINSTRETH: begin read_data = instret[63:32];exists = 1;end
-            MCOUNTEREN: begin read_data = {29'h0,mcounteren[1],1'b0,mcounteren[0]}; exists = 1; end
-            CYCLE: begin read_data = cycle[31:0];exists = 1;end
-            CYCLEH: begin read_data = cycle[63:32];exists = 1;end
-            INSTRET: begin read_data = instret[31:0];exists = 1;end
-            INSTRETH: begin read_data = instret[63:32];exists = 1;end
+            MCOUNTEREN: begin read_data = {29'h0,mcounteren[2],mcounteren[1],mcounteren[0]}; exists = 1; end
+            CYCLE: begin read_data = cycle[31:0];exists = (current_privilege_mode||(mcounteren[0]&!current_privilege_mode));end
+            CYCLEH: begin read_data = cycle[63:32];exists = (current_privilege_mode||(mcounteren[0]&!current_privilege_mode));end
+            INSTRET: begin read_data = instret[31:0];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
+            INSTRETH: begin read_data = instret[63:32];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
             BRNCHCTRL: begin read_data = {29'd0, biriqBrnchCtrl}; exists = 1; end
             default: begin
                 read_data = 0; exists = 0;
@@ -220,7 +220,8 @@ module csrfile #(parameter [31:0] HARTID = 0) (
                 end
                 MCOUNTEREN: begin
                     mcounteren[0] <= new_data[0];
-                    mcounteren[1] <= new_data[2];
+                    mcounteren[1] <= new_data[1];
+                    mcounteren[2] <= new_data[2];
                 end
                 default: begin
                     
@@ -246,7 +247,7 @@ module csrfile #(parameter [31:0] HARTID = 0) (
         end 
         else if (csrfile_valid_i&&csrfile_wr_en&&(current_privilege_mode)&&(csrfile_address_i==MINSTRETH)) begin
             instret[63:32] <= new_data;
-        end else if ((inc_commit0)&!mcountinhibit[1]) begin
+        end else if ((inc_commit0|inc_commit1)&!mcountinhibit[1]) begin
             instret <= instret + constant;
         end
     end
