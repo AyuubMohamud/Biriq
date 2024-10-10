@@ -195,7 +195,7 @@ module retireControlUnit (
     rrt register_reference_counters (cpu_clock_i, cins0_new_preg, (commit_ins0|altcommit0)&(cins0_is_mov_elim|cins0_register_allocated),
     cins1_new_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), cins0_old_preg, (commit_ins0|altcommit0)&(cins0_is_mov_elim|cins0_register_allocated),
     cins1_old_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), safe_to_free0, safe_to_free1);
-    assign rcu_busy = full|(retire_control_state!=Normal);
+    assign rcu_busy = full|!(retire_control_state==Normal||retire_control_state==TakeInterrupt);
     wire [29:0] currentPC = cpacket_pc[0] ? cpacket_pc : {cpacket_pc[29:1], partial_retire};
     wire [29:0] pcPlus4 = currentPC + 29'd1; // used in special types CSRRW, SFENCE, FENCE.I
     // Conditions of committing
@@ -235,7 +235,7 @@ module retireControlUnit (
     interrupt_router interrupts (cpm, mie, machine_interrupts, interrupt_pending, int_type);
     wire logic backendException = exception_valid && (partial_retire ? rob1_status==exception_rob[4:0] : rob0_status==exception_rob[4:0]) && !empty;
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
-    assign rcu_block = retire_control_state!=Normal && retire_control_state!=TakeInterrupt;
+    assign rcu_block = retire_control_state!=Normal;
     assign rename_flush_o = (retire_control_state==Await) && icache_idle;
     assign ins_commit0 = commit_ins0;
     assign ins_commit1 = commit_ins1;    reg wfi = 0;
