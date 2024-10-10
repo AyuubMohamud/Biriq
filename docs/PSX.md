@@ -9,7 +9,7 @@ Simply drag sw/binutils/riscv-opc.c to binutils/opcodes and sw/binutils/riscv-op
 - [Maximum/Minimum](#maximumminimum)
 - [Comparisons](#comparison)
 - [Multiplications and Dot Products](#multiplications-and-dot-products)
-- [Shifts and Rotations](#shifts-and-rotates)
+- [Shifts and Rotations](#shifts-and-rotations)
 - [Permuations](#permutations)
 - [Unsigned Sum of Absolute Differences](#unsigned-sum-of-absolute-differences)
 ## Instructions
