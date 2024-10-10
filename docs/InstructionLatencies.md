@@ -10,7 +10,7 @@
 | auipc rd, imm | 1 | 1 |
 | All branch instructions | 1 | 1 |
 | All PSX instructions | 1 | 2 |
-| Multiplications | at least 5 | 1/5 |
+| Multiplications | at least 4 | 1/4 |
 | Divisions | at least 34 | 1/34 |
 | lb,lh,lw,lbu,lhu | at least 4* | 1 |
 | sb,sh,sw | at least 3* | 1 |
