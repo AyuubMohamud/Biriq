@@ -233,7 +233,9 @@ module retireControlUnit (
     wire logic        excp_excp_valid = partial_retire ? cins1_excp_valid : cins0_excp_valid;
     wire logic [3:0]  excp_special = partial_retire ? cins1_special : cins0_special;
     interrupt_router interrupts (cpm, mie, machine_interrupts, interrupt_pending, int_type);
-    wire logic backendException = exception_valid && (partial_retire ? rob1_status==exception_rob[4:0] : rob0_status==exception_rob[4:0]) && !empty;
+    wire logic backendException = exception_valid && (partial_retire ? rob1_status==exception_rob[4:0] : rob0_status==exception_rob[4:0]) && !empty;    
+    reg altcommitted_on_interrupt = 0;
+    reg [29:0] altcommit_npc = 0;
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
     assign rcu_block = retire_control_state!=Normal;
     assign rename_flush_o = (retire_control_state==Await) && icache_idle;
@@ -242,7 +244,7 @@ module retireControlUnit (
     assign mret = ((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
     assign take_interrupt = retire_control_state==TakeInterrupt && !empty;
     assign take_exception = (excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
-    assign tmu_epc_o = wfi ? pcPlus4 : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
+    assign tmu_epc_o = wfi ? pcPlus4 : altcommitted_on_interrupt ? altcommit_npc : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
     assign altcommit = ((backendException&exception_code[4])||((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])))
     && (retire_control_state==Normal)&!mem_block_i&!empty&!excp_special[0];
@@ -256,11 +258,14 @@ module retireControlUnit (
     // On the cycle of a successful commit of any type (not an alternate commit), an interrupt can be taken
     // This does mean the processor can be deadlocked with an infinite sequence of CSR writes/FENCE.Is but this is a bit of an impossibility
     // Note Altcommit is mutually exclusive with a regular commit
+
     always_ff @(posedge cpu_clock_i) begin
         case (retire_control_state)
             Normal: begin
-                if (interrupt_pending&&(!empty)&&!mem_block_i&&((commit_ins0|commit_ins1)|wfi)) begin
+                if (interrupt_pending&&(!empty)&&!mem_block_i&&((commit_ins0|commit_ins1|altcommit)|wfi)) begin
                     retire_control_state <= TakeInterrupt;
+                    altcommit_npc <= (backendException&exception_code[4]) ? c1_btb_target : pcPlus4;
+                    altcommitted_on_interrupt <= altcommit;
                     flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
                 end
                 else if ((excp_excp_valid|backendException)&!mem_block_i&!empty) begin
@@ -293,6 +298,7 @@ module retireControlUnit (
             ReclaimAndRecover: begin
                 wfi <= 0;
                 partial_retire <= 0;
+                altcommitted_on_interrupt <= 0;
                 recoveryCounter0 <= recoveryCounter0 + 5'd2;
                 recoveryCounter1 <= recoveryCounter1 + 5'd2;
                 btb_mod <= 0;
