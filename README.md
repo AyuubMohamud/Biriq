@@ -25,33 +25,6 @@ Queue capacities:
 Up to 16 memory/mul/div/csr instructions
 up to 12 ALU/Branch instructions.
 
-Branches are scheduled on the second time round to avoid a ALU instruction taking a branch capable slot over a branch within the UIQ.
-The ALU/Branch scheduler is unified to enable efficient use of CPU resources.
-All ALU's support most of the base integer and all B extension instructions alongside Zicond.
-
-Pipeline is as follows:
-- IF1: generate PC and predict.
-- ICache: fetch instruction from cache or miss and fill.
-- Predecode: Prepare and decode operands as necessary to simplify rename.
-- READ: Rename/Eliminate(MOV's from instruction stream)/Allocation(of free registers and scheduler slots)/Dispatch to Schedulers
-- Issue: Issue to a specific functional unit.
-
-From here on it splits into three pipelines: Integer, Memory and Mul/Div/CSR.
-
-Integer: Register Read, Execute, Writeback\
-Loads: AGEN, Detect unaligned, Cache Read and conflict detect, Writeback
-
-When a load conflicts with more than one store it is held until it is the oldest instruction in the system and forces the RCU not to take exceptions/interrupts whilst it executes. This property holds regardless of whether the load is to the CPU's memory or IO region.
-
-Loads to the IO region, whilst weakly ordered (in the sense that later loads can come ahead of earlier stores), they are not allowed to execute speculatively and stops the ROB
-from executing interrupts during that time.
-
-Stores: AGEN, Detect unaligned, Enqueue (into store buffer)
-
-Multiplies and Divides get sent to the complex unit which stores instruction information in a seperate register, whilst letting non-M instructions execute in the meanwhile, and only writing back on a cycle where the wb_valid of the load unit is low.
-
-Special instructions FENCE.I, MRET, WFI do not get assigned to any functional unit but rather go straight to the RCU, where they are held until they are the oldest instruction to be committed, where the RCU will proceed to execute them.
-
 Currently the PMA Map of this core is:\
 0x00000000 - 0x7FFFFFFF (inclusive) -> Weakly ordered, idempotent memory (RVWMO)\
 0x80000000 - 0xFFFFFFFF (inclusive) -> Weakly ordered, non-idempotent memory (RVWMO)
