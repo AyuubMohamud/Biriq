@@ -130,6 +130,42 @@ module dcache #(parameter ACP_RS = 1) (
     }, acp_a_valid);
     assign acp_a_ready = ~acp_busy;
     reg [3:0] size = 0; reg [ACP_RS-1:0] source = 0;
+    logic [31:0] store_data; logic [3:0] bm;
+    reg [31:0] acp_data32; reg [3:0] acp_bm32;
+    always_comb begin
+        case ({working_acp_address[1:0], working_acp_size[1:0]})
+            4'b0000: begin
+                bm = 4'b0001;
+                store_data = working_acp_data;
+            end
+            4'b0001: begin
+                bm = 4'b0011;
+                store_data = working_acp_data;
+            end
+            4'b0010: begin
+                bm = 4'b1111;
+                store_data = working_acp_data;
+            end
+            4'b0100: begin
+                bm = 4'b0010;
+                store_data = {16'd0,working_acp_data[7:0], 8'd0};
+            end
+            4'b1000: begin
+                bm = 4'b0100;
+                store_data = {8'd0,working_acp_data[7:0], 16'd0};
+            end
+            4'b1001: begin
+                bm = 4'b1100;
+                store_data = {working_acp_data[15:0], 16'h0000};
+            end
+            4'b1100: begin
+                bm = 4'b1000; store_data = {working_acp_data[7:0], 24'd0};
+            end
+            default: begin
+                bm = 0; store_data = 'x;
+            end
+        endcase
+    end
 
     localparam LOAD_CMP = 3'b001;
     localparam IO_LD_CMP = 3'b010;
@@ -148,11 +184,12 @@ module dcache #(parameter ACP_RS = 1) (
     assign match_line = match[1];
     reg [31:0] buffer;
     dbraminst dsram (cpu_clock_i, bram_rd_en, bram_rd_addr, bram_rd_data, wr_en, wr_addr, wr_data);
-    wire [3:0] wr_en32 = {((|match)&(cache_fsm==STORE_CMP)&store_bm_i[3]),
-    ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[2]), ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[1]), 
-    ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[0])};
+    wire [3:0] wr_en32 = {((|match)&((cache_fsm==STORE_CMP)&store_bm_i[3]||((cache_fsm==SERVICE_COHERENT)&acp_bm32[3]&dcache_d_valid&!dcache_a_opcode[2]))),
+    ((|match)&((cache_fsm==STORE_CMP)&store_bm_i[2]||((cache_fsm==SERVICE_COHERENT)&acp_bm32[2]&dcache_d_valid&!dcache_a_opcode[2]))),
+    ((|match)&((cache_fsm==STORE_CMP)&store_bm_i[1]||((cache_fsm==SERVICE_COHERENT)&acp_bm32[1]&dcache_d_valid&!dcache_a_opcode[2]))),
+    ((|match)&((cache_fsm==STORE_CMP)&store_bm_i[0]||((cache_fsm==SERVICE_COHERENT)&acp_bm32[0]&dcache_d_valid&!dcache_a_opcode[2])))};
     wire cache_fill = (cache_fsm==LOAD_CMP)&(dcache_d_valid)&(!dc_addr[31]);
-    wire [7:0] wr_en64 = store_address_i[0] ? {wr_en32, 4'h0} : {4'h0, wr_en32};
+    wire [7:0] wr_en64 = ((cache_fsm==STORE_CMP && store_address_i[0])||(cache_fsm==SERVICE_COHERENT && dcache_a_address[2])) ? {wr_en32, 4'h0} : {4'h0, wr_en32};
     assign wr_en = {8{(cache_fill&counter[0]&dcache_d_valid)}}|wr_en64;
     wire [1:0] ld_vld = {valid1[load_cache_set_i[4:0]], valid0[load_cache_set_i[4:0]]};
     wire [1:0] ld_mtch = {tags1[load_cache_set_i[4:0]]==load_cache_set_i[23:5], tags0[load_cache_set_i[4:0]]==load_cache_set_i[23:5]} &
@@ -161,12 +198,13 @@ module dcache #(parameter ACP_RS = 1) (
     assign load_set_valid_o = |ld_mtch;
     assign replacement_bitvec = &match_vld ? rr : match_vld==2'b00 ? 2'b01 : match_vld==2'b01 ? 2'b10 : 2'b01;
     assign replacement_enc = replacement_bitvec[1];
-    assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter[4:1]} : {match_line, store_address_i[9:1]};
-    assign wr_data = cache_fsm==LOAD_CMP ? {dcache_d_data, buffer} : {store_data_i,store_data_i};
+    assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter[4:1]} : cache_fsm==SERVICE_COHERENT ? {match_line, dcache_a_address[11:3]} : {match_line, store_address_i[9:1]};
+    assign wr_data = cache_fsm==LOAD_CMP ? {dcache_d_data, buffer} : cache_fsm==SERVICE_COHERENT ? {acp_data32,acp_data32} : {store_data_i,store_data_i};
     assign dc_cmp = ((dc_addr[31]|dc_uncached)&(cache_fsm==IO_LD_CMP))|((cache_fsm==MEM_LD_CMP));
     assign cache_done = cache_fsm==STORE_CMP && dcache_d_valid; assign dcache_d_ready = 1'b1;
     logic [1:0] recover_low_order; logic [1:0] op; logic [31:0] recovered_data;
     initial dcache_a_valid = 0;
+
     always_comb begin
         case (store_bm_i[3:0])
             4'b0001: begin
@@ -215,7 +253,7 @@ module dcache #(parameter ACP_RS = 1) (
                     dcache_a_address <= working_acp_address;
                     dcache_a_opcode <= working_acp_opcode; dcache_a_size <= working_acp_size; dcache_a_valid <= 1;
                     dcache_a_data <= working_acp_data; dcache_a_mask <= working_acp_mask; source <= working_acp_source;
-                    size <= working_acp_size;
+                    size <= working_acp_size; acp_data32 <= store_data; acp_bm32 <= bm;
                 end
                 else if (store_valid_i) begin
                     cache_fsm <= STORE_CMP;
@@ -283,8 +321,6 @@ module dcache #(parameter ACP_RS = 1) (
                     acp_d_data <= dcache_d_data;
                     acp_d_opcode <= dcache_d_opcode;
                     acp_d_valid <= 1;
-                    valid0[dc_addr[11:7]] <= match[0] ? 1'b0 : valid0[dc_addr[11:7]];
-                    valid1[dc_addr[11:7]] <= match[1] ? 1'b0 : valid1[dc_addr[11:7]];
                     cache_fsm <= IDLE;
                     acp_d_size <= size;
                     acp_d_source <= source;
