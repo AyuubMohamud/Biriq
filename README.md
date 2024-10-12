@@ -1,8 +1,12 @@
 # BiriqIIE
 This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMB_Zicond_Zifencei_Zicsr_XPSX** implementation with Machine and User support.
 
+![Abstract Pipeline](cpu.drawio.svg)
+
 With SIMD extensions, the CPU fits to around 10700 LUTs in a Digilent Arty A100T (configured with 128 BTB entries, 32 RAS entries with RAS enabled, 10 store buffer entries and 4 PMP Entries), whilst also running at over 80Mhz (this is at a speed grade of -1).
+
 ![Synthesis Results](VivadoSynthesisResultat82_5Mhz.png)
+
 Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, SRAM, FLASH, PLIC, CLINT and interconnect all attached together.
 
 ## Properties:
