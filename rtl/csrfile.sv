@@ -21,7 +21,7 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 
-module csrfile #(parameter [31:0] HARTID = 0) (
+module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
     input   wire logic                          cpu_clock_i,
     // CSR Interface
     input   wire logic [31:0]                   csrfile_data_i,
@@ -60,7 +60,14 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     
     output  wire logic                          enable_branch_pred,
     output  wire logic                          enable_counter_overload,
-    output  wire logic                          counter_overload
+    output  wire logic                          counter_overload,
+
+    input   wire logic [24:0]                   i_addr,
+    output  wire logic                          i_kill,
+
+    input   wire logic [24:0]                   d_addr,
+    input   wire logic                          d_write,
+    output  wire logic                          d_kill
 );
     /*Optimise before even thinking of putting this on an fpga*/
     reg current_privilege_mode = 1'b1; // Initially at 2'b11
@@ -100,6 +107,23 @@ module csrfile #(parameter [31:0] HARTID = 0) (
     assign csrfile_mip_o = {csrfile_meip_i, csrfile_mtip_i, csrfile_msip_i}&{mie[2], mie[1], mie[0]};
     assign mprv_o = mstatus[4];
     logic [31:0] read_data; logic exists;
+    wire [31:0] new_data;
+    logic [31:0] pmp_data; logic pmp_exists;
+    generate if (PMP_REGS==0) begin : _no_pmp
+        assign i_kill = 0;
+        assign d_kill = 0;
+        assign pmp_exists = 0;
+        assign pmp_data = 0;
+    end else if (PMP_REGS>0) begin : _gen_pmp
+        mpu #(PMP_REGS) mpu0 (cpu_clock_i, csrfile_address_i, new_data, csrfile_wr_en&current_privilege_mode&csrfile_valid_i, pmp_data, pmp_exists, i_addr,
+        current_privilege_mode,
+        i_kill,
+        d_addr,
+        current_privilege_mode&!mprv_o,
+        d_write,
+        d_kill);
+    end endgenerate
+
     always_comb begin
         case (csrfile_address_i)
             MVENDORID: begin read_data = 32'h0; exists = 1; end
@@ -131,12 +155,12 @@ module csrfile #(parameter [31:0] HARTID = 0) (
             INSTRETH: begin read_data = instret[63:32];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
             BRNCHCTRL: begin read_data = {29'd0, biriqBrnchCtrl}; exists = 1; end
             default: begin
-                read_data = 0; exists = 0;
+                read_data = pmp_data; exists = pmp_exists;
             end
         endcase
     end
     wire [31:0] bit_sc = 1 << csrfile_data_i[4:0];
-    wire [31:0] new_data = csrfile_opcode_i==2'b01 ? csrfile_data_i : csrfile_opcode_i==2'b10 ? read_data|bit_sc : read_data&~(bit_sc);
+    assign new_data = csrfile_opcode_i==2'b01 ? csrfile_data_i : csrfile_opcode_i==2'b10 ? read_data|bit_sc : read_data&~(bit_sc);
     always_ff @(posedge cpu_clock_i) begin
         if ((mret|take_exception|take_interrupt)) begin
             casez ({mret,take_exception, take_interrupt})

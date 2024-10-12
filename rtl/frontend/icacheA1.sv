@@ -72,7 +72,10 @@ module icacheA1 (
     input   wire logic                      icache_d_corrupt,
     /* verilator lint_on UNUSEDSIGNAL */
     input   wire logic                      icache_d_valid,
-    output  wire logic                      icache_d_ready
+    output  wire logic                      icache_d_ready,
+
+    output  wire logic [24:0]               i_addr,
+    input   wire logic                      i_kill
 );
     initial icache_a_valid = 0;
     wire [29:0] working_addr; wire [29:0] working_target; wire [1:0] working_type; wire working_btb_vld; wire [1:0] working_bimodal_prediction;
@@ -127,6 +130,7 @@ module icacheA1 (
     reg block = 0;
     initial dec_vld_o = 0;
 
+    assign i_addr = working_addr[29:5];
     always_ff @(posedge core_clock_i) begin
         rr <= ~rr;
         case (cache_fsm)
@@ -140,10 +144,10 @@ module icacheA1 (
                 end else if (block&!dec_busy_i) begin
                     dec_vld_o <= 0;
                 end else if (!dec_busy_i) begin
-                    if (((!req_not_found|working_addr[29])&working_valid)) begin
+                    if (((!req_not_found|working_addr[29]|i_kill)&working_valid)) begin
                         dec_vpc_o <= working_addr;
                         dec_excp_code_o <= 1;
-                        dec_excp_vld_o <= working_addr[29];
+                        dec_excp_vld_o <= working_addr[29]|i_kill;
                         dec_btb_index_o <= working_btb_index;
                         dec_btb_btype_o <= working_type;
                         dec_btb_bm_pred_o <= working_bimodal_prediction;
@@ -151,7 +155,7 @@ module icacheA1 (
                         dec_btb_vld_o <= working_btb_vld;
                         dec_btb_way_o <= btb_way;
                         dec_vld_o <= 1;
-                    end else if (req_not_found&!working_addr[29]&working_valid) begin
+                    end else if (req_not_found&!working_addr[29]&!i_kill&working_valid) begin
                         random_sample <= rr;
                         cache_fsm <= MISS_REQ;
                         dec_vld_o <= 0;

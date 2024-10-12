@@ -121,7 +121,11 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
     output       logic [31:0]                   acp_d_data,
     output       logic                          acp_d_corrupt,
     output       logic                          acp_d_valid,
-    input   wire logic                          acp_d_ready
+    input   wire logic                          acp_d_ready,
+
+    output  wire logic [24:0]                   d_addr,
+    output  wire logic                          d_write,
+    input   wire logic                          d_kill
 );
     wire        lsu_busy;
     wire        lsu_vld;
@@ -190,7 +194,9 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
     complex_unit cu0 (cpu_clk_i, flush_i, opcode_i,operand1_i,operand2_i,valid_i,busy_o,result_o,wb_valid_o);
     AGU0 agu (cpu_clk_i, flush_i, lsu_busy,lsu_vld,lsu_rob,lsu_op,lsu_data,lsu_addr,lsu_dest,
     lq_full,lq_addr,lq_ld_type,lq_dest,lq_rob,lq_valid,enqueue_full,enqueue_address,enqueue_data,enqueue_bm,enqueue_io,enqueue_en,enqueue_rob,conflict_address,conflict_bm,
-    excp_pc,excp_valid,excp_code,excp_rob);
+    excp_pc,excp_valid,excp_code,excp_rob,d_addr,
+    d_write,
+    d_kill);
 
     newStoreBuffer #(.PHYS(32), .ENTRIES(SB_ENTRIES)) storeBuffer0 (cpu_clk_i, flush_i, enqueue_address,enqueue_data,enqueue_bm,enqueue_io, enqueue_en, enqueue_rob, enqueue_full, ins_rob, ins_cmp,commit0, commit1,
     conflict_address, conflict_bm, conflict_data_c,conflict_bm_c,conflict_resolvable,conflict_res_valid,cache_done,store_address,store_data,store_bm,store_valid,

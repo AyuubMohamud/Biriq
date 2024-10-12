@@ -21,7 +21,7 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0, parameter ENTRIES = 8) (
+parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0, parameter ENTRIES = 8, parameter PMP_ENTRIES = 8) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -124,11 +124,16 @@ wire logic                              c1_bnch_tkn_o;
 wire logic [1:0]                        c1_bnch_type_o;
 wire logic                              c1_btb_mod_o;
 wire tw;
-    csrfile #(.HARTID(HARTID)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
+wire [24:0] i_addr;
+wire        i_kill;
+wire [24:0] d_addr;
+wire        d_write;
+wire        d_kill;
+    csrfile #(.HARTID(HARTID), .PMP_REGS(PMP_ENTRIES)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
     take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,tw,real_privilege,mepc_o,mtvec_o,
     enable_branch_pred,
 enable_counter_overload,
-counter_overload);
+counter_overload,i_addr,i_kill,d_addr,d_write,d_kill);
     wire [29:0] flush_addr;
     wire icache_flush, icache_idle;
     logic                          ins0_port_o;
@@ -196,7 +201,7 @@ counter_overload);
     ins1_port_o, ins1_dnagn_o, ins1_alu_type_o, ins1_alu_opcode_o, ins1_alu_imm_o, ins1_ios_type_o, ins1_ios_opcode_o, ins1_special_o, ins1_rs1_o, ins1_rs2_o, 
     ins1_dest_o, ins1_imm_o, ins1_reg_props_o, ins1_dnr_o,  ins1_mov_elim_o, ins1_hint_o,ins1_excp_valid_o, ins1_excp_code_o, ins1_valid_o, insbundle_pc_o, btb_btype_o, 
     btb_bm_pred_o, btb_target_o, btb_vld_o, btb_idx_o, btb_way_o, valid_o, rn_busy_i, c1_btb_vpc_i,c1_btb_target_i,c1_cntr_pred_i,c1_bnch_tkn_i,
-    c1_bnch_type_i,c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i,c1_call_affirm_i,c1_ret_affirm_i);
+    c1_bnch_type_i,c1_btb_mod_i, c1_btb_way_i, c1_btb_bm_i,c1_call_affirm_i,c1_ret_affirm_i, i_addr, i_kill);
 
     wire logic [6:0]                        ms_ins0_opcode_o;
     wire logic [5:0]                        ms_ins0_ins_type;
@@ -364,6 +369,8 @@ counter_overload);
     acp_d_data,
     acp_d_corrupt,
     acp_d_valid,
-    acp_d_ready);
+    acp_d_ready,d_addr,
+    d_write,
+    d_kill);
     assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = rename_flush_o; assign exception_code_i[4] = 0;
 endmodule

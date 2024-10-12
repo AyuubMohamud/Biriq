@@ -53,7 +53,11 @@ module AGU0 (
     output       logic [31:0]                   excp_pc,
     output       logic                          excp_valid,
     output       logic [3:0]                    excp_code_o,
-    output       logic [5:0]                    excp_rob
+    output       logic [5:0]                    excp_rob,
+
+    output  wire logic [24:0]                   d_addr,
+    output  wire logic                          d_write,
+    input   wire logic                          d_kill
 );
     wire logic                          lsu_vld;
     wire logic [5:0]                    lsu_rob;
@@ -65,6 +69,8 @@ module AGU0 (
     lsu_vld, lsu_busy_o, {lsu_rob_i, lsu_op_i, lsu_data_i, lsu_addr_i, lsu_dest_i}, lsu_vld_i);
     wire isWrite = lsu_op[3];
     logic [3:0] bm; logic [31:0] store_data;
+    assign d_addr = lsu_addr[31:7];
+    assign d_write = isWrite;
     always_comb begin
         case ({lsu_addr[1:0], lsu_op[1:0]})
             4'b0000: begin
@@ -103,7 +109,7 @@ module AGU0 (
     always_ff @(posedge cpu_clock_i) begin
         if (flush_i) begin
             enqueue_en_o <= 0;
-        end else if (!enqueue_full_i&!lq_full_i&lsu_vld&!misaligned&lsu_op[3]) begin
+        end else if (!enqueue_full_i&!lq_full_i&lsu_vld&!misaligned&lsu_op[3]&!d_kill) begin
             enqueue_address_o <= lsu_addr[31:2];
             enqueue_bm_o <= bm;
             enqueue_data_o <= store_data;
@@ -126,7 +132,7 @@ module AGU0 (
         if (flush_i) begin
             lq_valid_o <= 0;
         end
-        else if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld) begin
+        else if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld&!d_kill) begin
             lq_addr_o <= lsu_addr;
             lq_dest_o <= lsu_dest;
             lq_ld_type_o <= lsu_op[2:0];
@@ -139,8 +145,8 @@ module AGU0 (
 
     always_ff @(posedge cpu_clock_i) begin
         excp_pc <= lsu_addr;
-        excp_valid <= lsu_vld&&!(enqueue_full_i|lq_full_i)&(bm==4'b0110);
+        excp_valid <= lsu_vld&&!(enqueue_full_i|lq_full_i)&((bm==4'b0110)|d_kill);
         excp_rob <= lsu_rob;
-        excp_code_o <= isWrite ? 4'd6 : 4'd4;
+        excp_code_o <= d_kill ? isWrite ? 4'd7 : 4'd5 : isWrite ? 4'd6 : 4'd4;
     end
 endmodule
