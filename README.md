@@ -11,7 +11,7 @@ Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, 
 
 ## Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
-- 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines.
+- 8KB I-Cache and 8KB write-through D-Cache, both with 128 byte cache lines, both 2-way set associative.
 - Configurable entry Store Buffer/Queue (holds both speculative and commited results).
 - A branch mispredict recovery delay of 16 cycles, with backend recovery in parallel with frontend recovery.
 - Move elimniation supported using the pseudo-instruction mov present in RISC-V assembler.
