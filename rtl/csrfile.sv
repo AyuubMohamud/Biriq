@@ -67,7 +67,8 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
 
     input   wire logic [24:0]                   d_addr,
     input   wire logic                          d_write,
-    output  wire logic                          d_kill
+    output  wire logic                          d_kill,
+    output  wire logic                          weak_io
 );
     /*Optimise before even thinking of putting this on an fpga*/
     reg current_privilege_mode = 1'b1; // Initially at 2'b11
@@ -99,10 +100,11 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
     reg [1:0] mcountinhibit = 0; localparam MCOUNTERINHIBIT = 12'h320; 
     assign tw = mstatus[5];
     // Vendor-specific CSRs
-    reg [2:0] biriqBrnchCtrl = 3'b100; localparam BRNCHCTRL = 12'h800;
-    assign enable_branch_pred = biriqBrnchCtrl[2];
-    assign enable_counter_overload = biriqBrnchCtrl[1];
-    assign counter_overload = biriqBrnchCtrl[0];
+    reg [3:0] maux = 4'b0100; localparam MAUX = 12'h7C0;
+    assign enable_branch_pred = maux[2];
+    assign enable_counter_overload = maux[1];
+    assign counter_overload = maux[0];
+    assign weak_io = maux[3];
     assign real_privilege = current_privilege_mode;
     assign csrfile_mip_o = {csrfile_meip_i, csrfile_mtip_i, csrfile_msip_i}&{mie[2], mie[1], mie[0]};
     assign mprv_o = mstatus[4];
@@ -127,7 +129,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
     always_comb begin
         case (csrfile_address_i)
             MVENDORID: begin read_data = 32'h0; exists = 1; end
-            MIMPID: begin read_data = 32'h6;exists = 1; end
+            MIMPID: begin read_data = 32'h7;exists = 1; end
             MARCHID: begin read_data = 32'h0;exists = 1; end
             MHARTID: begin read_data = HARTID;exists = 1; end
             MCONFIGPTR: begin read_data = 32'h0;exists = 1; end
@@ -153,7 +155,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
             CYCLEH: begin read_data = cycle[63:32];exists = (current_privilege_mode||(mcounteren[0]&!current_privilege_mode));end
             INSTRET: begin read_data = instret[31:0];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
             INSTRETH: begin read_data = instret[63:32];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
-            BRNCHCTRL: begin read_data = {29'd0, biriqBrnchCtrl}; exists = 1; end
+            MAUX: begin read_data = {28'd0, maux}; exists = 1; end
             default: begin
                 read_data = pmp_data; exists = pmp_exists;
             end
@@ -277,8 +279,8 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==BRNCHCTRL)) begin
-            biriqBrnchCtrl <= new_data[2:0];
+        if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==MAUX)) begin
+            maux <= new_data[2:0];
         end
     end
 

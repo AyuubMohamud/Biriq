@@ -7,7 +7,7 @@ With SIMD extensions, the CPU fits to around 10700 LUTs in a Digilent Arty A100T
 
 ![Synthesis Results](VivadoSynthesisResultat82_5Mhz.png)
 
-Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, SRAM, FLASH, PLIC, CLINT and interconnect all attached together.
+Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, SRAM, FLASH, PLIC, CLINT, DDR3 (using Xilinx's MIG with a bridge) and interconnect all attached together.
 
 ## Properties:
 - A configurable BTB/RAS storing both targets and bimodal prediction counters.
@@ -31,7 +31,9 @@ Up to 12 ALU/Branch instructions.
 
 The PMA Map of this core is:\
 0x00000000 - 0x7FFFFFFF (inclusive) -> Weakly ordered, idempotent memory (RVWMO)\
-0x80000000 - 0xFFFFFFFF (inclusive) -> Weakly ordered, non-idempotent memory (RVWMO)
+0x80000000 - 0xFFFFFFFF (inclusive) -> Weakly ordered/Strongly ordered, non-idempotent memory (RVWMO/SC)
+
+I/O ordering is configurable using MAUX (CSR: 0x7C0) bit 4, allowing I/O loads to execute with disregard to I/O stores (except cases of address overlap)
 ## Improvements:
 - Add ebreak into decoder (done)
 - Make divider and multiplier out of pipe (done)

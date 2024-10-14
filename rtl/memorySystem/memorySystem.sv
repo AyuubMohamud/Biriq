@@ -125,7 +125,8 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
 
     output  wire logic [24:0]                   d_addr,
     output  wire logic                          d_write,
-    input   wire logic                          d_kill
+    input   wire logic                          d_kill,
+    input   wire logic                          weak_io
 );
     wire        lsu_busy;
     wire        lsu_vld;
@@ -220,7 +221,7 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
     wire dcu;
     newLoadQueue lq (cpu_clk_i, flush_i, lq_valid, lq_rob, lq_ld_type, lq_addr, lq_dest, lq_full, conflict_data_c, conflict_bm_c, 
     conflict_resolvable, conflict_res_valid, bram_rd_en,bram_rd_addr,bram_rd_data,load_cache_set,load_set_valid,load_set,dc_req,dc_addr,dc_op,dcu,dc_data,
-    dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty);
+    dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty, weak_io);
 
     dcache #(ACP_RS) datacache (cpu_clk_i, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr,dc_op,dcu,dc_data,dc_cmp, bram_rd_en,
     bram_rd_addr,bram_rd_data,dcache_a_opcode,dcache_a_param,dcache_a_size,dcache_a_address,dcache_a_mask,dcache_a_data,dcache_a_corrupt,dcache_a_valid,

@@ -129,11 +129,12 @@ wire        i_kill;
 wire [24:0] d_addr;
 wire        d_write;
 wire        d_kill;
+wire        weak_io;
     csrfile #(.HARTID(HARTID), .PMP_REGS(PMP_ENTRIES)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
     take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,tw,real_privilege,mepc_o,mtvec_o,
     enable_branch_pred,
 enable_counter_overload,
-counter_overload,i_addr,i_kill,d_addr,d_write,d_kill);
+counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     wire [29:0] flush_addr;
     wire icache_flush, icache_idle;
     logic                          ins0_port_o;

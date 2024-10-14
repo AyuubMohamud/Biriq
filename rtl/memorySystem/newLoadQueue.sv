@@ -61,7 +61,8 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     input   wire logic                          rob_lock,
     output  wire logic                          lsu_lock,
     input   wire logic [4:0]                    oldest_instruction_i,
-    input   wire logic                          store_buf_emp
+    input   wire logic                          store_buf_emp,
+    input   wire logic                          weak_io
 );
     wire busy;
     wire logic [5:0]  lsu_rob;
@@ -115,7 +116,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
         end
     end
     always_ff @(posedge core_clock_i) begin
-        if (!sempty && (slsu_rob[4:0]==oldest_instruction_i) && !dc_req & !rob_lock && !(!store_buf_emp&slsu_slept) &!core_flush_i) begin
+        if (!sempty && (slsu_rob[4:0]==oldest_instruction_i) && !dc_req & !rob_lock && !(!store_buf_emp&(slsu_slept|!weak_io)) &!core_flush_i) begin
             dc_req <= 1;
             dc_addr <= slsu_addr;
             dc_op <= slsu_op[1:0];
