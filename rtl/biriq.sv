@@ -372,6 +372,6 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     acp_d_valid,
     acp_d_ready,d_addr,
     d_write,
-    d_kill);
+    d_kill, weak_io);
     assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = rename_flush_o; assign exception_code_i[4] = 0;
 endmodule
