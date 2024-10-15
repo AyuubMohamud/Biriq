@@ -238,11 +238,11 @@ module retireControlUnit (
     reg [29:0] altcommit_npc = 0;
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
     assign rcu_block = retire_control_state!=Normal;
-    assign rename_flush_o = (retire_control_state==Await) && icache_idle;
+    assign rename_flush_o = (retire_control_state==Await) && icache_idle && !mem_block_i;
     assign ins_commit0 = commit_ins0;
     assign ins_commit1 = commit_ins1;    reg wfi = 0;
     assign mret = ((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
-    assign take_interrupt = retire_control_state==TakeInterrupt && !empty;
+    assign take_interrupt = retire_control_state==TakeInterrupt && !empty && !mem_block_i;
     assign take_exception = (excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
     assign tmu_epc_o = wfi ? pcPlus4 : altcommitted_on_interrupt ? altcommit_npc : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
     assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
@@ -290,7 +290,7 @@ module retireControlUnit (
                 end
             end
             TakeInterrupt: begin
-                if (!empty) begin
+                if (!empty&&!mem_block_i) begin
                     retire_control_state <= Await;
                     wfi <= 0;
                 end
@@ -308,7 +308,7 @@ module retireControlUnit (
             end
             Await: begin
                 wfi <= 0;
-                if (icache_idle) begin
+                if (icache_idle&&!mem_block_i) begin
                     retire_control_state <= ReclaimAndRecover;
                 end
             end
