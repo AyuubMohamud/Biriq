@@ -106,14 +106,14 @@ end else begin : _else_gen_pmp
 
     always_ff @(posedge core_clock_i) begin
         for (integer i = 0; i < PMP_REGS; i++) begin
-            if (csrfile_wr_en&!pmp_l[i]&&(csrfile_address_i[11:4]==8'h3b)&!csrfile_address_i[3]&(i[2:0]==csrfile_address_i[2:0])) begin
+            if (csrfile_wr_en&!pmp_l[i]&&(csrfile_address_i[11:4]==8'h3b)&!csrfile_address_i[3]&(i[2:0]==csrfile_address_i[2:0])&&i_mmode) begin
                 pmp_addr[i] <= {csrfile_data_i[29:4]};
                 pmp_mask[i] <= mask[29:5];
                 pmp_match[i] <= match[29:5];
             end
         end
         for (integer i = 0; i < PMP_REGS/4; i++) begin
-            if (!pmp_l[i*4 + 0] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])) begin
+            if (!pmp_l[i*4 + 0] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])&&i_mmode) begin
                 pmp_l[i*4 + 0] <= csrfile_data_i[7];
                 pmp_a[i*4 + 0] <= &csrfile_data_i[4:3];
                 pmp_x[i*4 + 0] <= csrfile_data_i[2];
@@ -121,7 +121,7 @@ end else begin : _else_gen_pmp
                 pmp_r[i*4 + 0] <= csrfile_data_i[0];
             end
 
-            if (!pmp_l[i*4 + 1] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])) begin
+            if (!pmp_l[i*4 + 1] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])&&i_mmode) begin
                 pmp_l[i*4 + 1] <= csrfile_data_i[15];
                 pmp_a[i*4 + 1] <= &csrfile_data_i[12:11];
                 pmp_x[i*4 + 1] <= csrfile_data_i[10];
@@ -129,7 +129,7 @@ end else begin : _else_gen_pmp
                 pmp_r[i*4 + 1] <= csrfile_data_i[8];
             end
             
-            if (!pmp_l[i*4 + 2] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])) begin
+            if (!pmp_l[i*4 + 2] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])&&i_mmode) begin
                 pmp_l[i*4 + 2] <= csrfile_data_i[23];
                 pmp_a[i*4 + 2] <= &csrfile_data_i[20:19];
                 pmp_x[i*4 + 2] <= csrfile_data_i[18];
@@ -137,7 +137,7 @@ end else begin : _else_gen_pmp
                 pmp_r[i*4 + 2] <= csrfile_data_i[16];
             end
 
-            if (!pmp_l[i*4 + 3] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])) begin
+            if (!pmp_l[i*4 + 3] && csrfile_wr_en && (csrfile_address_i[11:4]==8'h3a) && (csrfile_address_i[3:1]==3'b000) && (i[0]==csrfile_address_i[0])&&i_mmode) begin
                 pmp_l[i*4 + 3] <= csrfile_data_i[31];
                 pmp_a[i*4 + 3] <= &csrfile_data_i[28:27];
                 pmp_x[i*4 + 3] <= csrfile_data_i[26];
@@ -172,7 +172,7 @@ end else begin : _else_gen_pmp
         addr_exists = PMP_REGS==4 ? (csrfile_address_i[11:4]==8'h3b && csrfile_address_i[3:2]==2'b00) : PMP_REGS==8 ? (csrfile_address_i[11:4]==8'h3b && csrfile_address_i[3]==1'b0) : 1'b0;
     end
 
-    assign csrfile_exists_o = cfg_exists|addr_exists;
+    assign csrfile_exists_o = (cfg_exists|addr_exists)&&i_mmode;
     assign csrfile_data_o = cfg_exists ? cfg_read_data : addr_read_data;
 end
 endgenerate

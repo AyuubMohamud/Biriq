@@ -129,7 +129,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
     always_comb begin
         case (csrfile_address_i)
             MVENDORID: begin read_data = 32'h0; exists = 1; end
-            MIMPID: begin read_data = 32'h8;exists = 1; end
+            MIMPID: begin read_data = 32'h9;exists = 1; end
             MARCHID: begin read_data = 32'h0;exists = 1; end
             MHARTID: begin read_data = HARTID;exists = 1; end
             MCONFIGPTR: begin read_data = 32'h0;exists = 1; end
@@ -279,7 +279,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
     end
 
     always_ff @(posedge cpu_clock_i) begin
-        if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==MAUX)) begin
+        if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==MAUX)&&current_privilege_mode) begin
             maux <= new_data[3:0];
         end
     end
