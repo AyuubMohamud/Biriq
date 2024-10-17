@@ -102,12 +102,12 @@ end else begin : _else_gen_pmp
 
     wire [29:0] mask;
     wire [29:0] match;
-    pmpdecode32 decode32 ({csrfile_data_i[29:5],5'b01111}, mask, match);
+    pmpdecode32 decode32 ({csrfile_data_i[29:4],4'b1111}, mask, match);
 
     always_ff @(posedge core_clock_i) begin
         for (integer i = 0; i < PMP_REGS; i++) begin
             if (csrfile_wr_en&!pmp_l[i]&&(csrfile_address_i[11:4]==8'h3b)&!csrfile_address_i[3]&(i[2:0]==csrfile_address_i[2:0])) begin
-                pmp_addr[i] <= {csrfile_data_i[29:5], 1'b0};
+                pmp_addr[i] <= {csrfile_data_i[29:4]};
                 pmp_mask[i] <= mask[29:5];
                 pmp_match[i] <= match[29:5];
             end
