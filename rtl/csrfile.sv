@@ -280,7 +280,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
 
     always_ff @(posedge cpu_clock_i) begin
         if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==MAUX)) begin
-            maux <= new_data[2:0];
+            maux <= new_data[3:0];
         end
     end
 
