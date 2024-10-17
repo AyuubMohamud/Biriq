@@ -160,7 +160,7 @@ end else begin : _else_gen_pmp
             };
             
         end
-        cfg_exists = PMP_REGS>0 ? (csrfile_address_i==PMPCFG0) : PMP_REGS>1 ? (csrfile_address_i==PMPCFG0)||(csrfile_address_i==PMPCFG1) : 1'b0;
+        cfg_exists = PMP_REGS==4 ? (csrfile_address_i==PMPCFG0) : PMP_REGS==8 ? (csrfile_address_i==PMPCFG0)||(csrfile_address_i==PMPCFG1) : 1'b0;
     end
 
     always_comb begin
@@ -169,7 +169,7 @@ end else begin : _else_gen_pmp
         for (integer i = 0; i < PMP_REGS; i++) begin
             addr_read_data = {2'b00, pmp_addr[i], 4'b1111};
         end
-        addr_exists = PMP_REGS>0 ? (csrfile_address_i[11:4]==8'h3b && csrfile_address_i[3:2]==2'b00) : PMP_REGS>1 ? (csrfile_address_i[11:4]==8'h3b && csrfile_address_i[3]==1'b0) : 1'b0;
+        addr_exists = PMP_REGS==4 ? (csrfile_address_i[11:4]==8'h3b && csrfile_address_i[3:2]==2'b00) : PMP_REGS==8 ? (csrfile_address_i[11:4]==8'h3b && csrfile_address_i[3]==1'b0) : 1'b0;
     end
 
     assign csrfile_exists_o = cfg_exists|addr_exists;
