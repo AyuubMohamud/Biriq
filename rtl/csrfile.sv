@@ -21,7 +21,7 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 
-module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
+module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter ENABLE_PSX = 1) (
     input   wire logic                          cpu_clock_i,
     // CSR Interface
     input   wire logic [31:0]                   csrfile_data_i,
@@ -134,7 +134,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8) (
             MHARTID: begin read_data = HARTID;exists = 1; end
             MCONFIGPTR: begin read_data = 32'h0;exists = 1; end
             MSTATUS: begin read_data = {14'h0, mstatus[4], 4'd0, mstatus[3:2], 3'd0, mstatus[1], 3'd0, mstatus[0], 3'd0};exists = 1; end
-            MISA: begin read_data = 32'h40901101;exists = 1; end
+            MISA: begin read_data = {8'h40, ENABLE_PSX==0 ? 1'b0 : 1'b1, 3'b001, 20'h01101};exists = 1; end
             MIE: begin read_data = {20'h0,mie[2], 3'd0, mie[1], 3'd0, mie[0], 3'd0};exists = 1; end
             MIP: begin read_data = {20'h0,mip[2]|csrfile_meip_i, 3'd0, mip[1]|csrfile_mtip_i, 3'd0, mip[0]|csrfile_msip_i, 3'd0};exists = 1;end
             MTVEC: begin read_data = mtvec;exists = 1;end

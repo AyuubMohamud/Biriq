@@ -20,7 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module mathSystem (
+module mathSystem #(parameter ENABLE_PSX = 0) (
     input   wire logic                  cpu_clock_i,
     input   wire logic                  flush_i,
 
@@ -190,7 +190,7 @@ module mathSystem (
     wire logic                      valu0_out_wb_valid_o;
     wire logic [5:0]                valu0_out_dest_o;
     wire logic                      valu0_out_valid_o;
-    ivalu ivalu0 (cpu_clock_i, flush_i, valu0_a, valu0_b, valu0_opc, valu0_rob_id_o, valu0_dest, valu0_valid, valu0_out_result,valu0_out_rob_id_o,valu0_out_wb_valid_o,
+    ivalu #(ENABLE_PSX) ivalu0 (cpu_clock_i, flush_i, valu0_a, valu0_b, valu0_opc, valu0_rob_id_o, valu0_dest, valu0_valid, valu0_out_result,valu0_out_rob_id_o,valu0_out_wb_valid_o,
     valu0_out_dest_o,valu0_out_valid_o);
     wire logic  [31:0]                   brnch_out_result_o;
     wire logic                           brnch_out_wb_valid_o;
@@ -246,7 +246,7 @@ module mathSystem (
     wire logic        valu1_out_wb_valid_o;
     wire logic [5:0]  valu1_out_dest;
     wire logic        valu1_out_valid_o;
-    ivalu ivalu1 (cpu_clock_i, flush_i, valu1_a, valu1_b, valu1_opc, valu1_rob_id_o,  valu1_dest, valu1_valid, valu1_out_result, valu1_out_rob_id_o, valu1_out_wb_valid_o, 
+    ivalu #(ENABLE_PSX) ivalu1 (cpu_clock_i, flush_i, valu1_a, valu1_b, valu1_opc, valu1_rob_id_o,  valu1_dest, valu1_valid, valu1_out_result, valu1_out_rob_id_o, valu1_out_wb_valid_o, 
     valu1_out_dest, valu1_out_valid_o);
     EX12 wb1 (flush_i, alu1_out_result,alu1_out_rob_id_o,alu1_out_wb_valid_o,alu1_out_dest,alu1_out_valid_o,valu1_out_result,    valu1_out_rob_id_o,    valu1_out_wb_valid_o,    valu1_out_dest,    valu1_out_valid_o, p1_we_data, p1_we_dest, p1_wen, alu1_rob_id, alu1_complete);
     assign wkp_alu1 = valu1_valid ? valu1_dest : alu1_dest; assign wkp_alu1_v = valu1_valid|alu1_valid;

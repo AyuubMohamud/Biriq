@@ -20,7 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module decode (
+module decode #(parameter ENABLE_PSX = 1) (
     input   wire logic                  cpu_clk_i,
     input   wire logic                  flush_i,
     input   wire logic                  current_privlidge,
@@ -154,7 +154,8 @@ module decode (
     wire isLUI = rv_instruction_i[6:2]==5'b01101;
     wire isOP = rv_instruction_i[6:2]==5'b01100;
     wire isOPIMM = rv_instruction_i[6:2]==5'b00100;
-    wire isPSX = rv_instruction_i[6:2]==5'b01010&(rv_instruction_i[14:12]==0);
+    wire isPSX;
+     
     wire sys_invalid = !(isECALL|isMRET|isWFI|isCSRRW|isCSRRC|isCSRRS|isEBREAK);
     wire [6:0] uop0; wire port0; wire op_valid0;
     op_dec #(1) opdec0 (rv_instruction_i[31:25], rv_instruction_i[14:12], uop0,port0,op_valid0);
@@ -186,7 +187,7 @@ module decode (
     wire isLUI2 = rv_instruction_i2[6:2]==5'b01101;
     wire isOP2 = rv_instruction_i2[6:2]==5'b01100;
     wire isOPIMM2 = rv_instruction_i2[6:2]==5'b00100;
-    wire isPSX2 = rv_instruction_i2[6:2]==5'b01010&(rv_instruction_i2[14:12]==0);
+    wire isPSX2;
     wire sys_invalid2 = !(isECALL2|isMRET2|isWFI2|isCSRRW2|isCSRRC2|isCSRRS2|isEBREAK2);
     wire [6:0] uop1; wire port1; wire op_valid1;
     op_dec #(1) opdec1 (rv_instruction_i2[31:25], rv_instruction_i2[14:12], uop1,port1,op_valid1);
@@ -203,7 +204,13 @@ module decode (
     wire [31:0] storeImmediate2 = {{20{rv_instruction_i2[31]}}, rv_instruction_i2[31:25], rv_instruction_i2[11:7]};
     initial valid_o = 0;
     wire ins1_valid = !rv_ppc_i[0]&!(rv_btb_vld&(rv_target!={rv_ppc_i[29:1], 1'd1})&!btb_idx&(rv_btype!=2'b00 ? 1'b1 : rv_bm_pred[1]));
-
+    generate if (ENABLE_PSX) begin : _gen_psx_dec
+        assign isPSX = rv_instruction_i[6:2]==5'b01010&(rv_instruction_i[14:12]==0);
+        assign isPSX2 = rv_instruction_i2[6:2]==5'b01010&(rv_instruction_i2[14:12]==0);
+    end else begin : _gen_psx_ndec
+        assign isPSX = 1'b0;
+        assign isPSX2 = 1'b0;
+    end endgenerate
     wire [1:0] branches_decoded = {(isJAL2|isJALR2|isCmpBranch2)&ins1_valid, isJAL|isJALR|isCmpBranch};
     wire [1:0] branches_predicted = {rv_btb_vld&ins1_valid&btb_idx, rv_btb_vld&!btb_idx};
     wire btb_correction = (!branches_decoded[0]&branches_predicted[0])|(!branches_decoded[1]&branches_predicted[1]);

@@ -21,7 +21,7 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0, parameter ENTRIES = 8, parameter PMP_ENTRIES = 8) (
+parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0, parameter ENTRIES = 8, parameter PMP_ENTRIES = 8, parameter ENABLE_PSX = 1) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -130,7 +130,7 @@ wire [24:0] d_addr;
 wire        d_write;
 wire        d_kill;
 wire        weak_io;
-    csrfile #(.HARTID(HARTID), .PMP_REGS(PMP_ENTRIES)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
+    csrfile #(.HARTID(HARTID), .PMP_REGS(PMP_ENTRIES), .ENABLE_PSX(ENABLE_PSX)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
     take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,tw,real_privilege,mepc_o,mtvec_o,
     enable_branch_pred,
 enable_counter_overload,
@@ -193,7 +193,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     wire logic                     c1_btb_bm_i;
     wire logic                     c1_call_affirm_i;
     wire logic                     c1_ret_affirm_i;
-    frontend #(START_ADDR,BPU_ENTRIES,BPU_ENABLE_RAS,BPU_RAS_ENTRIES) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
+    frontend #(START_ADDR,BPU_ENTRIES,BPU_ENABLE_RAS,BPU_RAS_ENTRIES, ENABLE_PSX) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
     enable_counter_overload,
     counter_overload, real_privilege,tw,icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
     icache_a_mask,icache_a_data,icache_a_corrupt,icache_a_valid,icache_a_ready,icache_d_opcode,icache_d_param,icache_d_size,icache_d_denied,icache_d_data,
@@ -339,7 +339,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     p1_we_data, p1_we_dest, p2_we_i, p2_we_data, p2_we_dest, p0_rd_src, p0_rd_datas, p1_rd_src, p1_rd_datas, p2_rd_src, p2_rd_datas, p3_rd_src, p3_rd_datas, p4_rd_src, 
     p4_rd_datas, p5_rd_src, p5_rd_datas,r4_vec_indx, r4, r5_vec_indx,r5);
 
-    mathSystem maths (cpu_clock_i, full_flush, ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_hint_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,
+    mathSystem #(ENABLE_PSX) maths (cpu_clock_i, full_flush, ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_hint_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,
     ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_hint_o,ms_ins1_valid,ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o,ms_rn_btb_vld_o
     ,ms_rn_btb_target_o,ms_rn_btb_way_o,ms_rn_btb_idx_o,ms_rn_btb_pack,ms_rn_btb_wen,ms_p0_data_o,ms_p0_vld_o,ms_p0_rs1_vld_o,ms_p0_rs2_vld_o,
     ms_p0_rs1_rdy,ms_p0_rs2_rdy,ms_p1_data_o,ms_p1_vld_o,ms_p1_rs1_vld_o,ms_p1_rs2_vld_o,ms_p1_rs1_rdy,ms_p1_rs2_rdy,ms_p0_busy_i,ms_p1_busy_i, p2_we_i, p2_we_dest,

@@ -20,7 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module ivalu (
+module ivalu #(parameter ENABLE_PSX = 1) (
     input   wire logic              core_clock_i,
     input   wire logic              core_reset_i,
 
@@ -37,6 +37,8 @@ module ivalu (
     output       logic              valid_o
 );
 
+
+generate if (ENABLE_PSX) begin : __gen_psx_ivalu
     wire [31:0] vadder;
     wire [31:0] vmisc;
     wire [31:0] vcmper;
@@ -57,4 +59,11 @@ module ivalu (
         wb_valid_o <= !core_reset_i&valid_i&(dest_i!=0);
         rob_o <= rob_i;
     end
+end else begin : __else_psx_ivalu
+    assign result_o = 32'd0;
+    assign valid_o = 1'b0;
+    assign wb_valid_o = 1'b0;
+    assign rob_o = 5'd0;
+    assign dest_o = 6'd0;
+end endgenerate
 endmodule
