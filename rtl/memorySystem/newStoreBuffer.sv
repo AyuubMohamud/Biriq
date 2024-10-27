@@ -249,17 +249,21 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
         end
     end
     
-    always_ff @(posedge cpu_clk_i) begin
-        if ((|cdec)&!store_valid_o) begin
-            store_address_o <= address;
-            store_bm_o <= bm;
-            store_data_o <= cache_dq;
-            store_valid_o <= 1;
-        end
-        else if (cache_done) begin
-            store_valid_o <= 1'b0;
-        end
-    end
+    //always_ff @(posedge cpu_clk_i) begin
+    //    if ((|cdec)&!store_valid_o) begin
+    //        store_address_o <= address;
+    //        store_bm_o <= bm;
+    //        store_data_o <= cache_dq;
+    //        store_valid_o <= 1;
+    //    end
+    //    else if (cache_done) begin
+    //        store_valid_o <= 1'b0;
+    //    end
+    //end
+    assign store_valid_o = (|cdec);
+    assign store_data_o = cache_dq;
+    assign store_bm_o = bm;
+    assign store_address_o = address;
     assign no_nonspec = !(|((~speculative)&vld));// inner expression 1 when there are valid instructions that are not speculative, since the other modules use
     // store buffer empty, store buffer empty is high when inner expression is 0
     assign complete_vld = enqueue_en_i&!enqueue_full; assign complete = enqueue_rob_i;

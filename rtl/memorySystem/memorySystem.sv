@@ -88,6 +88,7 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
     output       logic [2:0]                    dcache_a_opcode,
     output       logic [2:0]                    dcache_a_param, // not needed
     output       logic [3:0]                    dcache_a_size,
+    output       logic [4:0]                    dcache_a_source,
     output       logic [31:0]                   dcache_a_address,
     output       logic [3:0]                    dcache_a_mask,  // not needed
     output       logic [31:0]                   dcache_a_data,  // not needed
@@ -98,6 +99,7 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
     input   wire logic [2:0]                    dcache_d_opcode,
     input   wire logic [1:0]                    dcache_d_param,
     input   wire logic [3:0]                    dcache_d_size,
+    input   wire logic [4:0]                    dcache_d_source,
     input   wire logic                          dcache_d_denied,
     input   wire logic [31:0]                   dcache_d_data,
     input   wire logic                          dcache_d_corrupt,
@@ -224,8 +226,8 @@ module memorySystem #(parameter ACP_RS = 1, parameter SB_ENTRIES = 8) (
     dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty, weak_io);
 
     dcache #(ACP_RS) datacache (cpu_clk_i, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr,dc_op,dcu,dc_data,dc_cmp, bram_rd_en,
-    bram_rd_addr,bram_rd_data,dcache_a_opcode,dcache_a_param,dcache_a_size,dcache_a_address,dcache_a_mask,dcache_a_data,dcache_a_corrupt,dcache_a_valid,
-    dcache_a_ready,  dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,
+    bram_rd_addr,bram_rd_data,dcache_a_opcode,dcache_a_param,dcache_a_size,dcache_a_source,dcache_a_address,dcache_a_mask,dcache_a_data,dcache_a_corrupt,dcache_a_valid,
+    dcache_a_ready,  dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_source, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,
     acp_a_opcode,
 acp_a_param,
 acp_a_size,
