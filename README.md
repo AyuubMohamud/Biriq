@@ -1,4 +1,4 @@
-# BiriqIIE
+# BiriqIIEC
 This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMB_Zicond_Zifencei_Zicsr_XPSX** implementation with Machine and User support.
 
 ![Abstract Pipeline](cpu.drawio.svg)
