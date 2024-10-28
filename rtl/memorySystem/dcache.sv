@@ -229,8 +229,8 @@ module dcache #(parameter ACP_RS = 1) (
             end
             VICTIM: begin
                 dcache_a_valid <= 1;
-                valid0[dc_addr[11:7]] <= replacement_bitvec[0] ? 1'b0 : valid0[dc_addr[11:7]];
-                valid1[dc_addr[11:7]] <= replacement_bitvec[1] ? 1'b0 : valid1[dc_addr[11:7]];
+                valid0[dc_addr[11:7]] <= replacement_bitvec[0]&!dc_uncached ? 1'b0 : valid0[dc_addr[11:7]];
+                valid1[dc_addr[11:7]] <= replacement_bitvec[1]&!dc_uncached ? 1'b0 : valid1[dc_addr[11:7]];
                 cache_fsm <= LOAD_CMP;
             end
             LOAD_CMP: begin
@@ -270,8 +270,8 @@ module dcache #(parameter ACP_RS = 1) (
                     acp_d_data <= dcache_d_data;
                     acp_d_opcode <= dcache_d_opcode;
                     acp_d_valid <= 1;
-                    valid0[dc_addr[11:7]] <= match[0] ? 1'b0 : valid0[dc_addr[11:7]];
-                    valid1[dc_addr[11:7]] <= match[1] ? 1'b0 : valid1[dc_addr[11:7]];
+                    valid0[dcache_a_address[11:7]] <= match[0] ? 1'b0 : valid0[dcache_a_address[11:7]];
+                    valid1[dcache_a_address[11:7]] <= match[1] ? 1'b0 : valid1[dcache_a_address[11:7]];
                     cache_fsm <= IDLE;
                     acp_d_size <= size;
                     acp_d_source <= source;
