@@ -68,7 +68,10 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     input   wire logic [24:0]                   d_addr,
     input   wire logic                          d_write,
     output  wire logic                          d_kill,
-    output  wire logic                          weak_io
+    output  wire logic                          weak_io,
+    output  wire logic [1:0]                    cbie,
+    output  wire logic                          cbcfe,
+    output  wire logic                          cbze
 );
     /*Optimise before even thinking of putting this on an fpga*/
     reg current_privilege_mode = 1'b1; // Initially at 2'b11
@@ -91,7 +94,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     reg [31:0] mtval = 0; localparam MTVAL = 12'h343;
     reg [2:0] mip = 0; localparam MIP = 12'h344;
     assign mie_o = mstatus[0];
-    localparam MENVCFG = 12'h30A;// fences are already implemented as total
+    reg [3:0] menvcfg = 0; localparam MENVCFG = 12'h30A;// fences are already implemented as total
     localparam MENVCFGH = 12'h31A; // RO ZERO
 
     // USER accessible CSRs
@@ -108,6 +111,9 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     assign real_privilege = current_privilege_mode;
     assign csrfile_mip_o = {csrfile_meip_i, csrfile_mtip_i, csrfile_msip_i}&{mie[2], mie[1], mie[0]};
     assign mprv_o = mstatus[4];
+    assign cbie = menvcfg[1:0];
+    assign cbcfe = menvcfg[2];
+    assign cbze = menvcfg[3];
     logic [31:0] read_data; logic exists;
     wire [31:0] new_data;
     logic [31:0] pmp_data; logic pmp_exists;
@@ -141,7 +147,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
             MTVAL: begin read_data = mtval;exists = 1;end
             MSTATUSH: begin read_data = 32'h0;exists = 1;end
             MENVCFGH : begin read_data = 32'h0; exists = 1; end
-            MENVCFG: begin read_data = 32'h0; exists = 1; end
+            MENVCFG: begin read_data = {24'h0, menvcfg, 4'h0}; exists = 1; end
             MCAUSE: begin read_data = {mcause[4], 27'h0,mcause[3:0]};exists = 1;end
             MSCRATCH: begin read_data = mscratch;exists = 1;end
             MEPC: begin read_data = {mepc,2'b00};exists = 1;end
@@ -248,6 +254,11 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
                     mcounteren[0] <= new_data[0];
                     mcounteren[1] <= new_data[1];
                     mcounteren[2] <= new_data[2];
+                end
+                MENVCFG: begin
+                    menvcfg[1:0] <= new_data[5:4];
+                    menvcfg[2] <= new_data[6];
+                    menvcfg[3] <= new_data[7];
                 end
                 default: begin
                     

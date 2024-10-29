@@ -25,6 +25,9 @@ module decode #(parameter ENABLE_PSX = 1) (
     input   wire logic                  flush_i,
     input   wire logic                  current_privlidge,
     input   wire logic                  tw,
+    input   wire logic [1:0]            cbie,
+    input   wire logic                  cbcfe,
+    input   wire logic                  cbze,
     input   wire logic                  icache_idle,
     input   wire logic                  icache_valid_i,
     input   wire logic [63:0]           instruction_i,
@@ -45,7 +48,7 @@ module decode #(parameter ENABLE_PSX = 1) (
     output       logic [5:0]            ins0_alu_type_o,
     output       logic [6:0]            ins0_alu_opcode_o,
     output       logic                  ins0_alu_imm_o,
-    output       logic [4:0]            ins0_ios_type_o,
+    output       logic [5:0]            ins0_ios_type_o,
     output       logic [2:0]            ins0_ios_opcode_o,
     output       logic [3:0]            ins0_special_o,
     output       logic [4:0]            ins0_rs1_o,
@@ -63,7 +66,7 @@ module decode #(parameter ENABLE_PSX = 1) (
     output       logic [5:0]            ins1_alu_type_o,
     output       logic [6:0]            ins1_alu_opcode_o,
     output       logic                  ins1_alu_imm_o,
-    output       logic [4:0]            ins1_ios_type_o,
+    output       logic [5:0]            ins1_ios_type_o,
     output       logic [2:0]            ins1_ios_opcode_o,
     output       logic [3:0]            ins1_special_o,
     output       logic [4:0]            ins1_rs1_o,
@@ -145,6 +148,11 @@ module decode #(parameter ENABLE_PSX = 1) (
     wire isCSRRC = rv_instruction_i[13:12]==2'b11;
     wire csr_imm = rv_instruction_i[14];
     wire isFenceI = rv_instruction_i[31:0]==32'b00000000000000000001000000001111;
+    wire isCMO = rv_instruction_i[31:22]==10'd0 && (rv_instruction_i[21:20]!=2'b11||rv_instruction_i[22:20]==3'b100) && rv_instruction_i[14:2]==13'b0100000000011;
+    wire isCBO_CLEAN = (rv_instruction_i[21:20]==2'b01)&(cbcfe|current_privlidge);
+    wire isCBO_FLUSH = ((rv_instruction_i[21:20]==2'b10)&(cbcfe|current_privlidge))||((rv_instruction_i[21:20]==2'b00)&(cbie==2'b01 && !current_privlidge));
+    wire isCBO_INVAL = (rv_instruction_i[21:20]==2'b00)&(cbie==2'b11||current_privlidge);
+    wire isCBO_ZERO = (rv_instruction_i[22:20]==3'b100)&(cbze|current_privlidge);
     wire isFence = rv_instruction_i[19:0]==20'b00000000000000001111;
     wire isCmpBranch = rv_instruction_i[6:2] == 5'b11000;
     wire isCMPBranchInvalid = !rv_instruction_i[14]&rv_instruction_i[13]; // 011 and 11x not used
@@ -162,7 +170,7 @@ module decode #(parameter ENABLE_PSX = 1) (
     wire [6:0] uop_imm0; wire op_imm_valid0;
     op_imm_dec opimmdec0 (rv_instruction_i[31:25], rv_instruction_i[14:12], rv_instruction_i[24:20], uop_imm0,op_imm_valid0);
     wire invalid_instruction = !(&rv_instruction_i[1:0])||!(isAUIPC|isLUI|(isOP&op_valid0)|(isOPIMM&op_imm_valid0)|isJAL|isJALR|(isCmpBranch&!isCMPBranchInvalid)|(isLoad&!load_invalid)|(isStore&!store_invalid)
-    |(isSystem&!sys_invalid)|isFence|isFenceI|isPSX);
+    |(isSystem&!sys_invalid)|isFence|isFenceI|isPSX|(isCMO&(isCBO_CLEAN|isCBO_FLUSH|isCBO_INVAL|isCBO_ZERO)));
     // second instruction
     wire isLoad2 = rv_instruction_i2[6:2]==5'b00000; 
     wire isStore2 = rv_instruction_i2[6:2]==5'b01000;
@@ -178,6 +186,11 @@ module decode #(parameter ENABLE_PSX = 1) (
     wire isCSRRC2 = rv_instruction_i2[13:12]==2'b11;
     wire csr_imm2 = rv_instruction_i2[14];
     wire isFenceI2 = rv_instruction_i2[31:0]==32'b00000000000000000001000000001111;
+    wire isCMO2 = rv_instruction_i2[31:22]==10'd0 && (rv_instruction_i2[21:20]!=2'b11||rv_instruction_i2[22:20]==3'b100) && rv_instruction_i2[14:2]==13'b0100000000011;
+    wire isCBO_CLEAN2 = (rv_instruction_i2[21:20]==2'b01)&(cbcfe|current_privlidge);
+    wire isCBO_FLUSH2 = ((rv_instruction_i2[21:20]==2'b10)&(cbcfe|current_privlidge))||((rv_instruction_i2[21:20]==2'b00)&(cbie==2'b01 && !current_privlidge));
+    wire isCBO_INVAL2 = (rv_instruction_i2[21:20]==2'b00)&(cbie==2'b11||current_privlidge);
+    wire isCBO_ZERO2 = (rv_instruction_i2[22:20]==3'b100)&(cbze||current_privlidge);
     wire isFence2 = rv_instruction_i2[19:0]==20'b00000000000000001111;
     wire isCmpBranch2 = rv_instruction_i2[6:2] == 5'b11000;
     wire isCMPBranchInvalid2 = !rv_instruction_i2[14]&rv_instruction_i2[13]; // 011 and 11x not used
@@ -194,7 +207,7 @@ module decode #(parameter ENABLE_PSX = 1) (
     wire [6:0] uop_imm1; wire op_imm_valid1;
     op_imm_dec opimmdec1 (rv_instruction_i2[31:25], rv_instruction_i2[14:12], rv_instruction_i2[24:20], uop_imm1,op_imm_valid1);
     wire invalid_instruction2 = !(&rv_instruction_i2[1:0])||!(isAUIPC2|isLUI2|(isOP2&op_valid1)|(isOPIMM2&op_imm_valid1)|isJAL2|isJALR2|(isCmpBranch2&!isCMPBranchInvalid2)|(isLoad2&!load_invalid2)|(isStore2&!store_invalid2)
-    |(isSystem2&!sys_invalid2)|isFence2|isFenceI2|isPSX2);
+    |(isSystem2&!sys_invalid2)|isFence2|isFenceI2|isPSX2|(isCMO2&(isCBO_CLEAN2|isCBO_FLUSH2|isCBO_INVAL2|isCBO_ZERO2)));
     wire [3:0] ecall = {2'b10, current_privlidge,current_privlidge};
     wire [3:0] ebreak = 4'd3;
     wire [31:0] jalrImmediate2 = {{20{rv_instruction_i2[31]}},rv_instruction_i2[31:20]};
@@ -239,8 +252,8 @@ module decode #(parameter ENABLE_PSX = 1) (
             ins0_alu_type_o <= {isPSX,isAUIPC, isLUI, isJALR, isJAL, ((isOP&!port0)|isOPIMM)};
             ins0_alu_opcode_o <= isOP ? uop0 : isOPIMM ? uop_imm0 : isPSX ? {rv_instruction_i[31:25]} : {4'b0000, rv_instruction_i[14:12]};
             ins0_alu_imm_o <= isOPIMM;
-            ins0_ios_type_o <= {isLoad, isStore, (isCSRRC|isCSRRS|isCSRRW)&isSystem, isFence, (isOP&port0)};
-            ins0_ios_opcode_o <= {rv_instruction_i[14:12]};
+            ins0_ios_type_o <= {isCMO, isLoad, isStore, (isCSRRC|isCSRRS|isCSRRW)&isSystem, isFence, (isOP&port0)};
+            ins0_ios_opcode_o <= isCMO ? (isCBO_CLEAN ? 3'd0 : isCBO_FLUSH ? 3'd1 : isCBO_INVAL ? 3'd2 : 3'd3) : {rv_instruction_i[14:12]};
             ins0_special_o <= {(isCSRRC|isCSRRS|isCSRRW)&((rv_instruction_i[19:15]!=0)|csr_imm)&isSystem, isMRET&isSystem,isFenceI,isWFI&isSystem};
             ins0_rs1_o <= rv_instruction_i[19:15];
             ins0_rs2_o <= rv_instruction_i[24:20];
@@ -258,8 +271,8 @@ module decode #(parameter ENABLE_PSX = 1) (
             ins1_alu_type_o <= {isPSX2,isAUIPC2, isLUI2, isJALR2, isJAL2, ((isOP2&!port1)|isOPIMM2)};
             ins1_alu_opcode_o <= isOP2 ? uop1 : isOPIMM2 ? uop_imm1 : isPSX2 ? {rv_instruction_i2[31:25]} : {4'b0000, rv_instruction_i2[14:12]};
             ins1_alu_imm_o <= isOPIMM2;
-            ins1_ios_type_o <= {isLoad2, isStore2, (isCSRRC2|isCSRRS2|isCSRRW2)&isSystem2, isFence2, (isOP2)&port1};
-            ins1_ios_opcode_o <= {rv_instruction_i2[14:12]};
+            ins1_ios_type_o <= {isCMO2, isLoad2, isStore2, (isCSRRC2|isCSRRS2|isCSRRW2)&isSystem2, isFence2, (isOP2)&port1};
+            ins1_ios_opcode_o <= isCMO2 ? (isCBO_CLEAN2 ? 3'd0 : isCBO_FLUSH2 ? 3'd1 : isCBO_INVAL2 ? 3'd2 : 3'd3) : {rv_instruction_i2[14:12]};
             ins1_special_o <= {(isCSRRC2|isCSRRS2|isCSRRW2)&((rv_instruction_i2[19:15]!=0)|csr_imm2)&isSystem2, isMRET2&isSystem2,isFenceI2, isWFI2&isSystem2};
             ins1_rs1_o <= rv_instruction_i2[19:15];
             ins1_rs2_o <= rv_instruction_i2[24:20];

@@ -30,7 +30,7 @@ module memory_scheduler (
     input   wire logic [5:0]                    pkt0_rs2_i,
     input   wire logic [5:0]                    pkt0_dest_i,
     input   wire logic [31:0]                   pkt0_immediate_i,
-    input   wire logic [4:0]                    pkt0_ios_type_i,
+    input   wire logic [5:0]                    pkt0_ios_type_i,
     input   wire logic [2:0]                    pkt0_ios_opcode_i,
     input   wire logic [4:0]                    pkt0_rob_i,
     input   wire logic                          pkt0_vld_i,
@@ -38,7 +38,7 @@ module memory_scheduler (
     input   wire logic [5:0]                    pkt1_rs2_i,
     input   wire logic [5:0]                    pkt1_dest_i,
     input   wire logic [31:0]                   pkt1_immediate_i,
-    input   wire logic [4:0]                    pkt1_ios_type_i,
+    input   wire logic [5:0]                    pkt1_ios_type_i,
     input   wire logic [2:0]                    pkt1_ios_opcode_i,
     input   wire logic                          pkt1_vld_i,
     output  wire logic                          full,
@@ -56,6 +56,7 @@ module memory_scheduler (
     input   wire logic                          lsu_busy_i,
     output       logic                          lsu_vld_o,
     output       logic [5:0]                    lsu_rob_o,
+    output       logic                          lsu_cmo_o,
     output       logic [3:0]                    lsu_op_o,
     output       logic [31:0]                   lsu_data_o,
     output       logic [31:0]                   lsu_addr_o,
@@ -99,7 +100,7 @@ module memory_scheduler (
     wire logic [5:0]                    pkt0_rs2;
     wire logic [5:0]                    pkt0_dest;
     wire logic [31:0]                   pkt0_immediate;
-    wire logic [4:0]                    pkt0_ios_type;
+    wire logic [5:0]                    pkt0_ios_type;
     wire logic [2:0]                    pkt0_ios_opcode;
     wire logic [4:0]                    pkt0_rob;
     wire logic                          pkt0_vld;
@@ -107,10 +108,10 @@ module memory_scheduler (
     wire logic [5:0]                    pkt1_rs2;
     wire logic [5:0]                    pkt1_dest;
     wire logic [31:0]                   pkt1_immediate;
-    wire logic [4:0]                    pkt1_ios_type;
+    wire logic [5:0]                    pkt1_ios_type;
     wire logic [2:0]                    pkt1_ios_opcode;
     wire logic                          pkt1_vld;
-    sfifo2 #(.DW(123), .FW(8)) memfifo (cpu_clk_i, flush_i, !full&!flush_i&renamer_pkt_vld_i, {
+    sfifo2 #(.DW(125), .FW(8)) memfifo (cpu_clk_i, flush_i, !full&!flush_i&renamer_pkt_vld_i, {
         pkt0_rs1_i, pkt0_rs2_i, pkt0_dest_i, pkt0_immediate_i, pkt0_ios_type_i, pkt0_ios_opcode_i, pkt0_rob_i, pkt0_vld_i, pkt1_rs1_i, 
         pkt1_rs2_i, pkt1_dest_i, pkt1_immediate_i, pkt1_ios_type_i, pkt1_ios_opcode_i, pkt1_vld_i}, full, issue, {
     pkt0_rs1, pkt0_rs2, pkt0_dest, pkt0_immediate, pkt0_ios_type, pkt0_ios_opcode, pkt0_rob, pkt0_vld, pkt1_rs1, pkt1_rs2, 
@@ -124,7 +125,7 @@ module memory_scheduler (
     wire [5:0] packet_rs2 = actual_packet_select ? pkt1_rs2 : pkt0_rs2;
     wire [5:0] packet_dest = actual_packet_select ? pkt1_dest : pkt0_dest;
     wire [31:0] packet_imm = actual_packet_select ? pkt1_immediate : pkt0_immediate;
-    wire [4:0] packet_type = actual_packet_select ? pkt1_ios_type : pkt0_ios_type;
+    wire [5:0] packet_type = actual_packet_select ? pkt1_ios_type : pkt0_ios_type;
     wire [2:0] packet_opcode = actual_packet_select ? pkt1_ios_opcode : pkt0_ios_opcode;
     wire [5:0] packet_rob = actual_packet_select ? {pkt0_rob[4:0],1'b1} : {pkt0_rob[4:0],1'b0};
     wire packet_rs2_dependant = packet_type[3]|packet_type[0]; // a store
@@ -150,6 +151,14 @@ module memory_scheduler (
             lsu_rob_o <= packet_rob;
             lsu_op_o <= {packet_type[3],packet_opcode};
             lsu_vld_o <= 1;
+            lsu_cmo_o <= 0;
+        end else if (packet_is_issueable&(packet_type[5])) begin
+            lsu_addr_o <= rs1_data;
+            lsu_dest_o <= packet_dest;
+            lsu_rob_o <= packet_rob;
+            lsu_op_o <= {1'b0,packet_opcode};
+            lsu_vld_o <= 1;
+            lsu_cmo_o <= 1;
         end else if (!lsu_busy_i) begin
             lsu_vld_o <= 0;
         end

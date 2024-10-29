@@ -21,7 +21,7 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 module biriq #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ACP_RS = 1, parameter HARTID = 0, parameter ENTRIES = 8, parameter PMP_ENTRIES = 8, parameter ENABLE_PSX = 1) (
+parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter HARTID = 0, parameter ENTRIES = 8, parameter PMP_ENTRIES = 8, parameter ENABLE_PSX = 1) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      cpu_reset_i,
     // TileLink Bus Master Uncached Heavyweight
@@ -63,28 +63,6 @@ parameter [31:0] BPU_ENTRIES = 32, parameter BPU_ENABLE_RAS = 1, parameter BPU_R
     input   wire logic                      dcache_d_corrupt,
     input   wire logic                      dcache_d_valid,
     output  wire logic                      dcache_d_ready,
-
-    // TileLink Bus Slave Uncached Lightweight to keep coherent
-    input   wire logic [2:0]                acp_a_opcode,
-    input   wire logic [2:0]                acp_a_param,
-    input   wire logic [3:0]                acp_a_size,
-    input   wire logic [ACP_RS-1:0]         acp_a_source,
-    input   wire logic [31:0]               acp_a_address,
-    input   wire logic [3:0]                acp_a_mask,
-    input   wire logic [31:0]               acp_a_data,
-    input   wire logic                      acp_a_valid,
-    output  wire logic                      acp_a_ready, 
-
-    output       logic [2:0]                acp_d_opcode,
-    output       logic [1:0]                acp_d_param,
-    output       logic [3:0]                acp_d_size,
-    output       logic [ACP_RS-1:0]         acp_d_source,
-    output       logic                      acp_d_denied,
-    output       logic [31:0]               acp_d_data,
-    output       logic                      acp_d_corrupt,
-    output       logic                      acp_d_valid,
-    input   wire logic                      acp_d_ready,
-
 
     input   wire logic [2:0]                ext_int_i
 );
@@ -130,11 +108,14 @@ wire [24:0] d_addr;
 wire        d_write;
 wire        d_kill;
 wire        weak_io;
+wire [1:0] cbie;
+wire cbcfe;
+wire cbze;
     csrfile #(.HARTID(HARTID), .PMP_REGS(PMP_ENTRIES), .ENABLE_PSX(ENABLE_PSX)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
     take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,tw,real_privilege,mepc_o,mtvec_o,
     enable_branch_pred,
 enable_counter_overload,
-counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
+counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze);
     wire [29:0] flush_addr;
     wire icache_flush, icache_idle;
     logic                          ins0_port_o;
@@ -142,7 +123,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     logic [5:0]                    ins0_alu_type_o;
     logic [6:0]                    ins0_alu_opcode_o;
     logic                          ins0_alu_imm_o;
-    logic [4:0]                    ins0_ios_type_o;
+    logic [5:0]                    ins0_ios_type_o;
     logic [2:0]                    ins0_ios_opcode_o;
     logic [3:0]                    ins0_special_o;
     logic [4:0]                    ins0_rs1_o;
@@ -160,7 +141,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     logic [5:0]                    ins1_alu_type_o;
     logic [6:0]                    ins1_alu_opcode_o;
     logic                          ins1_alu_imm_o;
-    logic [4:0]                    ins1_ios_type_o;
+    logic [5:0]                    ins1_ios_type_o;
     logic [2:0]                    ins1_ios_opcode_o;
     logic [3:0]                    ins1_special_o;
     logic [4:0]                    ins1_rs1_o;
@@ -195,7 +176,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     wire logic                     c1_ret_affirm_i;
     frontend #(START_ADDR,BPU_ENTRIES,BPU_ENABLE_RAS,BPU_RAS_ENTRIES, ENABLE_PSX) frontend0 (cpu_clock_i,  cpu_reset_i, full_flush, flush_addr,enable_branch_pred,
     enable_counter_overload,
-    counter_overload, real_privilege,tw,icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
+    counter_overload, real_privilege,tw,cbie, cbcfe, cbze, icache_flush, icache_idle, icache_a_opcode,icache_a_param,icache_a_size,icache_a_address,
     icache_a_mask,icache_a_data,icache_a_corrupt,icache_a_valid,icache_a_ready,icache_d_opcode,icache_d_param,icache_d_size,icache_d_denied,icache_d_data,
     icache_d_corrupt,icache_d_valid,icache_d_ready, ins0_port_o, ins0_dnagn_o, ins0_alu_type_o, ins0_alu_opcode_o, ins0_alu_imm_o, ins0_ios_type_o, ins0_ios_opcode_o, 
     ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_hint_o,ins0_excp_valid_o, ins0_excp_code_o, 
@@ -247,7 +228,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     wire logic [5:0]                        memSys_pkt0_rs2_o;
     wire logic [5:0]                        memSys_pkt0_dest_i;
     wire logic [31:0]                       memSys_pkt0_immediate_o;
-    wire logic [4:0]                        memSys_pkt0_ios_type_o;
+    wire logic [5:0]                        memSys_pkt0_ios_type_o;
     wire logic [2:0]                        memSys_pkt0_ios_opcode_o;
     wire logic [4:0]                        memSys_pkt0_rob_o;
     wire logic                              memSys_pkt0_vld_o;
@@ -255,7 +236,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     wire logic [5:0]                        memSys_pkt1_rs2_o;
     wire logic [5:0]                        memSys_pkt1_dest_o;
     wire logic [31:0]                       memSys_pkt1_immediate_o;
-    wire logic [4:0]                        memSys_pkt1_ios_type_o;
+    wire logic [5:0]                        memSys_pkt1_ios_type_o;
     wire logic [2:0]                        memSys_pkt1_ios_opcode_o;
     wire logic                              memSys_pkt1_vld_o;
     wire logic                              memSys_full;
@@ -347,30 +328,13 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io);
     p0_we_i, p1_we_data, p1_we_dest, p1_we_i, p0_rd_src,p1_rd_src,p0_rd_datas,p1_rd_datas,p2_rd_src,p3_rd_src,p2_rd_datas,p3_rd_datas, rob_i, alu_excp_code_i, alu_excp_i,
     alu_c1_btb_vpc_i,alu_c1_btb_target_i,alu_c1_cntr_pred_i,alu_c1_bnch_tkn_i,alu_c1_bnch_type_i,alu_c1_bnch_present_i,alu0_call,alu0_ret, c1_btb_way_i, c1_btb_bm_i);
 
-    memorySystem #(ACP_RS, ENTRIES) memSys (cpu_clock_i, full_flush, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
+    memorySystem #(ENTRIES) memSys (cpu_clock_i, full_flush, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
     memSys_pkt0_ios_type_o,memSys_pkt0_ios_opcode_o,memSys_pkt0_rob_o,memSys_pkt0_vld_o,memSys_pkt1_rs1_o,memSys_pkt1_rs2_o,memSys_pkt1_dest_o,memSys_pkt1_immediate_o,
     memSys_pkt1_ios_type_o,memSys_pkt1_ios_opcode_o,memSys_pkt1_vld_o,memSys_full, p4_rd_datas, p4_rd_src, p5_rd_datas, p5_rd_src, r4_vec_indx,r4,r5_vec_indx,r5,
     tmu_data_i, tmu_address_i, tmu_opcode_i, tmu_wr_en, tmu_valid_i, tmu_done_o, tmu_excp_o, tmu_data_o, rcu_lock, oldest_instruction, mem_lock, agu0_rob_slot_i,
     agu0_rob_complete_i,ldq_rob_slot_i,ldq_rob_complete_i,exception_i, exception_code_i[3:0], completed_rob_id,exception_addr, p2_we_i, p2_we_data, p2_we_dest, 
     stb_c0, stb_c1, stb_emp, dcache_a_opcode, dcache_a_param, dcache_a_size, dcache_a_address, dcache_a_mask, dcache_a_data, dcache_a_corrupt, dcache_a_valid, dcache_a_ready, 
-    dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,acp_a_opcode,
-    acp_a_param,
-    acp_a_size,
-    acp_a_source,
-    acp_a_address,
-    acp_a_mask,
-    acp_a_data,
-    acp_a_valid,
-    acp_a_ready, 
-    acp_d_opcode,
-    acp_d_param,
-    acp_d_size,
-    acp_d_source,
-    acp_d_denied,
-    acp_d_data,
-    acp_d_corrupt,
-    acp_d_valid,
-    acp_d_ready,d_addr,
+    dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,d_addr,
     d_write,
     d_kill, weak_io);
     assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = rename_flush_o; assign exception_code_i[4] = 0;

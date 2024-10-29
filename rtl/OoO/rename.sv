@@ -29,7 +29,7 @@ module rename (
     input   wire logic [5:0]                    ins0_alu_type_i,
     input   wire logic [6:0]                    ins0_alu_opcode_i,
     input   wire logic                          ins0_alu_imm_i,
-    input   wire logic [4:0]                    ins0_ios_type_i,
+    input   wire logic [5:0]                    ins0_ios_type_i,
     input   wire logic [2:0]                    ins0_ios_opcode_i,
     input   wire logic [3:0]                    ins0_special_i,
     input   wire logic [4:0]                    ins0_rs1_i,
@@ -47,7 +47,7 @@ module rename (
     input   wire logic [5:0]                    ins1_alu_type_i,
     input   wire logic [6:0]                    ins1_alu_opcode_i,
     input   wire logic                          ins1_alu_imm_i,
-    input   wire logic [4:0]                    ins1_ios_type_i,
+    input   wire logic [5:0]                    ins1_ios_type_i,
     input   wire logic [2:0]                    ins1_ios_opcode_i,
     input   wire logic [3:0]                    ins1_special_i,
     input   wire logic [4:0]                    ins1_rs1_i,
@@ -144,7 +144,7 @@ module rename (
     output  wire logic [5:0]                    memSys_pkt0_rs2_o,
     output  wire logic [5:0]                    memSys_pkt0_dest_i,
     output  wire logic [31:0]                   memSys_pkt0_immediate_o,
-    output  wire logic [4:0]                    memSys_pkt0_ios_type_o,
+    output  wire logic [5:0]                    memSys_pkt0_ios_type_o,
     output  wire logic [2:0]                    memSys_pkt0_ios_opcode_o,
     output  wire logic [4:0]                    memSys_pkt0_rob_o,
     output  wire logic                          memSys_pkt0_vld_o,
@@ -152,7 +152,7 @@ module rename (
     output  wire logic [5:0]                    memSys_pkt1_rs2_o,
     output  wire logic [5:0]                    memSys_pkt1_dest_o,
     output  wire logic [31:0]                   memSys_pkt1_immediate_o,
-    output  wire logic [4:0]                    memSys_pkt1_ios_type_o,
+    output  wire logic [5:0]                    memSys_pkt1_ios_type_o,
     output  wire logic [2:0]                    memSys_pkt1_ios_opcode_o,
     output  wire logic                          memSys_pkt1_vld_o,
     input   wire logic                          memSys_full,
@@ -187,7 +187,7 @@ module rename (
     wire logic [5:0]                    ins0_alu_type;
     wire logic [6:0]                    ins0_alu_opcode;
     wire logic                          ins0_alu_imm;
-    wire logic [4:0]                    ins0_ios_type;
+    wire logic [5:0]                    ins0_ios_type;
     wire logic [2:0]                    ins0_ios_opcode;
     wire logic [3:0]                    ins0_special;
     wire logic [4:0]                    ins0_rs1;
@@ -205,7 +205,7 @@ module rename (
     wire logic [5:0]                    ins1_alu_type;
     wire logic [6:0]                    ins1_alu_opcode;
     wire logic                          ins1_alu_imm;
-    wire logic [4:0]                    ins1_ios_type;
+    wire logic [5:0]                    ins1_ios_type;
     wire logic [2:0]                    ins1_ios_opcode;
     wire logic [3:0]                    ins1_special;
     wire logic [4:0]                    ins1_rs1;
@@ -226,7 +226,7 @@ module rename (
     wire logic                          btb_vld;
     wire logic                          btb_idx;
     wire logic                          btb_way;
-    skdbf #(.DW(242)) rnskid (cpu_clock_i, flush_i, busy, {ins0_port,ins0_dnagn,ins0_alu_type,ins0_alu_opcode,ins0_alu_imm,ins0_ios_type,ins0_ios_opcode,ins0_special,
+    skdbf #(.DW(244)) rnskid (cpu_clock_i, flush_i, busy, {ins0_port,ins0_dnagn,ins0_alu_type,ins0_alu_opcode,ins0_alu_imm,ins0_ios_type,ins0_ios_opcode,ins0_special,
     ins0_rs1,ins0_rs2,ins0_dest,ins0_imm,ins0_reg_props,ins0_dnr,ins0_mov_elim,ins0_excp_valid,ins0_excp_code,ins1_port,ins1_dnagn,ins1_alu_type,ins1_alu_opcode,ins1_alu_imm,
     ins1_ios_type,ins1_ios_opcode,ins1_special,ins1_rs1,ins1_rs2,ins1_dest,ins1_imm,ins1_reg_props,ins1_dnr,ins1_mov_elim,ins1_excp_valid,ins1_excp_code,ins1_valid,
     insbundle_pc,btb_btype,btb_bm_pred,btb_target,btb_vld,btb_idx,btb_way,ins0_hint,ins1_hint}, cyc_valid, rn_busy_o, {ins0_port_i,ins0_dnagn_i,ins0_alu_type_i,ins0_alu_opcode_i,

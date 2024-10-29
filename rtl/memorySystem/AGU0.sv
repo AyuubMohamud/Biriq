@@ -27,6 +27,7 @@ module AGU0 (
     output  wire logic                          lsu_busy_o,
     input   wire logic                          lsu_vld_i,
     input   wire logic [5:0]                    lsu_rob_i,
+    input   wire logic                          lsu_cmo_i,
     input   wire logic [3:0]                    lsu_op_i,
     input   wire logic [31:0]                   lsu_data_i,
     input   wire logic [31:0]                   lsu_addr_i,
@@ -35,9 +36,11 @@ module AGU0 (
     // Load pipe
     input   wire logic                          lq_full_i,
     output       logic [31:0]                   lq_addr_o,
+    output       logic                          lq_cmo_o,
     output       logic [2:0]                    lq_ld_type_o,
     output       logic [5:0]                    lq_dest_o,
     output       logic [5:0]                    lq_rob_o,
+    output       logic [3:0]                    lq_bm_o,
     output       logic                          lq_valid_o,
     // store pipe
     input   wire logic                          enqueue_full_i,
@@ -47,8 +50,6 @@ module AGU0 (
     output       logic                          enqueue_io_o,
     output       logic                          enqueue_en_o,
     output       logic [4:0]                    enqueue_rob_o, 
-    output       logic [29:0]                   conflict_address_o,
-    output       logic [3:0]                    conflict_bm_o,
 
     output       logic [31:0]                   excp_pc,
     output       logic                          excp_valid,
@@ -65,8 +66,9 @@ module AGU0 (
     wire logic [31:0]                   lsu_data;
     wire logic [31:0]                   lsu_addr;
     wire logic [5:0]                    lsu_dest;
-    skdbf #(.DW(80)) agu0skidbuffer (cpu_clock_i, flush_i, lq_full_i|enqueue_full_i, {lsu_rob,lsu_op,lsu_data,lsu_addr,lsu_dest},
-    lsu_vld, lsu_busy_o, {lsu_rob_i, lsu_op_i, lsu_data_i, lsu_addr_i, lsu_dest_i}, lsu_vld_i);
+    wire logic                          lsu_cmo;
+    skdbf #(.DW(81)) agu0skidbuffer (cpu_clock_i, flush_i, lq_full_i|enqueue_full_i, {lsu_rob,lsu_op,lsu_data,lsu_addr,lsu_dest, lsu_cmo},
+    lsu_vld, lsu_busy_o, {lsu_rob_i, lsu_op_i, lsu_data_i, lsu_addr_i, lsu_dest_i, lsu_cmo_i}, lsu_vld_i);
     wire isWrite = lsu_op[3];
     logic [3:0] bm; logic [31:0] store_data;
     assign d_addr = lsu_addr[31:7];
@@ -121,23 +123,19 @@ module AGU0 (
         end
     end
 
-    always_ff @(posedge cpu_clock_i) begin
-        if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld&!misaligned) begin
-            conflict_address_o <= lsu_addr[31:2];
-            conflict_bm_o <= bm;
-        end
-    end
     initial lq_valid_o = 0; initial excp_valid = 0; initial enqueue_en_o = 0;
     always_ff @(posedge cpu_clock_i) begin
         if (flush_i) begin
             lq_valid_o <= 0;
         end
-        else if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld&!d_kill) begin
+        else if (!enqueue_full_i&!lq_full_i&!lsu_op[3]&lsu_vld&(!d_kill|lsu_cmo)) begin
             lq_addr_o <= lsu_addr;
             lq_dest_o <= lsu_dest;
             lq_ld_type_o <= lsu_op[2:0];
             lq_rob_o <= lsu_rob;
             lq_valid_o <= 1;
+            lq_cmo_o <= lsu_cmo;
+            lq_bm_o <= bm;
         end else if (!lq_full_i) begin
             lq_valid_o <= 0;
         end
@@ -145,7 +143,7 @@ module AGU0 (
 
     always_ff @(posedge cpu_clock_i) begin
         excp_pc <= lsu_addr;
-        excp_valid <= lsu_vld&&!(enqueue_full_i|lq_full_i)&((bm==4'b0110)|d_kill);
+        excp_valid <= lsu_vld&&!(enqueue_full_i|lq_full_i)&((bm==4'b0110)|(d_kill&!lsu_cmo));
         excp_rob <= lsu_rob;
         excp_code_o <= d_kill ? isWrite ? 4'd7 : 4'd5 : isWrite ? 4'd6 : 4'd4;
     end

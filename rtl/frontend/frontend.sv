@@ -32,7 +32,9 @@ parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RA
     input   wire logic                          counter_overload,
     input   wire logic                          current_privlidge,
     input   wire logic                          tw,
-
+    input   wire logic [1:0]                    cbie,
+    input   wire logic                          cbcfe,
+    input   wire logic                          cbze,
     // System control port
     input   wire logic                          cache_flush_i,
     // 00 - FLUSH, 01, Toggle ON/OFF, 1x undefined
@@ -63,7 +65,7 @@ parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RA
     output       logic [5:0]            ins0_alu_type_o,
     output       logic [6:0]            ins0_alu_opcode_o,
     output       logic                  ins0_alu_imm_o,
-    output       logic [4:0]            ins0_ios_type_o,
+    output       logic [5:0]            ins0_ios_type_o,
     output       logic [2:0]            ins0_ios_opcode_o,
     output       logic [3:0]            ins0_special_o,
     output       logic [4:0]            ins0_rs1_o,
@@ -81,7 +83,7 @@ parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RA
     output       logic [5:0]            ins1_alu_type_o,
     output       logic [6:0]            ins1_alu_opcode_o,
     output       logic                  ins1_alu_imm_o,
-    output       logic [4:0]            ins1_ios_type_o,
+    output       logic [5:0]            ins1_ios_type_o,
     output       logic [2:0]            ins1_ios_opcode_o,
     output       logic [3:0]            ins1_special_o,
     output       logic [4:0]            ins1_rs1_o,
@@ -154,7 +156,9 @@ parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RA
     flush_resp_o,icache_a_opcode, icache_a_param, icache_a_size, icache_a_address, icache_a_mask, icache_a_data, icache_a_corrupt, icache_a_valid,
     icache_a_ready, icache_d_opcode, icache_d_param, icache_d_size, icache_d_denied, icache_d_data, icache_d_corrupt, icache_d_valid, icache_d_ready, i_addr, i_kill);
 
-    decode #(ENABLE_PSX) decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw, flush_resp_o, pdc_hit_o,pdc_instruction_o,pdc_sip_vpc_o,
+    decode #(ENABLE_PSX) decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw,cbie,
+    cbcfe,
+    cbze, flush_resp_o, pdc_hit_o,pdc_instruction_o,pdc_sip_vpc_o,
     pdc_sip_excp_code_o,pdc_sip_excp_vld_o, 
     pdc_btb_index_o,pdc_btb_btype_o,pdc_btb_bm_pred_o,pdc_btb_target_o,pdc_btb_vld_o,pdc_btb_way_o,pdc_busy_i,
     ins0_port_o,

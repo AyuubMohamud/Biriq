@@ -29,26 +29,32 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
 
     input   wire logic                          lsu_vld_i,
     input   wire logic [5:0]                    lsu_rob_i,
+    input   wire logic                          lsu_cmo_i,
     input   wire logic [2:0]                    lsu_op_i,
     input   wire logic [31:0]                   lsu_addr_i,
+    input   wire logic [3:0]                    lsu_bm_i,
     input   wire logic [5:0]                    lsu_dest_i,
     output  wire logic                          lsu_busy_o,
 
     // store conflict interface
-    input   wire logic [31:0]                   conflict_data_i,
-    input   wire logic [3:0]                    conflict_bm_i,
-    input   wire logic                          conflict_resolvable_i,
-    input   wire logic                          conflict_res_valid_i,
+    input   wire logic [31:0]                   conflict_data,
+    input   wire logic [3:0]                    conflict_bm,
+    input   wire logic                          conflict_resolvable,
+    input   wire logic                          conflict_res_valid,
+    output  wire logic [29:0]                   conflict_address_o,
+    output  wire logic [3:0]                    conflict_bm_o,
     // sram
     output  wire logic                          bram_rd_en,
     output  wire logic [9:0]                    bram_rd_addr,
     input   wire logic [63:0]                   bram_rd_data_64,
+    input   wire logic                          collision,
     output  wire logic [23:0]                   load_cache_set_o,
     input   wire logic                          load_set_valid_i,
     input   wire logic                          load_set_i,
     output       logic                          dc_req,
     output       logic [31:0]                   dc_addr,
     output       logic [1:0]                    dc_op,
+    output       logic                          dc_cmo,
     output       logic                          dc_uncached,
     input   wire logic [31:0]                   dc_data,
     input   wire logic                          dc_cmp,
@@ -69,42 +75,43 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     wire logic [2:0]  lsu_op;
     wire logic [31:0] lsu_addr;
     wire logic [5:0]  lsu_dest;
+    wire logic lsu_cmo;
     wire logic        lsu_vld;
-    wire logic [31:0] conflict_data;
-    wire logic [3:0]  conflict_bm;
-    wire logic        conflict_resolvable;
-    wire logic        conflict_res_valid;
+    wire logic [3:0] lsu_bm;
     reg [23:0] current_miss;
     reg current_miss_valid = 0;
-    skdbf #(.DW(85)) lqskidbuffer (core_clock_i, core_flush_i|rob_lock, busy, {lsu_rob,lsu_op,lsu_addr,lsu_dest,conflict_data, conflict_bm, conflict_resolvable,
-    conflict_res_valid}, lsu_vld, lsu_busy_o, {lsu_rob_i,lsu_op_i,lsu_addr_i,lsu_dest_i, conflict_data_i, conflict_bm_i, conflict_resolvable_i, 
-    conflict_res_valid_i}, lsu_vld_i);
-    // Strongly ordered load queue, added here if unresolvable conflict on any region, if conflict and miss on a weakly ordered region, OR if MMIO
-    wire so_enqueue = !core_flush_i&lsu_vld&!busy&((conflict_res_valid&!conflict_resolvable)|(conflict_res_valid&!lsu_addr[31]&!load_set_valid_i)|lsu_addr[31]);
+    skdbf #(.DW(52)) lqskidbuffer (core_clock_i, core_flush_i|rob_lock, busy, {lsu_rob,lsu_op,lsu_addr,lsu_dest,lsu_cmo, lsu_bm}, lsu_vld, lsu_busy_o,
+    {lsu_rob_i,lsu_op_i,lsu_addr_i,lsu_dest_i,lsu_cmo_i, lsu_bm_i}, lsu_vld_i);
+    assign conflict_address_o = lsu_addr[31:2];
+    assign conflict_bm_o = lsu_bm;
+    // Strongly ordered load queue
+    wire so_enqueue = !core_flush_i&lsu_vld&!busy&(lsu_addr[31]|lsu_cmo);
     // Weakly ordered miss handling
     wire wk_enqueue = !core_flush_i&lsu_vld&!busy&!lsu_addr[31]&!conflict_res_valid&!load_set_valid_i&!(current_miss_valid&(lsu_addr[30:7]!=current_miss));
-    wire wk_failed_enqueue = !core_flush_i&lsu_vld&!(wk_dequeue|so_dequeue|sfull|wfull)&!lsu_addr[31]&!conflict_res_valid&!load_set_valid_i&(current_miss_valid&(lsu_addr[30:7]!=current_miss));
+    wire wk_failed_enqueue = !core_flush_i&lsu_vld&!(wk_dequeue|so_dequeue|sfull|wfull|collision)&!lsu_addr[31]&
+    ((!load_set_valid_i&((current_miss_valid&(lsu_addr[30:7]!=current_miss))||conflict_res_valid))||(conflict_res_valid&!conflict_resolvable));
     wire logic [5:0]  wlsu_rob;
     wire logic [2:0]  wlsu_op;
     wire logic [31:0] wlsu_addr;
     wire logic [5:0]  wlsu_dest;
     wire logic wempty;
     wire logic wfull;
-    wire logic wk_dequeue = !current_miss_valid&!wempty&!rob_lock;
+    wire logic wk_dequeue = !current_miss_valid&!wempty&!rob_lock&!collision;
     sfifo2 #(.FW(WOQE), .DW(47)) weakQueue (core_clock_i, core_flush_i|rob_lock, wk_enqueue, {lsu_rob,lsu_op,lsu_addr,lsu_dest}, 
     wfull, wk_dequeue, {wlsu_rob,wlsu_op,wlsu_addr,wlsu_dest}, wempty);
     // Stronger ordered loads handling
     wire logic [5:0]  slsu_rob;
     wire logic [2:0]  slsu_op;
     wire logic [31:0] slsu_addr;
+    wire logic slsu_cmo;
     wire logic [5:0]  slsu_dest;
     wire logic        slsu_slept;
     wire logic sempty;
     wire logic sfull;
     wire logic so_dequeue = dc_cmp&dc_uncached;
-    sfifo2 #(.FW(MMIOE), .DW(48)) strongQueue (core_clock_i, core_flush_i|rob_lock, so_enqueue, {lsu_rob,lsu_op,lsu_addr,lsu_dest,conflict_res_valid}, 
-    sfull, so_dequeue, {slsu_rob,slsu_op,slsu_addr,slsu_dest,slsu_slept}, sempty);
-    assign busy = (wk_dequeue|so_dequeue|sfull|wfull|wk_failed_enqueue);
+    sfifo2 #(.FW(MMIOE), .DW(49)) strongQueue (core_clock_i, core_flush_i|rob_lock, so_enqueue, {lsu_cmo, lsu_rob,lsu_op,lsu_addr,lsu_dest,conflict_res_valid}, 
+    sfull, so_dequeue, {slsu_cmo, slsu_rob,slsu_op,slsu_addr,slsu_dest,slsu_slept}, sempty);
+    assign busy = (wk_dequeue|so_dequeue|sfull|wfull|wk_failed_enqueue|collision);
     always_ff @(posedge core_clock_i) begin
         if (!current_miss_valid&wk_enqueue&!rob_lock) begin
             current_miss_valid <= 1;
@@ -120,12 +127,14 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
             dc_req <= 1;
             dc_addr <= slsu_addr;
             dc_op <= slsu_op[1:0];
-            dc_uncached <= 1;
+            dc_uncached <= !slsu_cmo;
+            dc_cmo <= slsu_cmo;
         end else if (current_miss_valid && !dc_req && !rob_lock &!core_flush_i) begin
             dc_req <= 1;
             dc_addr <= wlsu_addr;
             dc_op <= 0;
             dc_uncached <= 0;
+            dc_cmo <= 0;
         end else if (dc_req) begin
             if (dc_cmp) begin
                 dc_req <= 1'b0;
@@ -144,7 +153,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     reg nx64sel = 0;
     reg [31:0] nx2_cdat; reg [3:0] nx2_bm; reg nx2_io;    
     always_ff @(posedge core_clock_i) begin
-        nx2_vd <= core_flush_i ? 1'b0 : (wk_dequeue|so_dequeue)|(lsu_vld&!(wk_enqueue|so_enqueue)&!busy&!rob_lock);
+        nx2_vd <= core_flush_i ? 1'b0 : ((wk_dequeue&!collision)|so_dequeue)|(lsu_vld&!(wk_enqueue|so_enqueue)&!busy&!rob_lock);
         nx2_dest <= wk_dequeue ? wlsu_dest : so_dequeue ? slsu_dest : lsu_dest;
         nx2_rob <= wk_dequeue ? wlsu_rob : so_dequeue ? slsu_rob : lsu_rob;
         nx2_op <= wk_dequeue ? {wlsu_op} : so_dequeue ? {slsu_op} : {lsu_op};
