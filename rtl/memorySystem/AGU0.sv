@@ -143,7 +143,7 @@ module AGU0 (
 
     always_ff @(posedge cpu_clock_i) begin
         excp_pc <= lsu_addr;
-        excp_valid <= lsu_vld&&!(enqueue_full_i|lq_full_i)&((bm==4'b0110)|(d_kill&!lsu_cmo));
+        excp_valid <= lsu_vld&&!(enqueue_full_i|lq_full_i)&((bm==4'b0110)|(d_kill))&!lsu_cmo;
         excp_rob <= lsu_rob;
         excp_code_o <= d_kill ? isWrite ? 4'd7 : 4'd5 : isWrite ? 4'd6 : 4'd4;
     end

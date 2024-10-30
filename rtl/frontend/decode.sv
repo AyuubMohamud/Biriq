@@ -148,7 +148,7 @@ module decode #(parameter ENABLE_PSX = 1) (
     wire isCSRRC = rv_instruction_i[13:12]==2'b11;
     wire csr_imm = rv_instruction_i[14];
     wire isFenceI = rv_instruction_i[31:0]==32'b00000000000000000001000000001111;
-    wire isCMO = rv_instruction_i[31:22]==10'd0 && (rv_instruction_i[21:20]!=2'b11||rv_instruction_i[22:20]==3'b100) && rv_instruction_i[14:2]==13'b0100000000011;
+    wire isCMO = rv_instruction_i[31:23]==9'd0 && ((rv_instruction_i[21:20]!=2'b11 && !rv_instruction_i[22])||rv_instruction_i[22:20]==3'b100) && rv_instruction_i[14:2]==13'b0100000000011;
     wire isCBO_CLEAN = (rv_instruction_i[21:20]==2'b01)&(cbcfe|current_privlidge);
     wire isCBO_FLUSH = ((rv_instruction_i[21:20]==2'b10)&(cbcfe|current_privlidge))||((rv_instruction_i[21:20]==2'b00)&(cbie==2'b01 && !current_privlidge));
     wire isCBO_INVAL = (rv_instruction_i[21:20]==2'b00)&(cbie==2'b11||current_privlidge);
@@ -186,10 +186,10 @@ module decode #(parameter ENABLE_PSX = 1) (
     wire isCSRRC2 = rv_instruction_i2[13:12]==2'b11;
     wire csr_imm2 = rv_instruction_i2[14];
     wire isFenceI2 = rv_instruction_i2[31:0]==32'b00000000000000000001000000001111;
-    wire isCMO2 = rv_instruction_i2[31:22]==10'd0 && (rv_instruction_i2[21:20]!=2'b11||rv_instruction_i2[22:20]==3'b100) && rv_instruction_i2[14:2]==13'b0100000000011;
-    wire isCBO_CLEAN2 = (rv_instruction_i2[21:20]==2'b01)&(cbcfe|current_privlidge);
-    wire isCBO_FLUSH2 = ((rv_instruction_i2[21:20]==2'b10)&(cbcfe|current_privlidge))||((rv_instruction_i2[21:20]==2'b00)&(cbie==2'b01 && !current_privlidge));
-    wire isCBO_INVAL2 = (rv_instruction_i2[21:20]==2'b00)&(cbie==2'b11||current_privlidge);
+    wire isCMO2 = rv_instruction_i2[31:23]==9'd0 && ((rv_instruction_i2[21:20]!=2'b11 && !rv_instruction_i2[22])||rv_instruction_i2[22:20]==3'b100) && rv_instruction_i2[14:2]==13'b0100000000011;
+    wire isCBO_CLEAN2 = (rv_instruction_i2[22:20]==3'b001)&(cbcfe|current_privlidge);
+    wire isCBO_FLUSH2 = ((rv_instruction_i2[22:20]==3'b010)&(cbcfe|current_privlidge))||((rv_instruction_i2[22:20]==3'b000)&(cbie==2'b01 && !current_privlidge));
+    wire isCBO_INVAL2 = (rv_instruction_i2[22:20]==3'b000)&(cbie==2'b11||current_privlidge);
     wire isCBO_ZERO2 = (rv_instruction_i2[22:20]==3'b100)&(cbze||current_privlidge);
     wire isFence2 = rv_instruction_i2[19:0]==20'b00000000000000001111;
     wire isCmpBranch2 = rv_instruction_i2[6:2] == 5'b11000;

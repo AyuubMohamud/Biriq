@@ -115,7 +115,8 @@ module dcache (
     assign replacement_enc = replacement_bitvec[1];
     assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter[4:1]} : {match_line, store_address_i[9:1]};
     assign wr_data = cache_fsm==LOAD_CMP ? {dcache_d_data, buffer} : {store_data_i,store_data_i};
-    assign dc_cmp = ((dc_addr[31]|dc_uncached)&(cache_fsm==LOAD_CMP)&(dcache_d_valid))|((cache_fsm==LOAD_CMP)&(counter==5'd31)&dcache_d_valid&!dc_addr[31]&!dc_uncached);
+    assign dc_cmp = ((dc_addr[31]|dc_uncached)&(cache_fsm==LOAD_CMP)&(dcache_d_valid))|((cache_fsm==LOAD_CMP)&(counter==5'd31)&dcache_d_valid&!dc_addr[31]&!dc_uncached)|
+    ((cache_fsm==CBO_ZERO)&&(counter==5'd31)&&dcache_d_valid)|(dc_cmo&dc_req&(dc_op!=2'd3));
     assign cache_done = cache_fsm==STORE_CMP && dcache_d_valid; assign dcache_d_ready = 1'b1;
     logic [1:0] recover_low_order; logic [1:0] op; logic [31:0] recovered_data;
     initial dcache_a_valid = 0;
@@ -184,7 +185,7 @@ module dcache (
                         valid1[dc_addr[11:7]] <= match[1] ? 1'b0 : valid1[dc_addr[11:7]];
                         dcache_a_address <= {dc_addr[31:7],7'h00}; dcache_a_mask <= 4'hF; dcache_a_param <= 0;
                         dcache_a_corrupt <= 0; dcache_a_valid <= 1; dcache_a_data <= 0;
-                        dcache_a_opcode <= 3'd0; dcache_a_size <= 4'd7;
+                        dcache_a_opcode <= 3'd0; dcache_a_size <= 4'd2;
                     end
                 end
             end
@@ -222,6 +223,7 @@ module dcache (
                         dcache_a_valid <= 0;    
                     end else begin
                         dcache_a_address <= dcache_a_address + 32'd4;
+                        aux_counter <= aux_counter + 1;
                     end
                 end
                 if (dcache_d_valid) begin
