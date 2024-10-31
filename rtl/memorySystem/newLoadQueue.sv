@@ -48,7 +48,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     output  wire logic [9:0]                    bram_rd_addr,
     input   wire logic [63:0]                   bram_rd_data_64,
     input   wire logic                          collision,
-    output  wire logic [23:0]                   load_cache_set_o,
+    output  wire logic [24:0]                   load_cache_set_o,
     input   wire logic                          load_set_valid_i,
     input   wire logic                          load_set_i,
     output       logic                          dc_req,
@@ -170,7 +170,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
         end
     end
 
-    assign load_cache_set_o = wk_dequeue ? wlsu_addr[30:7] : lsu_addr[30:7];
+    assign load_cache_set_o = {1'b0, wk_dequeue ? wlsu_addr[30:7] : lsu_addr[30:7]};
     assign bram_rd_en = 1; assign bram_rd_addr = {load_set_i, wk_dequeue ? wlsu_addr[11:3] : lsu_addr[11:3]};
     wire [31:0] memdata;
     reg nx2_vd = 0;

@@ -23,7 +23,8 @@
 module memorySystem #(parameter SB_ENTRIES = 8) (
     input   wire logic                          cpu_clk_i,
     input   wire logic                          flush_i,
-
+    input   wire logic                          dcache_flush_i,
+    output  wire logic                          dcache_flush_resp,
     // interface from renamer
     input   wire logic                          renamer_pkt_vld_i,
     input   wire logic [5:0]                    pkt0_rs1_i,
@@ -189,7 +190,7 @@ module memorySystem #(parameter SB_ENTRIES = 8) (
     wire [9:0] bram_rd_addr;
     wire [63:0] bram_rd_data;
     wire collision;
-    wire [23:0] load_cache_set;
+    wire [24:0] load_cache_set;
     wire        load_set_valid;
     wire        load_set;
     wire        dc_req;
@@ -208,7 +209,8 @@ module memorySystem #(parameter SB_ENTRIES = 8) (
     conflict_resolvable, conflict_res_valid,conflict_address,conflict_bm, bram_rd_en,bram_rd_addr,bram_rd_data,collision, load_cache_set,load_set_valid,load_set,dc_req,dc_addr,dc_op,dc_cmo,dcu,dc_data,
     dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty, weak_io);
 
-    dcache datacache (cpu_clk_i, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr, dc_op, dc_cmo,dcu,dc_data,dc_cmp, bram_rd_en,
+    dcache datacache (cpu_clk_i,dcache_flush_i,
+    dcache_flush_resp, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr, dc_op, dc_cmo,dcu,dc_data,dc_cmp, bram_rd_en,
     bram_rd_addr,bram_rd_data,collision,dcache_a_opcode,dcache_a_param,dcache_a_size,dcache_a_address,dcache_a_mask,dcache_a_data,dcache_a_corrupt,dcache_a_valid,
     dcache_a_ready,  dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,
     load_cache_set,load_set_valid,load_set);

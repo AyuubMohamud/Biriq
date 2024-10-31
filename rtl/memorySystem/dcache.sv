@@ -23,6 +23,8 @@
 module dcache (
     input   wire logic                          cpu_clock_i,
 
+    input   wire logic                          dcache_flush_i,
+    output  wire logic                          dcache_flush_resp,
     // Cache interface
     output  wire logic                          cache_done,
     input   wire logic [29:0]                   store_address_i,
@@ -66,12 +68,12 @@ module dcache (
     output  wire logic                          dcache_d_ready,
 
     // cache tags
-    input   wire logic [23:0]                   load_cache_set_i,
+    input   wire logic [24:0]                   load_cache_set_i,
     output  wire logic                          load_set_valid_o,
     output  wire logic                          load_set_o
 );
     assign bram_collision = 1'b0;
-    reg [18:0] tags0 [0:31]; reg [18:0] tags1 [0:31];// from addr[31:0], addr[31:12] is extracted, and addr[12:7] used for index, addr[6:0] is offset
+    reg [19:0] tags0 [0:31]; reg [19:0] tags1 [0:31];// from addr[31:0], addr[31:12] is extracted, and addr[12:7] used for index, addr[6:0] is offset
     reg valid0 [0:31];reg valid1 [0:31]; reg [1:0] rr= 2'b01;
     wire [1:0] replacement_bitvec; wire replacement_enc;
     initial begin
@@ -91,23 +93,27 @@ module dcache (
     wire [7:0] wr_en; wire [9:0] wr_addr; wire [63:0] wr_data; 
     wire [1:0] match_tags; wire match_line; wire [1:0] match_vld; wire [1:0] match;
 
-    wire [23:0] address_mux = cache_fsm==STORE_CMP ? store_address_i[28:5] : dc_addr[30:7];
+    wire [24:0] address_mux = cache_fsm==STORE_CMP ? store_address_i[29:5] : dc_addr[31:7];
 
-    assign match_tags = {tags1[address_mux[4:0]]==address_mux[23:5], tags0[address_mux[4:0]]==address_mux[23:5]};
+    assign match_tags = {tags1[address_mux[4:0]]==address_mux[24:5], tags0[address_mux[4:0]]==address_mux[24:5]};
     assign match_vld = {valid1[address_mux[4:0]], valid0[address_mux[4:0]]};
     assign match = match_tags & match_vld;
     
     assign match_line = match[1];
     reg [31:0] buffer;
     dbraminst dsram (cpu_clock_i, bram_rd_en, bram_rd_addr, bram_rd_data, wr_en, wr_addr, wr_data);
-    wire [3:0] wr_en32 = {((|match)&(cache_fsm==STORE_CMP)&store_bm_i[3]),
-    ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[2]), ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[1]), 
-    ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[0])};
-    wire cache_fill = (cache_fsm==LOAD_CMP)&(dcache_d_valid)&(!dc_addr[31]);
+    wire [3:0] wr_en32 = {
+                          ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[3]&dcache_d_valid),
+                          ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[2]&dcache_d_valid), 
+                          ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[1]&dcache_d_valid), 
+                          ((|match)&(cache_fsm==STORE_CMP)&store_bm_i[0]&dcache_d_valid)
+    };
+
+    wire cache_fill = (cache_fsm==LOAD_CMP)&(dcache_d_valid)&(!dc_uncached);
     wire [7:0] wr_en64 = store_address_i[0] ? {wr_en32, 4'h0} : {4'h0, wr_en32};
     assign wr_en = {8{(cache_fill&counter[0]&dcache_d_valid)}}|wr_en64;
     wire [1:0] ld_vld = {valid1[load_cache_set_i[4:0]], valid0[load_cache_set_i[4:0]]};
-    wire [1:0] ld_mtch = {tags1[load_cache_set_i[4:0]]==load_cache_set_i[23:5], tags0[load_cache_set_i[4:0]]==load_cache_set_i[23:5]} &
+    wire [1:0] ld_mtch = {tags1[load_cache_set_i[4:0]]==load_cache_set_i[24:5], tags0[load_cache_set_i[4:0]]==load_cache_set_i[24:5]} &
     ld_vld;
     assign load_set_o = ld_mtch[1];
     assign load_set_valid_o = |ld_mtch;
@@ -115,8 +121,10 @@ module dcache (
     assign replacement_enc = replacement_bitvec[1];
     assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter[4:1]} : {match_line, store_address_i[9:1]};
     assign wr_data = cache_fsm==LOAD_CMP ? {dcache_d_data, buffer} : {store_data_i,store_data_i};
-    assign dc_cmp = ((dc_addr[31]|dc_uncached)&(cache_fsm==LOAD_CMP)&(dcache_d_valid))|((cache_fsm==LOAD_CMP)&(counter==5'd31)&dcache_d_valid&!dc_addr[31]&!dc_uncached)|
-    ((cache_fsm==CBO_ZERO)&&(counter==5'd31)&&dcache_d_valid)|(dc_cmo&dc_req&(dc_op!=2'd3));
+    assign dc_cmp = ((dc_uncached)&(cache_fsm==LOAD_CMP)&(dcache_d_valid))
+                  ||((cache_fsm==LOAD_CMP)&(counter==5'd31)&dcache_d_valid&!dc_addr[31]&!dc_uncached)
+                  ||((cache_fsm==CBO_ZERO)&&(counter==5'd31)&&dcache_d_valid)
+                  ||(dc_cmo&dc_req&(dc_op!=2'd3));
     assign cache_done = cache_fsm==STORE_CMP && dcache_d_valid; assign dcache_d_ready = 1'b1;
     logic [1:0] recover_low_order; logic [1:0] op; logic [31:0] recovered_data;
     initial dcache_a_valid = 0;
@@ -159,6 +167,7 @@ module dcache (
     end
     assign dc_data_o = dcache_d_data;
     reg [4:0] aux_counter = 0;
+    assign dcache_flush_resp = 1;
     always_ff @(posedge cpu_clock_i) begin
         case (cache_fsm)
             IDLE: begin
@@ -198,8 +207,8 @@ module dcache (
                     if (counter==5'd31) begin
                         counter <= 0;
                         cache_fsm <= IDLE;
-                        tags0[dc_addr[11:7]] <= replacement_bitvec[0] ? dc_addr[30:12] : tags0[dc_addr[11:7]];
-                        tags1[dc_addr[11:7]] <= replacement_bitvec[1] ? dc_addr[30:12] : tags1[dc_addr[11:7]];
+                        tags0[dc_addr[11:7]] <= replacement_bitvec[0] ? dc_addr[31:12] : tags0[dc_addr[11:7]];
+                        tags1[dc_addr[11:7]] <= replacement_bitvec[1] ? dc_addr[31:12] : tags1[dc_addr[11:7]];
                         valid0[dc_addr[11:7]] <= replacement_bitvec[0] ? 1'b1 : valid0[dc_addr[11:7]];
                         valid1[dc_addr[11:7]] <= replacement_bitvec[1] ? 1'b1 : valid1[dc_addr[11:7]];
                     end else begin

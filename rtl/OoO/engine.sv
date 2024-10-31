@@ -22,6 +22,8 @@
 //  -----------------------------------------------------------------------------------------
 module engine (
     input   wire logic                              cpu_clock_i,
+    output  wire logic                              dcache_flush_o,
+    input   wire logic                              dcache_flush_resp,
     input   wire logic                              ins0_port_i,
     input   wire logic                              ins0_dnagn_i,
     input   wire logic [5:0]                        ins0_alu_type_i,
@@ -331,7 +333,8 @@ module engine (
      memSys_pkt0_ios_type_o,memSys_pkt0_ios_opcode_o,memSys_pkt0_rob_o,memSys_pkt0_vld_o,memSys_pkt1_rs1_o,memSys_pkt1_rs2_o,memSys_pkt1_dest_o,memSys_pkt1_immediate_o,
      memSys_pkt1_ios_type_o,memSys_pkt1_ios_opcode_o,memSys_pkt1_vld_o,memSys_full, p0_vec_indx,p0_busy_vld,p1_vec_indx, p1_busy_vld, r0_vec_indx,r0,
      r1_vec_indx,r1,r2_vec_indx,r2,r3_vec_indx,r3, i_rd0,o_rd_data0,o_empty0,i_rd1,o_rd_data1,o_empty1);
-    retireControlUnit rcu0 (cpu_clock_i, cpm, mie, machine_interrupts, packet_pc, ins0_is_mov_elim, 
+    retireControlUnit rcu0 (cpu_clock_i, dcache_flush_o,
+    dcache_flush_resp,cpm, mie, machine_interrupts, packet_pc, ins0_is_mov_elim, 
     ins0_register_allocated, ins0_arch_reg, ins0_old_preg, ins0_new_preg, ins0_excp_code, ins0_excp_valid, ins0_special, ins0_is_store, ins1_is_mov_elim, 
     ins1_register_allocated, ins1_arch_reg, ins1_old_preg, ins1_new_preg, ins1_excp_code, ins1_excp_valid, ins1_special, ins1_is_store, ins1_valid, push_packet, 
     rcu_busy, rcu_pack, arch_reg0, arch_reg1, phys_reg0, phys_reg1,rob0_status,commit0,rob0_status_o,rob0_call_o,rob0_ret_o,rob1_status,commit1,rob1_status_o,rob1_call_o,rob1_ret_o, stb_c0, stb_c1, stb_emp,

@@ -118,6 +118,7 @@ enable_counter_overload,
 counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze);
     wire [29:0] flush_addr;
     wire icache_flush, icache_idle;
+    wire dcache_flush, dcache_idle;
     logic                          ins0_port_o;
     logic                          ins0_dnagn_o;
     logic [5:0]                    ins0_alu_type_o;
@@ -300,7 +301,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze)
     wire logic          r5;
     wire stb_emp;
     wire alu0_call,alu0_ret;
-    engine biriqEngine (cpu_clock_i, ins0_port_o, ins0_dnagn_o, ins0_alu_type_o, ins0_alu_opcode_o, ins0_alu_imm_o, ins0_ios_type_o, ins0_ios_opcode_o, 
+    engine biriqEngine (cpu_clock_i, dcache_flush, dcache_idle, ins0_port_o, ins0_dnagn_o, ins0_alu_type_o, ins0_alu_opcode_o, ins0_alu_imm_o, ins0_ios_type_o, ins0_ios_opcode_o, 
     ins0_special_o, ins0_rs1_o, ins0_rs2_o, ins0_dest_o, ins0_imm_o, ins0_reg_props_o, ins0_dnr_o, ins0_mov_elim_o, ins0_hint_o,ins0_excp_valid_o, ins0_excp_code_o, 
     ins1_port_o, ins1_dnagn_o, ins1_alu_type_o, ins1_alu_opcode_o, ins1_alu_imm_o, ins1_ios_type_o, ins1_ios_opcode_o, ins1_special_o, ins1_rs1_o, ins1_rs2_o, 
     ins1_dest_o, ins1_imm_o, ins1_reg_props_o, ins1_dnr_o,  ins1_mov_elim_o, ins1_hint_o,ins1_excp_valid_o, ins1_excp_code_o, ins1_valid_o, insbundle_pc_o, btb_btype_o, 
@@ -328,7 +329,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze)
     p0_we_i, p1_we_data, p1_we_dest, p1_we_i, p0_rd_src,p1_rd_src,p0_rd_datas,p1_rd_datas,p2_rd_src,p3_rd_src,p2_rd_datas,p3_rd_datas, rob_i, alu_excp_code_i, alu_excp_i,
     alu_c1_btb_vpc_i,alu_c1_btb_target_i,alu_c1_cntr_pred_i,alu_c1_bnch_tkn_i,alu_c1_bnch_type_i,alu_c1_bnch_present_i,alu0_call,alu0_ret, c1_btb_way_i, c1_btb_bm_i);
 
-    memorySystem #(ENTRIES) memSys (cpu_clock_i, full_flush, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
+    memorySystem #(ENTRIES) memSys (cpu_clock_i, full_flush, dcache_flush, dcache_idle, memSys_renamer_pkt_vld_o,memSys_pkt0_rs1_o,memSys_pkt0_rs2_o,memSys_pkt0_dest_i,memSys_pkt0_immediate_o,
     memSys_pkt0_ios_type_o,memSys_pkt0_ios_opcode_o,memSys_pkt0_rob_o,memSys_pkt0_vld_o,memSys_pkt1_rs1_o,memSys_pkt1_rs2_o,memSys_pkt1_dest_o,memSys_pkt1_immediate_o,
     memSys_pkt1_ios_type_o,memSys_pkt1_ios_opcode_o,memSys_pkt1_vld_o,memSys_full, p4_rd_datas, p4_rd_src, p5_rd_datas, p5_rd_src, r4_vec_indx,r4,r5_vec_indx,r5,
     tmu_data_i, tmu_address_i, tmu_opcode_i, tmu_wr_en, tmu_valid_i, tmu_done_o, tmu_excp_o, tmu_data_o, rcu_lock, oldest_instruction, mem_lock, agu0_rob_slot_i,

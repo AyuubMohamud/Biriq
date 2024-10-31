@@ -25,6 +25,8 @@
 **/
 module retireControlUnit (
     input   wire logic                              cpu_clock_i,
+    output  wire logic                              dcache_flush_o,
+    input   wire logic                              dcache_flush_resp,
 
     input   wire logic                              cpm,
     input   wire logic                              mie,
@@ -173,6 +175,7 @@ module retireControlUnit (
     localparam Normal = 3'b000; localparam ReclaimAndRecover = 3'b111; // flush held high for 16 cycles
     localparam WipeInstructionCache = 3'b001; localparam WaitForInterrupt = 3'b010;
     localparam Await = 3'b110; localparam TakeInterrupt = 3'b011;
+    localparam WipeDataCache = 3'b100;
     reg [2:0] retire_control_state = Normal;
 
     sfifospecial #(.DW(89)) instruction_information_buffer (
@@ -238,7 +241,7 @@ module retireControlUnit (
     reg [29:0] altcommit_npc = 0;
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
     assign rcu_block = retire_control_state!=Normal;
-    assign rename_flush_o = (retire_control_state==Await) && icache_idle && !mem_block_i;
+    assign rename_flush_o = (retire_control_state==Await) && icache_idle && dcache_flush_resp && !mem_block_i;
     assign ins_commit0 = commit_ins0;
     assign ins_commit1 = commit_ins1;    reg wfi = 0;
     assign mret = ((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
@@ -280,7 +283,7 @@ module retireControlUnit (
             end
             WipeInstructionCache: begin
                 if (icache_idle&&sqb_empty) begin
-                    retire_control_state <= Await;
+                    retire_control_state <= WipeDataCache;
                 end
             end
             WaitForInterrupt: begin
@@ -293,6 +296,11 @@ module retireControlUnit (
                 if (!empty&&!mem_block_i) begin
                     retire_control_state <= Await;
                     wfi <= 0;
+                end
+            end
+            WipeDataCache: begin
+                if (dcache_flush_resp&&sqb_empty) begin
+                    retire_control_state <= Await;
                 end
             end
             ReclaimAndRecover: begin
@@ -308,7 +316,7 @@ module retireControlUnit (
             end
             Await: begin
                 wfi <= 0;
-                if (icache_idle&&!mem_block_i) begin
+                if (icache_idle&&dcache_flush_resp&&!mem_block_i) begin
                     retire_control_state <= ReclaimAndRecover;
                 end
             end
@@ -318,12 +326,13 @@ module retireControlUnit (
         endcase
     end
     assign icache_flush = icache_idle&&sqb_empty&&(retire_control_state==WipeInstructionCache);
+    assign dcache_flush_o = dcache_flush_resp&&sqb_empty&&(retire_control_state==WipeDataCache);
     assign c1_btb_vpc_o = c1_btb_vpc;
     assign c1_btb_target_o = c1_btb_target;
     assign c1_cntr_pred_o = c1_cntr_pred;
     assign c1_bnch_tkn_o = c1_bnch_tkn;
     assign c1_bnch_type_o = c1_bnch_type;
-    assign c1_btb_mod_o = (retire_control_state==Await)&&icache_idle&&btb_mod;
+    assign c1_btb_mod_o = (retire_control_state==Await)&&icache_idle&&dcache_flush_resp&&btb_mod&&!mem_block_i;
     assign c1_call_affirm_o = (rob0_call_i&commit_ins0)|(rob1_call_i&commit_ins1);
     assign c1_ret_affirm_o = (rob0_ret_i&commit_ins0)|(rob1_ret_i&commit_ins1);
 endmodule
