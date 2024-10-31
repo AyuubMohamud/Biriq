@@ -30,6 +30,7 @@ module dcache (
     input   wire logic [29:0]                   store_address_i,
     input   wire logic [31:0]                   store_data_i,
     input   wire logic [3:0]                    store_bm_i,
+    input   wire logic                          store_io_i,
     input   wire logic                          store_valid_i,
     // cache request
     input   wire logic                          dc_req,
@@ -122,7 +123,7 @@ module dcache (
     assign wr_addr = cache_fsm==LOAD_CMP ? {replacement_enc, dc_addr[11:7], counter[4:1]} : {match_line, store_address_i[9:1]};
     assign wr_data = cache_fsm==LOAD_CMP ? {dcache_d_data, buffer} : {store_data_i,store_data_i};
     assign dc_cmp = ((dc_uncached)&(cache_fsm==LOAD_CMP)&(dcache_d_valid))
-                  ||((cache_fsm==LOAD_CMP)&(counter==5'd31)&dcache_d_valid&!dc_addr[31]&!dc_uncached)
+                  ||((cache_fsm==LOAD_CMP)&(counter==5'd31)&dcache_d_valid&!dc_uncached)
                   ||((cache_fsm==CBO_ZERO)&&(counter==5'd31)&&dcache_d_valid)
                   ||(dc_cmo&dc_req&(dc_op!=2'd3));
     assign cache_done = cache_fsm==STORE_CMP && dcache_d_valid; assign dcache_d_ready = 1'b1;
@@ -179,9 +180,9 @@ module dcache (
                     dcache_a_data <= recovered_data; dcache_a_mask <= 4'hF;
                 end else if (dc_req&!dc_cmo) begin
                     cache_fsm <= LOAD_CMP;
-                    dcache_a_address <= dc_addr[31]|dc_uncached ? dc_addr : {dc_addr[31:7],7'h00}; dcache_a_mask <= 0; dcache_a_param <= 0;
+                    dcache_a_address <= dc_uncached ? dc_addr : {dc_addr[31:7],7'h00}; dcache_a_mask <= 0; dcache_a_param <= 0;
                     dcache_a_corrupt <= 0; dcache_a_valid <= 1;
-                    dcache_a_opcode <= 3'd4; dcache_a_size <= dc_addr[31]|dc_uncached ? {2'b00,dc_op[1:0]} : 4'd7;
+                    dcache_a_opcode <= 3'd4; dcache_a_size <= dc_uncached ? {2'b00,dc_op[1:0]} : 4'd7;
                     valid0[dc_addr[11:7]] <= replacement_bitvec[0]&!dc_uncached ? 1'b0 : valid0[dc_addr[11:7]];
                     valid1[dc_addr[11:7]] <= replacement_bitvec[1]&!dc_uncached ? 1'b0 : valid1[dc_addr[11:7]];
                 end else if (dc_req&dc_cmo) begin

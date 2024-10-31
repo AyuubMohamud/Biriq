@@ -182,9 +182,9 @@ module memorySystem #(parameter SB_ENTRIES = 8) (
     excp_pc,excp_valid,excp_code,excp_rob,d_addr,
     d_write,
     d_kill);
-
+    wire sio;
     newStoreBuffer #(.PHYS(32), .ENTRIES(SB_ENTRIES)) storeBuffer0 (cpu_clk_i, flush_i, enqueue_address,enqueue_data,enqueue_bm,enqueue_io, enqueue_en, enqueue_rob, enqueue_full, ins_rob, ins_cmp,commit0, commit1,
-    conflict_address, conflict_bm, conflict_data_c,conflict_bm_c,conflict_resolvable,conflict_res_valid,cache_done,store_address,store_data,store_bm,store_valid,
+    conflict_address, conflict_bm, conflict_data_c,conflict_bm_c,conflict_resolvable,conflict_res_valid,cache_done,store_address,store_data,store_bm,sio,store_valid,
     store_buffer_empty);
     wire        bram_rd_en;
     wire [9:0] bram_rd_addr;
@@ -210,7 +210,7 @@ module memorySystem #(parameter SB_ENTRIES = 8) (
     dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty, weak_io);
 
     dcache datacache (cpu_clk_i,dcache_flush_i,
-    dcache_flush_resp, cache_done, store_address,store_data,store_bm,store_valid, dc_req,dc_addr, dc_op, dc_cmo,dcu,dc_data,dc_cmp, bram_rd_en,
+    dcache_flush_resp, cache_done, store_address,store_data,store_bm,sio,store_valid, dc_req,dc_addr, dc_op, dc_cmo,dcu,dc_data,dc_cmp, bram_rd_en,
     bram_rd_addr,bram_rd_data,collision,dcache_a_opcode,dcache_a_param,dcache_a_size,dcache_a_address,dcache_a_mask,dcache_a_data,dcache_a_corrupt,dcache_a_valid,
     dcache_a_ready,  dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,
     load_cache_set,load_set_valid,load_set);

@@ -48,6 +48,7 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
     output       logic [PHYS-3:0]           store_address_o,
     output       logic [31:0]               store_data_o,
     output       logic [3:0]                store_bm_o,
+    output       logic                      store_io_o,
     output       logic                      store_valid_o,
     output       logic                      no_nonspec
 );
@@ -88,80 +89,13 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
             end
         end
     end
-    //always_comb begin
-    //    casez (conflicts)
-    //        10'bzzzzzzzzz1: begin
-    //            conflict_dq_id = data[0];
-    //            conflict_bitmask = bitmask[0];
-    //            conflict_io = io[0];
-    //        end
-    //        10'bzzzzzzzz10: begin
-    //            conflict_dq_id = data[1];
-    //            conflict_bitmask = bitmask[1];
-    //            conflict_io = io[1];
-    //        end
-    //        10'bzzzzzzz100: begin
-    //            conflict_dq_id = data[2];            
-    //            conflict_bitmask = bitmask[2];
-    //            conflict_io = io[2];
-    //        end
-    //        10'bzzzzzz1000: begin
-    //            conflict_dq_id = data[3];
-    //            conflict_bitmask = bitmask[3];
-    //            conflict_io = io[3];
-    //        end
-    //        10'bzzzzz10000: begin
-    //            conflict_dq_id = data[4];
-    //            conflict_bitmask = bitmask[4];
-    //            conflict_io = io[4];
-    //        end
-    //        10'bzzzz100000: begin
-    //            conflict_dq_id = data[5];
-    //            conflict_bitmask = bitmask[5];
-    //            conflict_io = io[5];
-    //        end
-    //        10'bzzz1000000: begin
-    //            conflict_dq_id = data[6];
-    //            conflict_bitmask = bitmask[6];
-    //            conflict_io = io[6];
-    //        end
-    //        10'bzz10000000: begin
-    //            conflict_dq_id = data[7];
-    //            conflict_bitmask = bitmask[7];
-    //            conflict_io = io[7];
-    //        end
-    //        10'bz100000000: begin
-    //            conflict_dq_id = data[8];
-    //            conflict_bitmask = bitmask[8];
-    //            conflict_io = io[8];
-    //        end
-    //        10'b1000000000: begin
-    //            conflict_dq_id = data[9];
-    //            conflict_bitmask = bitmask[9];
-    //            conflict_io = io[9];
-    //        end
-    //        default: begin
-    //            conflict_dq_id = data[0];
-    //            conflict_bitmask = bitmask[0];
-    //            conflict_io = io[0];
-    //        end
-    //    endcase
-    //end
+
     wire [ENTRIES-1:0] shift;
     wire [ENTRIES-1:0] spec;
     for (genvar i = 0; i < ENTRIES; i++) begin : shift_logic
         assign shift[i] = !(&vld[i:0]);
     end
-    //assign shift[0] = !vld[0];
-    //assign shift[1] = !(vld[1] & vld[0]);
-    //assign shift[2] = !(vld[2] & vld[1] & vld[0]);
-    //assign shift[3] = !(vld[3] & vld[2] & vld[1] & vld[0]);
-    //assign shift[4] = !(vld[4] & vld[3] & vld[2] & vld[1] & vld[0]);
-    //assign shift[5] = !(vld[5] & vld[4] & vld[3] & vld[2] & vld[1] & vld[0]);
-    //assign shift[6] = !(vld[6] & vld[5] & vld[4] & vld[3] & vld[2] & vld[1] & vld[0]);
-    //assign shift[7] = !(vld[7] & vld[6] & vld[5] & vld[4] & vld[3] & vld[2] & vld[1] & vld[0]);
-    //assign shift[8] = !(vld[8] & vld[7] & vld[6] & vld[5] & vld[4] & vld[3] & vld[2] & vld[1] & vld[0]);
-    //assign shift[9] = !(vld[9] & vld[8] & vld[7] & vld[6] & vld[5] & vld[4] & vld[3] & vld[2] & vld[1] & vld[0]);
+
     logic [ENTRIES-1:0] ddec;
     logic [ENTRIES-1:0] vldl;
     logic FINISHSEL2;
@@ -175,21 +109,7 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
             end
         end
     end
-    //always_comb begin
-    //    casez (vld&speculative)
-    //        10'bzzzzzzzzz1: ddec = 10'b0000000001;
-    //        10'bzzzzzzzz10: ddec = 10'b0000000010;
-    //        10'bzzzzzzz100: ddec = 10'b0000000100;
-    //        10'bzzzzzz1000: ddec = 10'b0000001000;
-    //        10'bzzzzz10000: ddec = 10'b0000010000;
-    //        10'bzzzz100000: ddec = 10'b0000100000;
-    //        10'bzzz1000000: ddec = 10'b0001000000;
-    //        10'bzz10000000: ddec = 10'b0010000000;
-    //        10'bz100000000: ddec = 10'b0100000000;
-    //        10'b1000000000: ddec = 10'b1000000000;
-    //        default: ddec = 10'h0;
-    //    endcase
-    //end
+
     logic [ENTRIES-1:0] ddec2;
     logic FINISHSEL3;
     always_comb begin
@@ -206,6 +126,7 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
     logic [31:0] cache_dq;
     logic [PHYS-3:0] address;
     logic [3:0] bm;
+    logic c_io;
     logic FINISHSEL4;
     always_comb begin
         FINISHSEL4 = '0;
@@ -213,6 +134,7 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
         cache_dq = 'x;
         address = 'x;
         bm = 'x;
+        c_io = 'x;
         for (integer i = 0; i < ENTRIES; i++) begin
             if (vld[i]&~speculative[i]&!FINISHSEL4) begin
                 FINISHSEL4 = 1;
@@ -220,6 +142,7 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
                 cache_dq = data[i];
                 address = physical_addresses[i];
                 bm = bitmask[i];
+                c_io = io[i];
             end
         end
     end
@@ -248,22 +171,12 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
             vld[i-1] <= shift[i-1] ? vldl[i] : vldl[i-1];
         end
     end
-    
-    //always_ff @(posedge cpu_clk_i) begin
-    //    if ((|cdec)&!store_valid_o) begin
-    //        store_address_o <= address;
-    //        store_bm_o <= bm;
-    //        store_data_o <= cache_dq;
-    //        store_valid_o <= 1;
-    //    end
-    //    else if (cache_done) begin
-    //        store_valid_o <= 1'b0;
-    //    end
-    //end
+
     assign store_valid_o = (|cdec);
     assign store_data_o = cache_dq;
     assign store_bm_o = bm;
     assign store_address_o = address;
+    assign store_io_o = c_io;
     assign no_nonspec = !(|((~speculative)&vld));// inner expression 1 when there are valid instructions that are not speculative, since the other modules use
     // store buffer empty, store buffer empty is high when inner expression is 0
     assign complete_vld = enqueue_en_i&!enqueue_full; assign complete = enqueue_rob_i;
