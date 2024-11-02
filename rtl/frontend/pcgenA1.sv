@@ -217,11 +217,11 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
         rr <= ~rr;
         if (c1_btb_mod_i) begin
             if (|match) begin : modify_entry
-                counters[{~match[0],btb_lkp_idx}] <= val_to_be_written; btype[{~match[0],btb_lkp_idx}] <= c1_bnch_type_i; targets[{~match[0],btb_lkp_idx}] <= c1_btb_target_i; // here tags are not changed
+                btype[{~match[0],btb_lkp_idx}] <= c1_bnch_type_i; targets[{~match[0],btb_lkp_idx}] <= c1_btb_target_i; // here tags are not changed
                 valid0[btb_lkp_idx] <= match[0] ?  1 : valid0[btb_lkp_idx];valid1[btb_lkp_idx] <= match[1] ?  1 : valid1[btb_lkp_idx];
                 idx[{~match[0], btb_lkp_idx}] <= c1_btb_vpc_i[0];
             end else begin : add_new_entry
-                counters[{replacement_idx,btb_lkp_idx}] <=  val_to_be_written; btype[{replacement_idx,btb_lkp_idx}] <= c1_bnch_type_i; targets[{replacement_idx,btb_lkp_idx}] <= c1_btb_target_i;
+                btype[{replacement_idx,btb_lkp_idx}] <= c1_bnch_type_i; targets[{replacement_idx,btb_lkp_idx}] <= c1_btb_target_i;
                 valid0[{btb_lkp_idx}] <= replacement_idx==0 ? 1 : valid0[btb_lkp_idx]; valid1[{btb_lkp_idx}] <= replacement_idx==1 ? 1 : valid1[btb_lkp_idx];
                 tag0[{btb_lkp_idx}] <= replacement_idx==0 ? tag_based_on_pc : tag0[btb_lkp_idx];tag1[{btb_lkp_idx}] <= replacement_idx==1 ? tag_based_on_pc : tag1[btb_lkp_idx];
                 idx[{replacement_idx, btb_lkp_idx}] <= c1_btb_vpc_i[0];
@@ -230,7 +230,14 @@ parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32)
             valid0[btb_lkp_idx] <= match[0] ?  0 : valid0[btb_lkp_idx];valid1[btb_lkp_idx] <= match[1] ? 0: valid1[btb_lkp_idx];
             idx[{~match[0], btb_lkp_idx}] <= 0;
         end
-        if (c1_btb_bm_i&!core_reset_i) begin
+        if (c1_btb_mod_i) begin
+            if (|match) begin : modify_count_entry
+                counters[{~match[0],btb_lkp_idx}] <= val_to_be_written;
+            end else begin : add_new_count_entry
+                counters[{replacement_idx,btb_lkp_idx}] <=  val_to_be_written;
+            end
+        end
+        else if (c1_btb_bm_i&!core_reset_i) begin
             counters[{c1_btb_way_i,c1_btb_vpc_i[$clog2(BPU_ENTRIES/2):1]}] <= val_to_be_written;
         end
     end
