@@ -27,6 +27,8 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
     input   wire logic                          core_clock_i,
     input   wire logic                          core_flush_i,
 
+    input   wire logic                          load_reordering,
+
     input   wire logic                          lsu_vld_i,
     input   wire logic [5:0]                    lsu_rob_i,
     input   wire logic                          lsu_cmo_i,
@@ -98,7 +100,7 @@ module newLoadQueue #(parameter WOQE = 8, parameter MMIOE = 8) (
 
     // Fails weak enqueue if miss under miss, or miss and conflict, or unresolvable load (too many store buffer conflicts)
     wire wk_failed_enqueue = !core_flush_i&lsu_vld&!(wk_dequeue|so_dequeue|sfull|wfull|collision)&!lsu_addr[31]&!lsu_cmo&
-    ((!load_set_valid_i&((current_miss_valid&(lsu_addr[30:7]!=current_miss))||conflict_res_valid))||(conflict_res_valid&!conflict_resolvable));
+    ((!load_set_valid_i&((current_miss_valid&(lsu_addr[30:7]!=current_miss))||conflict_res_valid))||(conflict_res_valid&!conflict_resolvable)||(!wempty&!load_reordering));
 
     wire logic [5:0]  wlsu_rob;
     wire logic [2:0]  wlsu_op;

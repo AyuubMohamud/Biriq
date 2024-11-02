@@ -71,7 +71,8 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     output  wire logic                          weak_io,
     output  wire logic [1:0]                    cbie,
     output  wire logic                          cbcfe,
-    output  wire logic                          cbze
+    output  wire logic                          cbze,
+    output  wire logic                          load_reordering
 );
     /*Optimise before even thinking of putting this on an fpga*/
     reg current_privilege_mode = 1'b1; // Initially at 2'b11
@@ -103,7 +104,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     reg [1:0] mcountinhibit = 0; localparam MCOUNTERINHIBIT = 12'h320; 
     assign tw = mstatus[5];
     // Vendor-specific CSRs
-    reg [3:0] maux = 4'b0100; localparam MAUX = 12'h7C0;
+    reg [4:0] maux = 5'b10100; localparam MAUX = 12'h7C0;
     assign enable_branch_pred = maux[2];
     assign enable_counter_overload = maux[1];
     assign counter_overload = maux[0];
@@ -114,6 +115,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     assign cbie = menvcfg[1:0];
     assign cbcfe = menvcfg[2];
     assign cbze = menvcfg[3];
+    assign load_reordering = maux[4];
     logic [31:0] read_data; logic exists;
     wire [31:0] new_data;
     logic [31:0] pmp_data; logic pmp_exists;
@@ -161,7 +163,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
             CYCLEH: begin read_data = cycle[63:32];exists = (current_privilege_mode||(mcounteren[0]&!current_privilege_mode));end
             INSTRET: begin read_data = instret[31:0];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
             INSTRETH: begin read_data = instret[63:32];exists = (current_privilege_mode||(mcounteren[2]&!current_privilege_mode));end
-            MAUX: begin read_data = {28'd0, maux}; exists = 1; end
+            MAUX: begin read_data = {27'd0, maux}; exists = 1; end
             default: begin
                 read_data = pmp_data; exists = pmp_exists;
             end
@@ -291,7 +293,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
 
     always_ff @(posedge cpu_clock_i) begin
         if (csrfile_valid_i&&csrfile_wr_en&&(csrfile_address_i==MAUX)&&current_privilege_mode) begin
-            maux <= new_data[3:0];
+            maux <= new_data[4:0];
         end
     end
 

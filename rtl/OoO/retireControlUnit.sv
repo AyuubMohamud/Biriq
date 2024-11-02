@@ -158,6 +158,7 @@ module retireControlUnit (
     wire logic        cins1_is_store;
     wire logic        cins1_valid;
     wire commit_ins0; wire commit_ins1; wire safe_to_free0; wire safe_to_free1;
+    wire altcommit, altcommit0, altcommit1;
     assign commit0 = commit_ins0; assign commit1 = commit_ins1;
     reg partial_retire;
     reg [4:0] recoveryCounter0 = 5'b00000;
@@ -190,7 +191,7 @@ module retireControlUnit (
     assign arch_reg0 = recoveryCounter0; assign arch_reg1 = recoveryCounter1;
     assign sqb_commit0 = cins0_is_store&commit_ins0;
     assign sqb_commit1 = (cins1_is_store&commit_ins1);
-    wire altcommit, altcommit0, altcommit1;
+    
     assign altcommit0 = altcommit&!partial_retire; assign altcommit1 = altcommit&partial_retire;
     crmt architectural_register_map (cpu_clock_i, arch_reg0, phys_reg0, arch_reg1, phys_reg1, cins0_arch_reg, cins0_new_preg, 
     (commit_ins0|altcommit0)&(cins0_is_mov_elim|cins0_register_allocated)&(cins0_arch_reg!=0),cins1_arch_reg, cins1_new_preg,
@@ -242,8 +243,8 @@ module retireControlUnit (
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
     assign rcu_block = retire_control_state!=Normal;
     assign rename_flush_o = (retire_control_state==Await) && icache_idle && dcache_flush_resp && !mem_block_i;
-    assign ins_commit0 = commit_ins0;
-    assign ins_commit1 = commit_ins1;    reg wfi = 0;
+    assign ins_commit0 = commit_ins0|altcommit0;
+    assign ins_commit1 = commit_ins1|altcommit1;    reg wfi = 0;
     assign mret = ((excp_special[2]))&(retire_control_state==Normal)&!empty&!mem_block_i&!excp_excp_valid;
     assign take_interrupt = retire_control_state==TakeInterrupt && !empty && !mem_block_i;
     assign take_exception = (excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);

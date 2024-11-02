@@ -111,11 +111,12 @@ wire        weak_io;
 wire [1:0] cbie;
 wire cbcfe;
 wire cbze;
+wire load_reordering;
     csrfile #(.HARTID(HARTID), .PMP_REGS(PMP_ENTRIES), .ENABLE_PSX(ENABLE_PSX)) csrfile (cpu_clock_i,tmu_data_i,tmu_address_i,tmu_opcode_i,tmu_wr_en,tmu_valid_i,tmu_done_o,tmu_excp_o,tmu_data_o,mret,take_exception,
     take_interrupt,tmu_epc_i,tmu_mtval_i,tmu_mcause_i,tmu_msip_i,tmu_mtip_i,tmu_meip_i,tmu_mip_o,mie_o,inc_commit0,inc_commit1,effc_privilege,tw,real_privilege,mepc_o,mtvec_o,
     enable_branch_pred,
 enable_counter_overload,
-counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze);
+counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze, load_reordering);
     wire [29:0] flush_addr;
     wire icache_flush, icache_idle;
     wire dcache_flush, dcache_idle;
@@ -337,6 +338,6 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze)
     stb_c0, stb_c1, stb_emp, dcache_a_opcode, dcache_a_param, dcache_a_size, dcache_a_address, dcache_a_mask, dcache_a_data, dcache_a_corrupt, dcache_a_valid, dcache_a_ready, 
     dcache_d_opcode, dcache_d_param, dcache_d_size, dcache_d_denied, dcache_d_data, dcache_d_corrupt, dcache_d_valid, dcache_d_ready,d_addr,
     d_write,
-    d_kill, weak_io);
+    d_kill, weak_io, load_reordering);
     assign inc_commit0 = ins_commit0; assign inc_commit1 = ins_commit1; assign full_flush = rename_flush_o; assign exception_code_i[4] = 0;
 endmodule

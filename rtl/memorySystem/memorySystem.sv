@@ -108,7 +108,8 @@ module memorySystem #(parameter SB_ENTRIES = 8) (
     output  wire logic [24:0]                   d_addr,
     output  wire logic                          d_write,
     input   wire logic                          d_kill,
-    input   wire logic                          weak_io
+    input   wire logic                          weak_io,
+    input   wire logic                          load_reordering
 );
     wire        lsu_busy;
     wire        lsu_vld;
@@ -205,7 +206,7 @@ module memorySystem #(parameter SB_ENTRIES = 8) (
     wire logic [5:0]  lq_rob_cmp;
     wire logic         lq_cmp;
     wire dcu;
-    newLoadQueue lq (cpu_clk_i, flush_i, lq_valid, lq_rob, lq_cmo, lq_ld_type, lq_addr, bm, lq_dest, lq_full, conflict_data_c, conflict_bm_c, 
+    newLoadQueue lq (cpu_clk_i, flush_i, load_reordering, lq_valid, lq_rob, lq_cmo, lq_ld_type, lq_addr, bm, lq_dest, lq_full, conflict_data_c, conflict_bm_c, 
     conflict_resolvable, conflict_res_valid,conflict_address,conflict_bm, bram_rd_en,bram_rd_addr,bram_rd_data,collision, load_cache_set,load_set_valid,load_set,dc_req,dc_addr,dc_op,dc_cmo,dcu,dc_data,
     dc_cmp, lq_wr,lq_wr_data,lq_wr_en,lq_rob_cmp,lq_cmp, rob_lock, lsu_lock, rob_oldest_i, store_buffer_empty, weak_io);
 
