@@ -23,7 +23,7 @@ Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, 
 - SIMD instructions on both Integer ALU Ports.
 - Dual ported, dual issue out of order integer scheduler for maximum effeciency in scheduling integer/branch instructions
 - 0, 4, or 8 PMP Entries with a granularity of 128 bytes.
-- A coherent TileLink-UL port into the data cache allowing for coherent DMA (and write-updates to the cache if it writes a present line).
+- A coherent TileLink-UL port into the data cache allowing for coherent DMA.
 
 Queue capacities: \
 Up to 16 memory/mul/div/csr instructions \
