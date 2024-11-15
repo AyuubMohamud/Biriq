@@ -18,13 +18,13 @@
 
 Latencies measured from the start of the cycle after Register Read
 
-0* The mv pseudo instruction is recognised by the CPU and eliminated from the instruction stream, (only present in RCU and not scheduler/pipeline).
+> The mv pseudo instruction is recognised by the CPU and eliminated from the instruction stream, (only present in RCU and not scheduler/pipeline).
 Note that chaining dependent mov's together does not change this, it is handled by the rename logic.
 
-2* The store instructions results are placed in a store buffer, hence commit to the memory system eventually with variable latencies taken to store.
+> The store instructions results are placed in a store buffer, hence commit to the memory system eventually with variable latencies taken to store.
 
-3* Loads actually finish executing in 3 stages, but do not do forwarding like the integer ALU's do, hence taking till the start of the 4th clock since execution to obtain the correct value from the Physical Register File.
+> Loads actually finish executing in 3 stages, but do not do forwarding like the integer ALU's do, hence taking till the start of the 4th clock since execution to obtain the correct value from the Physical Register File.
 
-Divisions and Multiplications are out of pipe, and write back to a moment where the load engine does not write a value back to the PRF.
+> Divisions and Multiplications are out of pipe, and write back to a moment where the load engine does not write a value back to the PRF.
 
-Note that the CPU is up to tri-issue, two arithmetic instructions and 1 of mul/div/csr/mem.
+> Note that the CPU is up to tri-issue, two arithmetic instructions and 1 of mul/div/csr/mem.
