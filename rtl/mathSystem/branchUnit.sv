@@ -20,14 +20,15 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module branchUnit (
+module branchUnit #(parameter ENABLE_C_EXTENSION = 1,
+localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30) (
     input   wire logic                      cpu_clock_i,
     input   wire logic                      flush_i,
     // base instruction information
     input   wire logic [31:0]               operand_1,
     input   wire logic [31:0]               operand_2,
     input   wire logic [31:0]               offset,
-    input   wire logic [29:0]               pc,
+    input   wire logic [PC_BITS-1:0]        pc,
     input   wire logic                      auipc,
     input   wire logic                      call,
     input   wire logic                      ret,
@@ -35,12 +36,15 @@ module branchUnit (
     input   wire logic                      jalr,
     input   wire logic [2:0]                bnch_cond,
     input   wire logic [5:0]                rob_id_i,
+    /* verilator lint_off unused */
+    input   wire logic                      ins_sz_i,
+    /* verilator lint_on unused */
     input   wire logic [5:0]                dest_i,
     // btb info
     input   wire logic  [1:0]               bm_pred_i,
     input   wire logic  [1:0]               btype_i,
     input   wire logic                      btb_vld_i,
-    input   wire logic  [29:0]              btb_target_i,
+    input   wire logic  [PC_BITS-1:0]       btb_target_i,
     input   wire logic                      btb_way_i,
     input   wire logic                      valid_i,
 
@@ -50,7 +54,7 @@ module branchUnit (
     output  logic                           res_valid_o,
     output  logic [5:0]                     rob_o,    
     output  logic                           rcu_excp_o,
-    output  logic  [29:0]                   c1_btb_vpc_o, //! SIP PC
+    output  logic  [PC_BITS-1:0]            c1_btb_vpc_o, //! SIP PC
     output  logic  [31:0]                   c1_btb_target_o, //! SIP Target **if** taken
     output  logic  [1:0]                    c1_cntr_pred_o, //! Bimodal counter prediction,
     output  logic                           c1_bnch_tkn_o, //! Branch taken this cycle
@@ -106,23 +110,48 @@ module branchUnit (
     assign brnch_res = {bnch_cond[2], bnch_cond[0]} == 2'b00 ? eq :
                        {bnch_cond[2], bnch_cond[0]} == 2'b01 ? !eq : 
                        {bnch_cond[2], bnch_cond[0]} == 2'b10 ? lt :
-                       mt|eq; 
+                       mt|eq;
+    wire [31:0] pc_32;
+    wire [30:0] tgt_31;
+    generate if (ENABLE_C_EXTENSION) begin : _if_IALIGN2
+        assign pc_32 = {pc, 1'b0};
+        assign tgt_31 = btb_target_i;
+    end else begin : _if_IALIGN4
+        assign pc_32 = {pc, 2'd0};
+        assign tgt_31 = {btb_target_i, 1'b0};
+    end endgenerate
     wire [31:0] excp_addr;
-    wire [31:0] first_operand = jalr ? operand_1 : {pc,2'b00};
+    wire [31:0] first_operand = jalr ? operand_1 : pc_32;
     wire [31:0] second_operand = (jal|jalr|brnch_res)&&!(auipc) ? offset : 32'd4;
 
     assign excp_addr = first_operand+second_operand;
     wire wrongful_nbranch = !btb_vld_i&&!(auipc);
-    wire wrongful_target = {btb_target_i,2'b00}!=excp_addr && btb_vld_i;
-    //wire [1:0] branch_type = call ? 2'b01 : ret ? 2'b11 : jal|jalr ? 2'b10 : 2'b00;
+    wire wrongful_target = tgt_31!=excp_addr[31:1] && btb_vld_i;
     wire [1:0] branch_type = call ? 2'b01 : ret ? 2'b11 : jal|jalr ? 2'b10 : 2'b00;
     wire wrongful_type = branch_type!=btype_i && btb_vld_i;
     wire wrongful_bm = (brnch_res^bm_pred_i[1]) && btb_vld_i && branch_type==2'b00;    
-    initial rcu_excp_o = 0; initial wb_valid_o = 0; initial res_valid_o = 0;                
+    initial rcu_excp_o = 0; initial wb_valid_o = 0; initial res_valid_o = 0;           
+    
+    wire [31:0] pc_constant;
+    generate if (ENABLE_C_EXTENSION) begin : __if_IALIGN2
+        assign pc_constant = ins_sz_i ? 32'd2 : 32'd4;
+    end else begin : __if_IALIGN4
+        assign pc_constant = 32'd4;
+    end endgenerate
+
+    wire [31:0] pc_nx = pc_32+pc_constant;
+
+    wire [PC_BITS-1:0] c1_btb_vpc;
+
+    generate if (ENABLE_C_EXTENSION) begin : ___if_IALIGN2
+        assign c1_btb_vpc = !ins_sz_i ? pc[1:0]==2'b00 ? {pc[30:2], 2'b01} : pc[1:0]==2'b01 ? {pc[30:2], 2'b10} : pc[1:0]==2'b10 ? {pc[30:2], 2'b11} : {pc_nx[31:3], 2'b00} : pc;
+    end else begin : ___if_IALIGN4
+        assign c1_btb_vpc = pc;
+    end endgenerate
     always_ff @(posedge cpu_clock_i) begin
         wb_valid_o <= !flush_i&valid_i&(auipc|jal|jalr)&!(dest_i==0);
         res_valid_o <= !flush_i&valid_i;
-        result_o <= auipc ? offset+{pc,2'b00} : {pc+30'h1,2'b00};
+        result_o <= auipc ? offset+pc_32 : pc_nx;
         wb_dest_o <= dest_i;
         rob_o <= rob_id_i;
         if (((wrongful_nbranch&(brnch_res|(branch_type[1:0]!=2'b00)))|wrongful_target|wrongful_type|wrongful_bm)&& !flush_i && valid_i) begin
@@ -144,7 +173,7 @@ module branchUnit (
             rcu_excp_o <= 0;
         end
         c1_btb_way_o <= btb_way_i;
-        c1_btb_vpc_o <= pc;
+        c1_btb_vpc_o <= c1_btb_vpc;
         c1_btb_target_o <= excp_addr;
         c1_cntr_pred_o <= bm_pred_i;
         c1_bnch_tkn_o <= (brnch_res|(branch_type[1:0]!=2'b00));

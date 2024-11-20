@@ -20,29 +20,31 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module binfo (
+module binfo #(parameter ENABLE_C_EXTENSION = 1,
+localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
+localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     input   wire logic                  cpu_clock_i,
 
-    input   wire logic [29:0]           rn_pc_i,
+    input   wire logic [PC_BITS-1:0]    rn_pc_i,
     input   wire logic  [1:0]           rn_bm_pred_i,
     input   wire logic  [1:0]           rn_btype_i,
     input   wire logic                  rn_btb_vld_i,
-    input   wire logic  [29:0]          rn_btb_target_i,
+    input   wire logic [PC_BITS-1:0]    rn_btb_target_i,
     input   wire logic                  rn_btb_way_i,
-    input   wire logic                  rn_btb_idx_i,
+    input   wire logic [IDX_BITS-1:0]   rn_btb_idx_i,
     input   wire logic [3:0]            rn_btb_pack,
     input   wire logic                  rn_btb_wen,
 
     input   wire logic [3:0]            pack_i,
-    output  wire logic [29:0]           pc_o,
+    output  wire logic [PC_BITS-1:0]    pc_o,
     output  wire logic  [1:0]           bm_pred_o,
     output  wire logic  [1:0]           btype_o,
     output  wire logic                  btb_vld_o,
-    output  wire logic  [29:0]          btb_target_o,
+    output  wire logic [PC_BITS-1:0]    btb_target_o,
     output  wire logic                  btb_way_o,
-    output  wire logic                  btb_idx_o
+    output  wire logic [IDX_BITS-1:0]   btb_idx_o
 );
-    reg [66:0] binfo_ram [0:15];
+    reg [PC_BITS+PC_BITS+2+2+IDX_BITS+1:0] binfo_ram [0:15];
 
     always_ff @(posedge cpu_clock_i) begin
         if (rn_btb_wen) begin

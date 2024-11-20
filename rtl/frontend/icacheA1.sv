@@ -20,16 +20,18 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module icacheA1 (
+module icacheA1 #(parameter ENABLE_C_EXTENSION = 0,
+localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
+localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     input   wire logic                      core_clock_i,
     input   wire logic                      core_flush_i,
 
     input   wire logic                      icache_vld_i, //! IF2 valid next cycle
-    input   wire logic [29:0]               icache_ppc_i, //! Only used for Cache
-    input   wire logic                      icache_btb_index_i,
+    input   wire logic [PC_BITS-1:0]        icache_ppc_i, //! Only used for Cache
+    input   wire logic [IDX_BITS-1:0]       icache_btb_index_i,
     input   wire logic [1:0]                icache_btb_btype_i, //! Branch type: 00 = Cond, 01 = Indirect, 10 - Jump, 11 - Ret
     input   wire logic [1:0]                icache_btb_bm_pred_i, //! Bimodal counter prediction
-    input   wire logic [29:0]               icache_btb_target_i, //! Predicted target if branch is taken
+    input   wire logic [PC_BITS-1:0]        icache_btb_target_i, //! Predicted target if branch is taken
     input   wire logic                      icache_btb_vld_i,
     input   wire logic                      icache_btb_way_i,
     output  wire logic                      icache_busy_o,
@@ -37,13 +39,13 @@ module icacheA1 (
     // decode
     output       logic                      dec_vld_o,
     output       logic [63:0]               dec_instruction_o,
-    output       logic [29:0]               dec_vpc_o,
+    output       logic [PC_BITS-1:0]        dec_vpc_o,
     output       logic [3:0]                dec_excp_code_o,
     output       logic                      dec_excp_vld_o,
-    output       logic                      dec_btb_index_o,
+    output       logic [IDX_BITS-1:0]       dec_btb_index_o,
     output       logic [1:0]                dec_btb_btype_o, //! Branch type: 00 = Cond, 01 = Indirect, 10 - Jump, 11 - Ret
     output       logic [1:0]                dec_btb_bm_pred_o, //! Bimodal counter prediction
-    output       logic [29:0]               dec_btb_target_o, //! Predicted target if branch is taken
+    output       logic [PC_BITS-1:0]        dec_btb_target_o, //! Predicted target if branch is taken
     output       logic                      dec_btb_vld_o,
     output       logic                      dec_btb_way_o,
     input   wire logic                      dec_busy_i,
@@ -78,9 +80,9 @@ module icacheA1 (
     input   wire logic                      i_kill
 );
     initial icache_a_valid = 0;
-    wire [29:0] working_addr; wire [29:0] working_target; wire [1:0] working_type; wire working_btb_vld; wire [1:0] working_bimodal_prediction;
+    wire [PC_BITS-1:0] working_addr; wire [PC_BITS-1:0] working_target; wire [1:0] working_type; wire working_btb_vld; wire [1:0] working_bimodal_prediction;
     wire btb_way;
-    wire working_valid; wire working_btb_index;
+    wire working_valid; wire [IDX_BITS-1:0] working_btb_index;
     localparam IDLE = 2'b00;
     localparam MISS_REQ = 2'b01;
     localparam MISS_RESP = 2'b10;
@@ -88,13 +90,13 @@ module icacheA1 (
     reg [1:0] cache_fsm = IDLE;
     wire req_not_found;
     wire miss = (cache_fsm==IDLE)&(cache_flush_i|req_not_found);
-    skdbf #(.DW(67)) skidbuffer (
+    skdbf #(.DW(PC_BITS+PC_BITS+IDX_BITS+1+2+1+2)) skidbuffer (
         core_clock_i, core_flush_i, dec_busy_i|(cache_fsm!=IDLE)|miss, 
         {working_addr, working_target, working_type, working_btb_vld, working_bimodal_prediction, working_btb_index, btb_way
     }, working_valid, icache_busy_o, {icache_ppc_i, icache_btb_target_i, icache_btb_btype_i, icache_btb_vld_i, 
     icache_btb_bm_pred_i,icache_btb_index_i, icache_btb_way_i}, icache_vld_i
     );
-    reg [19:0] tags0 [0:31]; reg [19:0] tags1 [0:31];// from addr[31:0], addr[31:12] is extracted, and addr[12:7] used for index, addr[6:0] is offset
+    reg [19:0] tags0 [0:31]; reg [19:0] tags1 [0:31];// from addr[31:0], addr[31:12] is extracted, and addr[11:7] used for index, addr[6:0] is offset
     reg valid0 [0:31];reg valid1 [0:31]; reg rr = 0;
     initial begin
         for (integer x = 0; x < 32; x++) begin
@@ -108,7 +110,12 @@ module icacheA1 (
     assign icache_d_ready = 1'b1;
     reg [4:0] counter = 0;
     /* verilator lint_off UNUSEDSIGNAL */
-    wire [31:0] used_address = {working_addr,2'b00};
+    wire [31:0] used_address;
+    generate if (ENABLE_C_EXTENSION) begin : __if_IALIGN2
+        assign used_address = {working_addr, 1'b0};
+    end else begin : __if_IALIGN4
+        assign used_address = {working_addr,2'b00};
+    end endgenerate
     /* verilator lint_on UNUSEDSIGNAL */
     wire [1:0] present = {tags1[used_address[11:7]]==used_address[31:12] && valid1[used_address[11:7]], tags0[used_address[11:7]]==used_address[31:12] && valid0[used_address[11:7]]};
     assign req_not_found = working_valid&!(|present);
@@ -129,8 +136,8 @@ module icacheA1 (
     );
     reg block = 0;
     initial dec_vld_o = 0;
-
-    assign i_addr = working_addr[29:5];
+    localparam PMP_ADDR_START = ENABLE_C_EXTENSION==1 ? 6 : 5;
+    assign i_addr = working_addr[PC_BITS-1:PMP_ADDR_START];
     always_ff @(posedge core_clock_i) begin
         rr <= ~rr;
         case (cache_fsm)
@@ -144,10 +151,10 @@ module icacheA1 (
                 end else if (block&!dec_busy_i) begin
                     dec_vld_o <= 0;
                 end else if (!dec_busy_i) begin
-                    if (((!req_not_found|working_addr[29]|i_kill)&working_valid)) begin
+                    if (((!req_not_found|working_addr[PC_BITS-1]|i_kill)&working_valid)) begin
                         dec_vpc_o <= working_addr;
                         dec_excp_code_o <= 1;
-                        dec_excp_vld_o <= working_addr[29]|i_kill;
+                        dec_excp_vld_o <= working_addr[PC_BITS-1]|i_kill;
                         dec_btb_index_o <= working_btb_index;
                         dec_btb_btype_o <= working_type;
                         dec_btb_bm_pred_o <= working_bimodal_prediction;
@@ -155,7 +162,7 @@ module icacheA1 (
                         dec_btb_vld_o <= working_btb_vld;
                         dec_btb_way_o <= btb_way;
                         dec_vld_o <= 1;
-                    end else if (req_not_found&!working_addr[29]&!i_kill&working_valid) begin
+                    end else if (req_not_found&!working_addr[PC_BITS-1]&!i_kill&working_valid) begin
                         random_sample <= rr;
                         cache_fsm <= MISS_REQ;
                         dec_vld_o <= 0;
