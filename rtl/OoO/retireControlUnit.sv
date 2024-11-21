@@ -201,7 +201,7 @@ module retireControlUnit (
     cins1_old_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), safe_to_free0, safe_to_free1);
     assign rcu_busy = full|!(retire_control_state==Normal||retire_control_state==TakeInterrupt);
     wire [29:0] currentPC = cpacket_pc[0] ? cpacket_pc : {cpacket_pc[29:1], partial_retire};
-    wire [29:0] pcPlus4 = currentPC + 29'd1; // used in special types CSRRW, SFENCE, FENCE.I
+    wire [29:0] pcPlus4 = currentPC + 30'd1; // used in special types CSRRW, SFENCE, FENCE.I
     // Conditions of committing
     assign packet_pop = ((partial_retire&(commit_ins1|altcommit1))|((commit_ins0|altcommit0)&((!cins1_valid)|(commit_ins1))))|(retire_control_state==ReclaimAndRecover);
     assign wr_data0 = retire_control_state==ReclaimAndRecover ? cins0_new_preg : cins0_old_preg;
