@@ -20,18 +20,22 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module align (
+module align #(
+    parameter ENABLE_C_EXTENSION = 1,
+    localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
+    localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1
+) (
     input   wire logic                  cpu_clk_i,
     input   wire logic                  flush_i,
     input   wire logic                  icache_valid_i,
     input   wire logic [63:0]           instruction_i,
-    input   wire logic [30:0]           if2_sip_vpc_i,
+    input   wire logic [PC_BITS-1:0]    if2_sip_vpc_i,
     input   wire logic [3:0]            if2_sip_excp_code_i,
     input   wire logic                  if2_sip_excp_vld_i,
-    input   wire logic [1:0]            if2_btb_idx,
+    input   wire logic [IDX_BITS-1:0]   if2_btb_idx,
     input   wire logic [1:0]            btb_btype_i, //! Branch type: 00 = Cond, 01 = Indirect, 10 - Jump, 11 - Ret
     input   wire logic [1:0]            btb_bm_pred_i, //! Bimodal counter prediction
-    input   wire logic [30:0]           btb_target_i, //! Predicted target if branch is taken
+    input   wire logic [PC_BITS-1:0]    btb_target_i, //! Predicted target if branch is taken
     input   wire logic                  btb_vld_i,
     input   wire logic                  btb_way_i,
     output  wire logic                  busy_o,
@@ -43,13 +47,13 @@ module align (
     output       logic [31:0]           dec1_instruction_o,
     output       logic                  dec1_instruction_is_2,
     output       logic                  dec1_instruction_valid_o,
-    output       logic [30:0]           dec_vpc_o,
+    output       logic [PC_BITS-1:0]    dec_vpc_o,
     output       logic [3:0]            dec_excp_code_o,
     output       logic                  dec_excp_vld_o,
-    output       logic [1:0]            dec_btb_index_o,
+    output       logic [IDX_BITS-1:0]   dec_btb_index_o,
     output       logic [1:0]            dec_btb_btype_o, //! Branch type: 00 = Cond, 01 = Indirect, 10 - Jump, 11 - Ret
     output       logic [1:0]            dec_btb_bm_pred_o, //! Bimodal counter prediction
-    output       logic [30:0]           dec_btb_target_o, //! Predicted target if branch is taken
+    output       logic [PC_BITS-1:0]    dec_btb_target_o, //! Predicted target if branch is taken
     output       logic                  dec_btb_vld_o,
     output       logic                  dec_btb_way_o,
     output       logic                  dec_invalidate_o,

@@ -197,6 +197,8 @@ module frontend #(
         mrq_busy_i
     );
 
+    
+
     decode #(ENABLE_PSX) decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw,cbie,
     cbcfe,
     cbze, flush_resp_o, mrq_hit_o,
