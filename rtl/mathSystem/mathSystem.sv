@@ -40,7 +40,6 @@ localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     input   wire logic [31:0]           ins1_immediate_i,
     input   wire logic [5:0]            ins1_dest_i,
     input   wire logic [1:0]            ins1_hint_i,
-    input   wire logic                  ins1_ins0_2byte_i,
     input   wire logic                  ins1_2byte_i,
     input   wire logic                  ins1_valid,
     input   wire logic [3:0]            pack_id,
@@ -138,7 +137,7 @@ localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     /* verilator lint_on UNUSED */
     wire logic [4:0]                alu1_rob_i;
     iram instructionRAM (cpu_clock_i,ins0_opcode_i, ins0_ins_type, ins0_imm_i, ins0_immediate_i, ins0_dest_i,ins0_hint_i, ins0_2byte_i, ins0_valid, ins1_opcode_i, ins1_ins_type, ins1_imm_i,
-    ins1_immediate_i, ins1_dest_i,ins1_hint_i, ins1_2byte_i, ins1_ins0_2byte_i, ins1_valid, pack_id, alu0_opcode_o, alu0_ins_type, alu0_imm_o, alu0_immediate_o, alu0_dest_o, alu0_hint_o,alu0_2byte_o,alu0_2byte_p_o,
+    ins1_immediate_i, ins1_dest_i,ins1_hint_i, ins1_2byte_i, ins1_valid, pack_id, alu0_opcode_o, alu0_ins_type, alu0_imm_o, alu0_immediate_o, alu0_dest_o, alu0_hint_o,alu0_2byte_o,alu0_2byte_p_o,
     alu0_rob_i, alu1_opcode_o, alu1_ins_type,  alu1_imm_o, alu1_immediate_o, alu1_dest_o, alu1_hint_o, alu1_2byte_o, alu1_2byte_p_o, alu1_rob_i);
     wire logic [3:0]            pack_i = alu0_rob_i[4:1];
     wire logic [PC_BITS-1:0]    pc_o;

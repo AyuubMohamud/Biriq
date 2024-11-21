@@ -23,7 +23,10 @@
 // RCU
 /**
 **/
-module retireControlUnit (
+module retireControlUnit #(
+    parameter ENABLE_C_EXTENSION = 1,
+    localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30
+) (
     input   wire logic                              cpu_clock_i,
     output  wire logic                              dcache_flush_o,
     input   wire logic                              dcache_flush_resp,
@@ -32,7 +35,7 @@ module retireControlUnit (
     input   wire logic                              mie,
     input   wire logic [2:0]                        machine_interrupts,
 
-    input   wire logic [29:0]                       packet_pc,
+    input   wire logic [PC_BITS-1:0]                packet_pc,
     input   wire logic                              ins0_is_mov_elim,
     input   wire logic                              ins0_register_allocated,
     input   wire logic [4:0]                        ins0_arch_reg,
@@ -42,6 +45,7 @@ module retireControlUnit (
     input   wire logic                              ins0_excp_valid,
     input   wire logic [3:0]                        ins0_special,
     input   wire logic                              ins0_is_store,
+    input   wire logic                              ins0_is_2byte,
     input   wire logic                              ins1_is_mov_elim,
     input   wire logic                              ins1_register_allocated,
     input   wire logic [4:0]                        ins1_arch_reg,
@@ -51,6 +55,7 @@ module retireControlUnit (
     input   wire logic                              ins1_excp_valid,
     input   wire logic [3:0]                        ins1_special,
     input   wire logic                              ins1_is_store,
+    input   wire logic                              ins1_is_2byte,
     input   wire logic                              ins1_valid,
     input   wire logic                              push_packet,
     output  wire logic                              rcu_busy,
@@ -84,8 +89,8 @@ module retireControlUnit (
     input   wire logic                              alu_excp_i,
     input   wire logic [4:0]                        alu_excp_code_i,
     input   wire logic [5:0]                        rob_i,
-    input   wire logic [29:0]                       c1_btb_vpc_i, 
-    input   wire logic [29:0]                       c1_btb_target_i,
+    input   wire logic [PC_BITS-1:0]                c1_btb_vpc_i, 
+    input   wire logic [PC_BITS-1:0]                c1_btb_target_i,
     input   wire logic [1:0]                        c1_cntr_pred_i,
     input   wire logic                              c1_bnch_tkn_i, 
     input   wire logic [1:0]                        c1_bnch_type_i,
@@ -101,7 +106,7 @@ module retireControlUnit (
     output  wire logic                              icache_flush,
     
     output  wire logic                              flush_o,
-    output       logic [29:0]                       flush_address,
+    output       logic [PC_BITS-1:0]                flush_address,
 
     output  wire logic                              rcu_block,
 
@@ -115,14 +120,14 @@ module retireControlUnit (
     // exception handling           
     output  wire logic                              take_exception,
     output  wire logic                              take_interrupt,
-    output  wire logic [29:0]                       tmu_epc_o,
+    output  wire logic [PC_BITS-1:0]                tmu_epc_o,
     output  wire logic [31:0]                       tmu_mtval_o,
     output  wire logic [3:0]                        tmu_mcause_o,
-    input   wire logic [29:0]                       mepc_i,
+    input   wire logic [PC_BITS-1:0]                mepc_i,
     input   wire logic [31:0]                       mtvec_i,
 
-    output  wire logic [29:0]                       c1_btb_vpc_o, //! SIP PC
-    output  wire logic [29:0]                       c1_btb_target_o, //! SIP Target **if** taken
+    output  wire logic [PC_BITS-1:0]                c1_btb_vpc_o, //! SIP PC
+    output  wire logic [PC_BITS-1:0]                c1_btb_target_o, //! SIP Target **if** taken
     output  wire logic [1:0]                        c1_cntr_pred_o, //! Bimodal counter prediction,
     output  wire logic                              c1_bnch_tkn_o, //! Branch taken this cycle
     output  wire logic [1:0]                        c1_bnch_type_o,
@@ -136,7 +141,7 @@ module retireControlUnit (
     wire packet_pop;
     wire [4:0] rd_ptr; wire [4:0] wr_ptr;
     /*verilator lint_off UNUSEDSIGNAL*/
-    wire logic [29:0] cpacket_pc;
+    wire logic [PC_BITS-1:0] cpacket_pc;
     /*verilator lint_on UNUSEDSIGNAL*/
     wire logic        cins0_is_mov_elim;
     wire logic        cins0_register_allocated;
@@ -147,6 +152,7 @@ module retireControlUnit (
     wire logic        cins0_excp_valid;
     wire logic [3:0]  cins0_special;
     wire logic        cins0_is_store;
+    wire logic        cins0_is_2byte;
     wire logic        cins1_is_mov_elim;
     wire logic        cins1_register_allocated;
     wire logic [4:0]  cins1_arch_reg;
@@ -156,6 +162,7 @@ module retireControlUnit (
     wire logic        cins1_excp_valid;
     wire logic [3:0]  cins1_special;
     wire logic        cins1_is_store;
+    wire logic        cins1_is_2byte;
     wire logic        cins1_valid;
     wire commit_ins0; wire commit_ins1; wire safe_to_free0; wire safe_to_free1;
     wire altcommit, altcommit0, altcommit1;
@@ -167,8 +174,8 @@ module retireControlUnit (
     reg [4:0]  exception_code;
     reg [5:0]  exception_rob;
     reg        exception_valid = 0;
-    reg [29:0] c1_btb_vpc;
-    reg [29:0] c1_btb_target;
+    reg [PC_BITS-1:0] c1_btb_vpc;
+    reg [PC_BITS-1:0] c1_btb_target;
     reg [1:0]  c1_cntr_pred;
     reg        c1_bnch_tkn;
     reg [1:0]  c1_bnch_type;
@@ -179,12 +186,12 @@ module retireControlUnit (
     localparam WipeDataCache = 3'b100;
     reg [2:0] retire_control_state = Normal;
 
-    sfifospecial #(.DW(89)) instruction_information_buffer (
+    sfifospecial #(.DW(PC_BITS+61)) instruction_information_buffer (
         cpu_clock_i, 1'b0, push_packet&!full, {packet_pc, ins0_is_mov_elim, ins0_register_allocated, ins0_arch_reg, ins0_old_preg, ins0_new_preg, ins0_excp_code,
         ins0_excp_valid, ins0_special, ins0_is_store, ins1_is_mov_elim, ins1_register_allocated, ins1_arch_reg, ins1_old_preg, ins1_new_preg, ins1_excp_code, ins1_excp_valid,
-        ins1_special, ins1_is_store, ins1_valid}, full, packet_pop, {cpacket_pc,cins0_is_mov_elim,cins0_register_allocated,cins0_arch_reg,cins0_old_preg,cins0_new_preg,cins0_excp_code,
+        ins1_special, ins1_is_store, ins1_valid, ins0_is_2byte, ins1_is_2byte}, full, packet_pop, {cpacket_pc,cins0_is_mov_elim,cins0_register_allocated,cins0_arch_reg,cins0_old_preg,cins0_new_preg,cins0_excp_code,
         cins0_excp_valid,cins0_special,cins0_is_store,cins1_is_mov_elim,cins1_register_allocated,cins1_arch_reg,cins1_old_preg,cins1_new_preg,cins1_excp_code,
-        cins1_excp_valid,cins1_special,cins1_is_store,cins1_valid}, empty, rd_ptr, wr_ptr);
+        cins1_excp_valid,cins1_special,cins1_is_store,cins1_valid, cins0_is_2byte, cins1_is_2byte}, empty, rd_ptr, wr_ptr);
     assign rob0_status = {rd_ptr[3:0],1'b0};
     assign rob1_status = {rd_ptr[3:0],1'b1};
     assign rcu_pack = wr_ptr;
@@ -200,8 +207,16 @@ module retireControlUnit (
     cins1_new_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), cins0_old_preg, (commit_ins0|altcommit0)&(cins0_is_mov_elim|cins0_register_allocated),
     cins1_old_preg, (commit_ins1|altcommit1)&(cins1_is_mov_elim|cins1_register_allocated), safe_to_free0, safe_to_free1);
     assign rcu_busy = full|!(retire_control_state==Normal||retire_control_state==TakeInterrupt);
-    wire [29:0] currentPC = cpacket_pc[0] ? cpacket_pc : {cpacket_pc[29:1], partial_retire};
-    wire [29:0] pcPlus4 = currentPC + 29'd1; // used in special types CSRRW, SFENCE, FENCE.I
+    wire [PC_BITS-1:0] currentPC; 
+    wire [PC_BITS-1:0] pcPlus4; // used in special types CSRRW, SFENCE, FENCE.I
+    generate if (ENABLE_C_EXTENSION) begin : __if_IALIGN2
+        assign currentPC = partial_retire ? {cpacket_pc[30:2], cins0_is_2byte ? (cpacket_pc[1:0]==2'b00 ? 2'b01 : cpacket_pc[1:0]==2'b01 ? 2'b10 : 2'b11) :
+        (cpacket_pc[1:0]==2'b00 ? 2'b10 : 2'b11)} : cpacket_pc;
+        assign pcPlus4 = currentPC + (partial_retire ? cins1_is_2byte ? 31'd1 : 31'd2 : cins0_is_2byte ? 31'd1 : 31'd2);
+    end else begin : __if_IALIGN4
+        assign currentPC = cpacket_pc[0] ? cpacket_pc : {cpacket_pc[29:1], partial_retire};
+        assign pcPlus4 = currentPC + 30'd1;
+    end endgenerate
     // Conditions of committing
     assign packet_pop = ((partial_retire&(commit_ins1|altcommit1))|((commit_ins0|altcommit0)&((!cins1_valid)|(commit_ins1))))|(retire_control_state==ReclaimAndRecover);
     assign wr_data0 = retire_control_state==ReclaimAndRecover ? cins0_new_preg : cins0_old_preg;
@@ -239,7 +254,7 @@ module retireControlUnit (
     interrupt_router interrupts (cpm, mie, machine_interrupts, interrupt_pending, int_type);
     wire logic backendException = exception_valid && (partial_retire ? rob1_status==exception_rob[4:0] : rob0_status==exception_rob[4:0]) && !empty;    
     reg altcommitted_on_interrupt = 0;
-    reg [29:0] altcommit_npc = 0;
+    reg [PC_BITS-1:0] altcommit_npc = 0;
     assign oldest_instruction = {rd_ptr[3:0], partial_retire};
     assign rcu_block = retire_control_state!=Normal;
     assign rename_flush_o = (retire_control_state==Await) && icache_idle && dcache_flush_resp && !mem_block_i;
@@ -249,7 +264,12 @@ module retireControlUnit (
     assign take_interrupt = retire_control_state==TakeInterrupt && !empty && !mem_block_i;
     assign take_exception = (excp_excp_valid|(backendException&!exception_code[4]))&!mem_block_i&!empty&(retire_control_state==Normal);
     assign tmu_epc_o = wfi ? pcPlus4 : altcommitted_on_interrupt ? altcommit_npc : currentPC; assign tmu_mcause_o = take_interrupt ? int_type : excp_excp_valid ? excp_excp_code : exception_code[3:0];
-    assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
+    generate if (ENABLE_C_EXTENSION) begin : __IF_IALIGN2
+        assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,1'b0} : 0;
+    end else begin : __IF_IALIGN4
+        assign tmu_mtval_o = backendException ? relavant_address : excp_excp_code[3:1]==0 ? {currentPC,2'b00} : 0;
+    end endgenerate
+    
     assign altcommit = ((backendException&exception_code[4])||((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])))
     && (retire_control_state==Normal)&!mem_block_i&!empty&!excp_special[0];
     reg btb_mod;
@@ -262,7 +282,15 @@ module retireControlUnit (
     // On the cycle of a successful commit of any type (not an alternate commit), an interrupt can be taken
     // This does mean the processor can be deadlocked with an infinite sequence of CSR writes/FENCE.Is but this is a bit of an impossibility
     // Note Altcommit is mutually exclusive with a regular commit
-
+    wire [PC_BITS-1:0] gen_flush_address_on_interrupt; // on interrupt
+    wire [PC_BITS-1:0] gen_flush_address_on_exception; // on interrupt
+    generate if (ENABLE_C_EXTENSION) begin : ___if_IALIGN2
+        assign gen_flush_address_on_interrupt = {!(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]},1'b0};
+        assign gen_flush_address_on_exception = backendException&exception_code[4] ? c1_btb_target : {mtvec_i[31:2],1'b0};
+    end else begin : ___if_IALIGN4
+        assign gen_flush_address_on_interrupt = !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
+        assign gen_flush_address_on_exception = backendException&exception_code[4] ? c1_btb_target : mtvec_i[31:2];
+    end endgenerate
     always_ff @(posedge cpu_clock_i) begin
         case (retire_control_state)
             Normal: begin
@@ -270,11 +298,11 @@ module retireControlUnit (
                     retire_control_state <= TakeInterrupt;
                     altcommit_npc <= (backendException&exception_code[4]) ? c1_btb_target : pcPlus4;
                     altcommitted_on_interrupt <= altcommit;
-                    flush_address <= !(|mtvec_i[1:0]) ? mtvec_i[31:2] : {mtvec_i[31:2]} + {26'h0, tmu_mcause_o[3:0]};
+                    flush_address <= gen_flush_address_on_interrupt;
                 end
                 else if ((excp_excp_valid|backendException)&!mem_block_i&!empty) begin
                     retire_control_state <= Await;
-                    flush_address <= backendException&exception_code[4] ? c1_btb_target : mtvec_i[31:2];
+                    flush_address <= gen_flush_address_on_exception;
                 end else if ((((|excp_special)&&((excp_special[3]&(partial_retire ? rob1_status_i : rob0_status_i))||!excp_special[3])&!(wfi&excp_special[0]))&!mem_block_i&!empty)) begin
                     retire_control_state <= excp_special[1] ? WipeInstructionCache : excp_special[0] ? WaitForInterrupt : Await;
                     flush_address <= excp_special[2] ? mepc_i : pcPlus4;

@@ -38,7 +38,6 @@ module iram (
     input   wire logic [5:0]                ins1_dest_i,
     input   wire logic [1:0]                ins1_hint_i,
     input   wire logic                      ins1_2byte_i,
-    input   wire logic                      ins1_ins0_2byte_i,
     input   wire logic                      ins1_valid,
     input   wire logic [3:0]                pack_id,
 
@@ -70,7 +69,7 @@ module iram (
             iram0[pack_id] <= {ins0_2byte_i,ins0_hint_i,ins0_opcode_i, ins0_ins_type, ins0_imm_i, ins0_immediate_i, ins0_dest_i};
         end
         if (ins1_valid) begin
-            iram1[pack_id] <= {ins1_ins0_2byte_i,ins1_2byte_i,ins1_hint_i,ins1_opcode_i, ins1_ins_type, ins1_imm_i, ins1_immediate_i, ins1_dest_i};
+            iram1[pack_id] <= {ins0_2byte_i,ins1_2byte_i,ins1_hint_i,ins1_opcode_i, ins1_ins_type, ins1_imm_i, ins1_immediate_i, ins1_dest_i};
         end
     end
     assign {alu0_2byte_p_o, alu0_2byte_o, alu0_hint_o,alu0_opcode_o,

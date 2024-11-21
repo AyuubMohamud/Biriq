@@ -20,7 +20,11 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module rename (
+module rename #(
+    parameter ENABLE_C_EXTENSION = 1, 
+    localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
+    localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1
+) (
     input   wire logic                          cpu_clock_i,
     input   wire logic                          flush_i,
     input   wire logic                          recovery_i,
@@ -40,6 +44,7 @@ module rename (
     input   wire logic                          ins0_dnr_i,
     input   wire logic                          ins0_mov_elim_i,
     input   wire logic [1:0]                    ins0_hint_i,
+    input   wire logic                          ins0_2byte_i,
     input   wire logic                          ins0_excp_valid_i,
     input   wire logic [3:0]                    ins0_excp_code_i,
     input   wire logic                          ins1_port_i,
@@ -58,20 +63,21 @@ module rename (
     input   wire logic                          ins1_dnr_i,
     input   wire logic                          ins1_mov_elim_i,
     input   wire logic [1:0]                    ins1_hint_i,
+    input   wire logic                          ins1_2byte_i,
     input   wire logic                          ins1_excp_valid_i,
     input   wire logic [3:0]                    ins1_excp_code_i,
     input   wire logic                          ins1_valid_i,
-    input   wire logic [29:0]                   insbundle_pc_i,
+    input   wire logic [PC_BITS-1:0]            insbundle_pc_i,
     input   wire logic [1:0]                    btb_btype_i,
     input   wire logic [1:0]                    btb_bm_pred_i,
-    input   wire logic [29:0]                   btb_target_i,
+    input   wire logic [PC_BITS-1:0]            btb_target_i,
     input   wire logic                          btb_vld_i,
-    input   wire logic                          btb_idx_i,
+    input   wire logic [IDX_BITS-1:0]           btb_idx_i,
     input   wire logic                          btb_way_i,
     input   wire logic                          valid_i,
     output  wire logic                          rn_busy_o,
     // retire control unit
-    output  wire logic [29:0]                   rcu_packet_pc,
+    output  wire logic [PC_BITS-1:0]            rcu_packet_pc,
     output  wire logic                          rcu_ins0_is_mov_elim,
     output  wire logic                          rcu_ins0_register_allocated,
     output  wire logic [4:0]                    rcu_ins0_arch_reg,
@@ -81,6 +87,7 @@ module rename (
     output  wire logic                          rcu_ins0_excp_valid,
     output  wire logic [3:0]                    rcu_ins0_special,
     output  wire logic                          rcu_ins0_is_store,
+    output  wire logic                          rcu_ins0_is_2byte,
     output  wire logic                          rcu_ins1_is_mov_elim,
     output  wire logic                          rcu_ins1_register_allocated,
     output  wire logic [4:0]                    rcu_ins1_arch_reg,
@@ -90,6 +97,7 @@ module rename (
     output  wire logic                          rcu_ins1_excp_valid,
     output  wire logic [3:0]                    rcu_ins1_special,
     output  wire logic                          rcu_ins1_is_store,
+    output  wire logic                          rcu_ins1_is_2byte,
     output  wire logic                          rcu_ins1_valid,
     output  wire logic                          rcu_push_packet,
     input   wire logic                          rcu_busy,
@@ -105,6 +113,7 @@ module rename (
     output  wire logic [31:0]                   ms_ins0_immediate_o,
     output  wire logic [5:0]                    ms_ins0_dest_o,
     output  wire logic [1:0]                    ms_ins0_hint_o,
+    output  wire logic                          ms_ins0_2byte,
     output  wire logic                          ms_ins0_valid,
     output  wire logic [6:0]                    ms_ins1_opcode_o,
     output  wire logic [5:0]                    ms_ins1_ins_type,
@@ -112,15 +121,16 @@ module rename (
     output  wire logic [31:0]                   ms_ins1_immediate_o,
     output  wire logic [5:0]                    ms_ins1_dest_o,
     output  wire logic [1:0]                    ms_ins1_hint_o,
+    output  wire logic                          ms_ins1_2byte,
     output  wire logic                          ms_ins1_valid,
     output  wire logic [3:0]                    ms_pack_id,
-    output  wire logic [29:0]                   ms_rn_pc_o,
-    output  wire logic  [1:0]                   ms_rn_bm_pred_o,
-    output  wire logic  [1:0]                   ms_rn_btype_o,
+    output  wire logic [PC_BITS-1:0]            ms_rn_pc_o,
+    output  wire logic [1:0]                    ms_rn_bm_pred_o,
+    output  wire logic [1:0]                    ms_rn_btype_o,
     output  wire logic                          ms_rn_btb_vld_o,
-    output  wire logic  [29:0]                  ms_rn_btb_target_o,
+    output  wire logic [PC_BITS-1:0]            ms_rn_btb_target_o,
     output  wire logic                          ms_rn_btb_way_o,
-    output  wire logic                          ms_rn_btb_idx_o,
+    output  wire logic [IDX_BITS-1:0]           ms_rn_btb_idx_o,
     output  wire logic [3:0]                    ms_rn_btb_pack,
     output  wire logic                          ms_rn_btb_wen,
     output  wire logic [18:0]                   ms_p0_data_o,
@@ -219,21 +229,23 @@ module rename (
     wire logic                          ins1_excp_valid;
     wire logic [3:0]                    ins1_excp_code;
     wire logic                          ins1_valid;
-    wire logic [29:0]                   insbundle_pc;
+    wire logic [PC_BITS-1:0]            insbundle_pc;
     wire logic [1:0]                    btb_btype;
     wire logic [1:0]                    btb_bm_pred;
-    wire logic [29:0]                   btb_target;
+    wire logic [PC_BITS-1:0]            btb_target;
     wire logic                          btb_vld;
-    wire logic                          btb_idx;
+    wire logic [IDX_BITS-1:0]           btb_idx;
     wire logic                          btb_way;
-    skdbf #(.DW(244)) rnskid (cpu_clock_i, flush_i, busy, {ins0_port,ins0_dnagn,ins0_alu_type,ins0_alu_opcode,ins0_alu_imm,ins0_ios_type,ins0_ios_opcode,ins0_special,
+    wire logic                          ins0_2byte, ins1_2byte;
+    skdbf #(.DW(PC_BITS+PC_BITS+IDX_BITS+185)) rnskid (
+    cpu_clock_i, flush_i, busy, {ins0_port,ins0_dnagn,ins0_alu_type,ins0_alu_opcode,ins0_alu_imm,ins0_ios_type,ins0_ios_opcode,ins0_special,
     ins0_rs1,ins0_rs2,ins0_dest,ins0_imm,ins0_reg_props,ins0_dnr,ins0_mov_elim,ins0_excp_valid,ins0_excp_code,ins1_port,ins1_dnagn,ins1_alu_type,ins1_alu_opcode,ins1_alu_imm,
     ins1_ios_type,ins1_ios_opcode,ins1_special,ins1_rs1,ins1_rs2,ins1_dest,ins1_imm,ins1_reg_props,ins1_dnr,ins1_mov_elim,ins1_excp_valid,ins1_excp_code,ins1_valid,
-    insbundle_pc,btb_btype,btb_bm_pred,btb_target,btb_vld,btb_idx,btb_way,ins0_hint,ins1_hint}, cyc_valid, rn_busy_o, {ins0_port_i,ins0_dnagn_i,ins0_alu_type_i,ins0_alu_opcode_i,
+    insbundle_pc,btb_btype,btb_bm_pred,btb_target,btb_vld,btb_idx,btb_way,ins0_hint,ins1_hint, ins0_2byte, ins1_2byte}, cyc_valid, rn_busy_o, {ins0_port_i,ins0_dnagn_i,ins0_alu_type_i,ins0_alu_opcode_i,
     ins0_alu_imm_i,ins0_ios_type_i,ins0_ios_opcode_i,ins0_special_i,ins0_rs1_i,ins0_rs2_i,ins0_dest_i,ins0_imm_i,ins0_reg_props_i,ins0_dnr_i,ins0_mov_elim_i,
     ins0_excp_valid_i,ins0_excp_code_i,ins1_port_i,ins1_dnagn_i,ins1_alu_type_i,ins1_alu_opcode_i,ins1_alu_imm_i,ins1_ios_type_i,ins1_ios_opcode_i,ins1_special_i,
     ins1_rs1_i,ins1_rs2_i,ins1_dest_i,ins1_imm_i,ins1_reg_props_i,ins1_dnr_i,ins1_mov_elim_i,ins1_excp_valid_i,ins1_excp_code_i,ins1_valid_i,insbundle_pc_i,btb_btype_i,
-    btb_bm_pred_i,btb_target_i,btb_vld_i,btb_idx_i,btb_way_i,ins0_hint_i,ins1_hint_i}, valid_i);
+    btb_bm_pred_i,btb_target_i,btb_vld_i,btb_idx_i,btb_way_i,ins0_hint_i,ins1_hint_i, ins0_2byte_i, ins1_2byte_i}, valid_i);
     wire logic [4:0]    p0_logical_reg = ins0_rs1;
     wire logic [5:0]    p0_phys_reg;
     wire logic [4:0]    p1_logical_reg = ins0_rs2;
@@ -280,14 +292,14 @@ module rename (
     assign ms_rn_btb_idx_o = btb_idx;
     assign ms_rn_btb_pack = rcu_pack[3:0];
     assign ms_rn_btb_wen = cyc_valid&!busy&!flush_i;
-    assign ms_p0_data_o = {(btb_vld&!btb_idx)||((|ins0_alu_type[2:1])|(ins0_alu_type[4])|(!(|ins0_alu_type))), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
-    assign ms_p0_vld_o = (!ins0_port|(btb_vld&!btb_idx))&!ins0_excp_valid&cyc_valid&!busy&!flush_i&!(ins0_mov_elim);
+    assign ms_p0_data_o = {((|ins0_alu_type[2:1])|(ins0_alu_type[4])|(!(|ins0_alu_type))), p0_phys_reg, p1_phys_reg, {rcu_pack,1'b0}};
+    assign ms_p0_vld_o = !ins0_port&!ins0_excp_valid&cyc_valid&!busy&!flush_i&!(ins0_mov_elim);
     assign ms_p0_rs1_vld_o = ins0_reg_props[1];
     assign ms_p0_rs2_vld_o = ins0_reg_props[0];
     assign ms_p0_rs1_rdy = r0_i;
     assign ms_p0_rs2_rdy = r1_i;
-    assign ms_p1_data_o = {(btb_vld&btb_idx)||((|ins1_alu_type[2:1]|(ins1_alu_type[4])|(!(|ins1_alu_type)))), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
-    assign ms_p1_vld_o = (!ins1_port|(btb_vld&btb_idx))&!ins1_excp_valid&ins1_valid&cyc_valid&!flush_i&!busy&!(ins1_mov_elim);
+    assign ms_p1_data_o = {((|ins1_alu_type[2:1]|(ins1_alu_type[4])|(!(|ins1_alu_type)))), p2_phys_reg, p3_phys_reg, {rcu_pack,1'b1}};
+    assign ms_p1_vld_o = !ins1_port&!ins1_excp_valid&ins1_valid&cyc_valid&!flush_i&!busy&!(ins1_mov_elim);
     assign ms_p1_rs1_vld_o = ins1_reg_props[1];
     assign ms_p1_rs2_vld_o = ins1_reg_props[0];
     assign ms_p1_rs1_rdy = r2_i;
@@ -313,7 +325,7 @@ module rename (
     assign rcu_ins1_is_store= ins1_port&!ins1_dnagn&ins1_ios_type[3]&!ins1_excp_valid;
     assign rcu_ins1_valid= ins1_valid;
     assign rcu_push_packet= cyc_valid&!busy&!flush_i;
-    assign memSys_renamer_pkt_vld_o= cyc_valid&!busy&!flush_i&((ins1_port&!ins1_dnagn&!(btb_vld&btb_idx)&!ins1_excp_valid&ins1_valid)||(ins0_port&!ins0_dnagn&!(btb_vld&!btb_idx)&!ins0_excp_valid));
+    assign memSys_renamer_pkt_vld_o= cyc_valid&!busy&!flush_i&((ins1_port&!ins1_dnagn&!ins1_excp_valid&ins1_valid)||(ins0_port&!ins0_dnagn&!ins0_excp_valid));
     assign memSys_pkt0_rs1_o=ins0_dnr ? {1'b0,ins0_rs1} : p0_phys_reg;
     assign memSys_pkt0_rs2_o=p1_phys_reg;
     assign memSys_pkt0_dest_i=ins0_dest==0 ? 0 : w0_phys_reg;
@@ -321,14 +333,14 @@ module rename (
     assign memSys_pkt0_ios_type_o=ins0_ios_type;
     assign memSys_pkt0_ios_opcode_o=ins0_ios_opcode;
     assign memSys_pkt0_rob_o=rcu_pack;
-    assign memSys_pkt0_vld_o=(ins0_port&!ins0_dnagn&!(btb_vld&!btb_idx));
+    assign memSys_pkt0_vld_o=ins0_port&!ins0_dnagn;
     assign memSys_pkt1_rs1_o=ins1_dnr ? {1'b0,ins1_rs1} : p2_phys_reg;
     assign memSys_pkt1_rs2_o=p3_phys_reg;
     assign memSys_pkt1_dest_o=ins1_dest==0 ? 0 : w1_phys_reg;
     assign memSys_pkt1_immediate_o=ins1_imm;
     assign memSys_pkt1_ios_type_o=ins1_ios_type;
     assign memSys_pkt1_ios_opcode_o=ins1_ios_opcode;
-    assign memSys_pkt1_vld_o=(ins1_port&!ins1_dnagn&!(btb_vld&btb_idx))&&ins1_valid;
+    assign memSys_pkt1_vld_o=ins1_port&!ins1_dnagn&&ins1_valid;
     assign r0_vec_indx_o = p0_phys_reg;
     assign r1_vec_indx_o = p1_phys_reg;    
     assign r2_vec_indx_o = p2_phys_reg;
@@ -337,6 +349,12 @@ module rename (
     assign p0_busy_vld_o = w0_we&!ins0_mov_elim;
     assign p1_vec_indx_o = w1_phys_reg;
     assign p1_busy_vld_o = w1_we&!ins1_mov_elim;
+
+    assign ms_ins0_2byte = ins0_2byte;
+    assign ms_ins1_2byte = ins1_2byte;
+    assign rcu_ins0_is_2byte = ins0_2byte;
+    assign rcu_ins1_is_2byte = ins1_2byte;
+
     assign o_rd0 = !(memSys_full|(ms_p0_busy_i|ms_p1_busy_i)|rcu_busy|flush_i)&cyc_valid&ins0_reg_props[2]&!ins0_mov_elim&!ins0_excp_valid;
     assign o_rd1 = !(memSys_full|(ms_p0_busy_i|ms_p1_busy_i)|rcu_busy|flush_i)&cyc_valid&ins1_reg_props[2]&!ins1_mov_elim&ins1_valid&!ins1_excp_valid;
 endmodule
