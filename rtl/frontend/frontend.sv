@@ -26,7 +26,7 @@ module frontend #(
     parameter BPU_ENABLE_RAS = 1, 
     parameter BPU_RAS_ENTRIES = 32, 
     parameter ENABLE_PSX = 1, 
-    parameter ENABLE_C_EXTENSION = 0, 
+    parameter ENABLE_C_EXTENSION = 1, 
     parameter QUEUE_SZ = 8, 
     parameter QUEUE_OFF = 0, 
     parameter QUEUE_PASSTHROUGH = 1,
@@ -87,6 +87,7 @@ module frontend #(
     output       logic                  ins0_dnr_o,
     output       logic                  ins0_mov_elim_o,
     output       logic [1:0]            ins0_hint_o,
+    output       logic                  ins0_2byte_o,
     output       logic                  ins0_excp_valid_o,
     output       logic [3:0]            ins0_excp_code_o,
     output       logic                  ins1_port_o,
@@ -105,6 +106,7 @@ module frontend #(
     output       logic                  ins1_dnr_o,
     output       logic                  ins1_mov_elim_o,
     output       logic [1:0]            ins1_hint_o,
+    output       logic                  ins1_2byte_o,
     output       logic                  ins1_excp_valid_o,
     output       logic [3:0]            ins1_excp_code_o,
     output       logic                  ins1_valid_o,
@@ -196,23 +198,71 @@ module frontend #(
         mrq_btb_way_o,
         mrq_busy_i
     );
+    wire                  dec_vld_o;
+    wire [31:0]           dec0_instruction_o;
+    wire                  dec0_instruction_is_2;
+    wire [31:0]           dec1_instruction_o;
+    wire                  dec1_instruction_is_2;
+    wire                  dec1_instruction_valid_o;
+    wire [PC_BITS-1:0]    dec_vpc_o;
+    wire [3:0]            dec_excp_code_o;
+    wire                  dec_excp_vld_o;
+    wire [IDX_BITS-1:0]   dec_btb_index_o;
+    wire [1:0]            dec_btb_btype_o;
+    wire [1:0]            dec_btb_bm_pred_o;
+    wire [PC_BITS-1:0]    dec_btb_target_o;
+    wire                  dec_btb_vld_o;
+    wire                  dec_btb_way_o;
+    wire                  dec_busy_i;
+    align #(ENABLE_C_EXTENSION) aligner (
+        core_clock_i, core_flush_i|core_reset_i|branch_correct, mrq_hit_o,
+        mrq_instruction_o,
+        mrq_sip_vpc_o,
+        mrq_sip_excp_code_o,
+        mrq_sip_excp_vld_o,
+        mrq_btb_index_o,
+        mrq_btb_btype_o,
+        mrq_btb_bm_pred_o,
+        mrq_btb_target_o,
+        mrq_btb_vld_o,
+        mrq_btb_way_o,
+        mrq_busy_i,
+        dec_vld_o,
+        dec0_instruction_o,
+        dec0_instruction_is_2,
+        dec1_instruction_o,
+        dec1_instruction_is_2,
+        dec1_instruction_valid_o,
+        dec_vpc_o,
+        dec_excp_code_o,
+        dec_excp_vld_o,
+        dec_btb_index_o,
+        dec_btb_btype_o,
+        dec_btb_bm_pred_o,
+        dec_btb_target_o,
+        dec_btb_vld_o,
+        dec_btb_way_o,
+        dec_busy_i
+    );
 
-    
-
-    decode #(ENABLE_PSX) decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw,cbie,
+    newDecode #(ENABLE_PSX, ENABLE_C_EXTENSION) decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw,cbie,
     cbcfe,
-    cbze, flush_resp_o, mrq_hit_o,
-    mrq_instruction_o,
-    mrq_sip_vpc_o,
-    mrq_sip_excp_code_o,
-    mrq_sip_excp_vld_o,
-    mrq_btb_index_o,
-    mrq_btb_btype_o,
-    mrq_btb_bm_pred_o,
-    mrq_btb_target_o,
-    mrq_btb_vld_o,
-    mrq_btb_way_o,
-    mrq_busy_i,
+    cbze, flush_resp_o, dec_vld_o,
+    dec0_instruction_o,
+    dec0_instruction_is_2,
+    dec1_instruction_o,
+    dec1_instruction_is_2,
+    dec1_instruction_valid_o,
+    dec_vpc_o,
+    dec_excp_code_o,
+    dec_excp_vld_o,
+    dec_btb_index_o,
+    dec_btb_btype_o,
+    dec_btb_bm_pred_o,
+    dec_btb_target_o,
+    dec_btb_vld_o,
+    dec_btb_way_o,
+    dec_busy_i,
     ins0_port_o,
 ins0_dnagn_o,
 ins0_alu_type_o,
@@ -229,6 +279,7 @@ ins0_reg_props_o,
 ins0_dnr_o,
 ins0_mov_elim_o,
 ins0_hint_o,
+ins0_2byte_o,
 ins0_excp_valid_o,
 ins0_excp_code_o,
 ins1_port_o,
@@ -247,6 +298,7 @@ ins1_reg_props_o,
 ins1_dnr_o,
 ins1_mov_elim_o,
 ins1_hint_o,
+ins1_2byte_o,
 ins1_excp_valid_o,
 ins1_excp_code_o,
 ins1_valid_o,

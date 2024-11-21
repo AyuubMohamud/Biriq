@@ -20,7 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module decode #(
+module newDecode #(
     parameter ENABLE_PSX = 1,
     parameter ENABLE_C_EXTENSION = 0,
     localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
@@ -91,10 +91,10 @@ module decode #(
     output       logic                  ins1_excp_valid_o,
     output       logic [3:0]            ins1_excp_code_o,
     output       logic                  ins1_valid_o,
-    output       logic [29:0]           insbundle_pc_o,
+    output       logic [PC_BITS-1:0]    insbundle_pc_o,
     output       logic [1:0]            btb_btype_o,
     output       logic [1:0]            btb_bm_pred_o,
-    output       logic [29:0]           btb_target_o,
+    output       logic [PC_BITS-1:0]    btb_target_o,
     output       logic                  btb_vld_o,
     output       logic                  btb_idx_o,
     output       logic                  btb_way_o,
@@ -102,7 +102,7 @@ module decode #(
     input   wire logic                  rn_busy_i,
 
     output  wire logic                  branch_correction_flush,
-    output  wire logic [29:0]           branch_correction_pc
+    output  wire logic [PC_BITS-1:0]    branch_correction_pc
 );
     wire [63:0] rv_instruction_i_p;
     wire [29:0] rv_ppc_i;
@@ -250,11 +250,20 @@ module decode #(
         assign isPSX2 = 1'b0;
     end endgenerate
     wire [1:0] branches_decoded = {(isJAL2|isJALR2|isCmpBranch2)&dec1_instruction_valid, isJAL|isJALR|isCmpBranch};
-    wire 
-    wire [1:0] branches_predicted = {rv_btb_vld&ins1_valid&btb_idx, rv_btb_vld&!btb_idx};
+    wire [IDX_BITS-1:0] first_idx;
+    wire [IDX_BITS-1:0] second_idx;
+    generate if (ENABLE_C_EXTENSION) begin : _if_IALIGN2
+        assign first_idx = dec0_instruction_is_2 ? rv_ppc_i[1:0] : rv_ppc_i[1:0]==2'b00 ? 2'b01 : rv_ppc_i[1:0]==2'b01 ? 2'b10 : rv_ppc_i[1:0]==2'b10 ? 2'b11 : 2'b00;
+        assign second_idx = dec1_instruction_is_2 ? first_idx==2'b00 ? 2'b01 : first_idx==2'b01 ? 2'b10 : 2'b11 : first_idx==2'b00 ? 2'b10 : 2'b11;
+    end
+    else begin : _if_IALIGN4
+        assign first_idx = rv_ppc_i[0];
+        assign second_idx = 1'b1;
+    end endgenerate
+    wire [1:0] branches_predicted = {rv_btb_vld&dec1_instruction_valid&(btb_idx==second_idx), rv_btb_vld&(btb_idx==first_idx)};
     wire btb_correction = (!branches_decoded[0]&branches_predicted[0])|(!branches_decoded[1]&branches_predicted[1]);
     
-    reg [29:0] address_to_correct;
+    reg [PC_BITS-1:0] address_to_correct;
     always_ff @(posedge cpu_clk_i) begin
         if (flush_i) begin
             shutdown_frontend <= 0;
@@ -305,7 +314,7 @@ module decode #(
             ins1_dest_o <= rv_instruction_i2[11:7];
             ins1_imm_o <= isOPIMM2|isJALR2|isLoad2|isSystem2 ? jalrImmediate2 : isStore2 ? storeImmediate2 : isLUI2|isAUIPC2 ? auipcImmediate2 : isJAL2 ? jalImmediate2 : isCmpBranch2 ? cmpBranchImmediate2 : 0; 
             ins1_reg_props_o <= {(isOP2|isPSX2|isOPIMM2|isLoad2|isJAL2|isJALR2|isAUIPC2|isLUI2|((isCSRRW2|isCSRRC2|isCSRRS2)&isSystem2))&&(rv_instruction_i2[11:7]!=0), !(((isECALL2|isEBREAK2|isMRET2|isWFI2)&isSystem2)|isAUIPC2|isLUI2|isJAL2), isPSX2|isOP2|isCmpBranch2|isStore2};
-            ins1_valid_o <= ins1_valid;
+            ins1_valid_o <= dec1_instruction_valid;
             btb_way_o <= btb_way;
             btb_idx_o <= btb_idx;
             btb_btype_o <= rv_btype;
@@ -317,7 +326,9 @@ module decode #(
             ins0_dnr_o <= isSystem&(isCSRRC|isCSRRW|isCSRRS)&csr_imm;
             ins1_dnr_o <= isSystem2&(isCSRRC2|isCSRRW2|isCSRRS2)&csr_imm2;
             ins0_hint_o <= {(isJAL|isJALR)&(rv_instruction_i[11:7]==1), isJALR&(jalrImmediate==0)&(rv_instruction_i[19:15]==1)&(rv_instruction_i[11:7]==0)};
-            ins1_hint_o <= {(isJAL2|isJALR2)&(rv_instruction_i2[11:7]==1), isJALR2&(jalrImmediate2==0)&(rv_instruction_i2[19:15]==1)&(rv_instruction_i2[11:7]==0)};            
+            ins1_hint_o <= {(isJAL2|isJALR2)&(rv_instruction_i2[11:7]==1), isJALR2&(jalrImmediate2==0)&(rv_instruction_i2[19:15]==1)&(rv_instruction_i2[11:7]==0)};  
+            ins0_2byte_o <= dec0_instruction_is_2;
+            ins1_2byte_o <= dec1_instruction_is_2;
         end else if (!rn_busy_i&!rv_valid) begin
             valid_o <= 0;
         end

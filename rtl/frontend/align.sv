@@ -43,7 +43,6 @@ module align #(
     output       logic                  dec_vld_o,
     output       logic [31:0]           dec0_instruction_o,
     output       logic                  dec0_instruction_is_2,
-    output       logic                  dec0_instruction_valid_o,
     output       logic [31:0]           dec1_instruction_o,
     output       logic                  dec1_instruction_is_2,
     output       logic                  dec1_instruction_valid_o,
@@ -56,7 +55,6 @@ module align #(
     output       logic [PC_BITS-1:0]    dec_btb_target_o, //! Predicted target if branch is taken
     output       logic                  dec_btb_vld_o,
     output       logic                  dec_btb_way_o,
-    output       logic                  dec_invalidate_o,
     input   wire logic                  dec_busy_i
 );
     wire [63:0] working_ins;
@@ -200,11 +198,9 @@ module align #(
                         if (first_32) begin
                             dec0_instruction_o <= first_instruction;
                             dec0_instruction_is_2 <= 1'b0;
-                            dec0_instruction_valid_o <= !first_incomplete_32;
                         end else begin
                             dec0_instruction_o <= illegal_0 ? 32'd0 : decompressed_32_0;
                             dec0_instruction_is_2 <= 1'b1;
-                            dec0_instruction_valid_o <= 1'b1;
                         end
                         if (second_32) begin
                             dec1_instruction_o <= second_instruction;
@@ -215,7 +211,6 @@ module align #(
                             dec1_instruction_is_2 <= 1'b1;
                             dec1_instruction_valid_o <= (hw_accept_2!='0);
                         end
-                        dec_invalidate_o <= invalidate_btb_entry;
                         dec_vld_o <= 1'b1;
                         dec_vpc_o <= {rv_ppc_i[30:2], first_accepted};
                         dec_btb_bm_pred_o <= rv_bm_pred;
