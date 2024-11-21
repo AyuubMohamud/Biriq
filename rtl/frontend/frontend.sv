@@ -20,10 +20,19 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module frontend #(parameter [31:0] START_ADDR = 32'h0,
-parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RAS_ENTRIES = 32, parameter ENABLE_PSX = 1, parameter ENABLE_C_EXTENSION = 0,
-localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
-localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1)
+module frontend #(
+    parameter [31:0] START_ADDR = 32'h0,
+    parameter [31:0] BPU_ENTRIES = 32,
+    parameter BPU_ENABLE_RAS = 1, 
+    parameter BPU_RAS_ENTRIES = 32, 
+    parameter ENABLE_PSX = 1, 
+    parameter ENABLE_C_EXTENSION = 0, 
+    parameter QUEUE_SZ = 8, 
+    parameter QUEUE_OFF = 0, 
+    parameter QUEUE_PASSTHROUGH = 1,
+    localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
+    localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1
+    )
 (
     input   wire logic                          core_clock_i,
     input   wire logic                          core_reset_i,
@@ -158,11 +167,50 @@ localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1)
     flush_resp_o,icache_a_opcode, icache_a_param, icache_a_size, icache_a_address, icache_a_mask, icache_a_data, icache_a_corrupt, icache_a_valid,
     icache_a_ready, icache_d_opcode, icache_d_param, icache_d_size, icache_d_denied, icache_d_data, icache_d_corrupt, icache_d_valid, icache_d_ready, i_addr, i_kill);
 
+    wire logic                      mrq_hit_o;
+    wire logic [63:0]               mrq_instruction_o;
+    wire logic [PC_BITS-1:0]        mrq_sip_vpc_o;
+    wire logic [3:0]                mrq_sip_excp_code_o;
+    wire logic                      mrq_sip_excp_vld_o;
+    wire logic [IDX_BITS-1:0]       mrq_btb_index_o;
+    wire logic [1:0]                mrq_btb_btype_o;
+    wire logic [1:0]                mrq_btb_bm_pred_o;
+    wire logic [PC_BITS-1:0]        mrq_btb_target_o;
+    wire logic                      mrq_btb_vld_o;
+    wire logic                      mrq_btb_way_o;
+    wire logic                      mrq_busy_i;
+    mrq #(ENABLE_C_EXTENSION, QUEUE_SZ, QUEUE_OFF, QUEUE_PASSTHROUGH) memory_response_queue (
+        core_clock_i, core_flush_i|core_reset_i|branch_correct, pdc_hit_o,pdc_instruction_o,pdc_sip_vpc_o,
+        pdc_sip_excp_code_o,pdc_sip_excp_vld_o, 
+        pdc_btb_index_o,pdc_btb_btype_o,pdc_btb_bm_pred_o,pdc_btb_target_o,pdc_btb_vld_o,pdc_btb_way_o,pdc_busy_i,
+        mrq_hit_o,
+        mrq_instruction_o,
+        mrq_sip_vpc_o,
+        mrq_sip_excp_code_o,
+        mrq_sip_excp_vld_o,
+        mrq_btb_index_o,
+        mrq_btb_btype_o,
+        mrq_btb_bm_pred_o,
+        mrq_btb_target_o,
+        mrq_btb_vld_o,
+        mrq_btb_way_o,
+        mrq_busy_i
+    );
+
     decode #(ENABLE_PSX) decodeStage (core_clock_i, core_flush_i|core_reset_i, current_privlidge, tw,cbie,
     cbcfe,
-    cbze, flush_resp_o, pdc_hit_o,pdc_instruction_o,pdc_sip_vpc_o,
-    pdc_sip_excp_code_o,pdc_sip_excp_vld_o, 
-    pdc_btb_index_o,pdc_btb_btype_o,pdc_btb_bm_pred_o,pdc_btb_target_o,pdc_btb_vld_o,pdc_btb_way_o,pdc_busy_i,
+    cbze, flush_resp_o, mrq_hit_o,
+    mrq_instruction_o,
+    mrq_sip_vpc_o,
+    mrq_sip_excp_code_o,
+    mrq_sip_excp_vld_o,
+    mrq_btb_index_o,
+    mrq_btb_btype_o,
+    mrq_btb_bm_pred_o,
+    mrq_btb_target_o,
+    mrq_btb_vld_o,
+    mrq_btb_way_o,
+    mrq_busy_i,
     ins0_port_o,
 ins0_dnagn_o,
 ins0_alu_type_o,

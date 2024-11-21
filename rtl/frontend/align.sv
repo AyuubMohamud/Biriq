@@ -65,8 +65,7 @@ module align (
     );
     reg [3:0] alignStageMask = 4'hF; // Mask for partial decoding
     localparam alignIDLE = 2'b00;
-    localparam alignREM = 2'b01;
-    localparam alignSPECIAL = 2'b10;
+    localparam alignSPECIAL = 2'b01;
     reg [1:0] alignFSM = alignIDLE;
 
     wire [2:0] pc_start_hw = {
@@ -193,22 +192,22 @@ module align (
         end else if (!dec_busy_i) begin
             case (alignFSM)
                 2'b00: begin
-                    if (rv_valid) begin
+                    if (rv_valid&!excp_vld) begin
                         if (first_32) begin
                             dec0_instruction_o <= first_instruction;
                             dec0_instruction_is_2 <= 1'b0;
                             dec0_instruction_valid_o <= !first_incomplete_32;
                         end else begin
-                            dec0_instruction_o <= decompressed_32_0;
+                            dec0_instruction_o <= illegal_0 ? 32'd0 : decompressed_32_0;
                             dec0_instruction_is_2 <= 1'b1;
                             dec0_instruction_valid_o <= 1'b1;
                         end
                         if (second_32) begin
-                            dec1_instruction_o <= first_instruction;
+                            dec1_instruction_o <= second_instruction;
                             dec1_instruction_is_2 <= 1'b0;
                             dec1_instruction_valid_o <= !second_incomplete_32 && (hw_accept_2!='0);
                         end else begin
-                            dec1_instruction_o <= decompressed_32_0;
+                            dec1_instruction_o <= illegal_1 ? 32'd0 : decompressed_32_1;
                             dec1_instruction_is_2 <= 1'b1;
                             dec1_instruction_valid_o <= (hw_accept_2!='0);
                         end
@@ -229,9 +228,17 @@ module align (
                         end else begin
                             alignStageMask <= 4'hF;
                         end
+                    end else if (rv_valid&excp_vld) begin
+                        dec_vld_o <= 1'b1;
+                        dec_vpc_o <= rv_ppc_i;
+                        dec_excp_vld_o <= 1'b1;
+                        dec_excp_code_o <= excp_code;
                     end
                 end
-                alignREM: begin
+                alignSPECIAL: begin
+                    
+                end
+                default: begin
                     
                 end
             endcase
