@@ -21,7 +21,8 @@
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
 
-module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter ENABLE_PSX = 1) (
+module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter ENABLE_PSX = 1, parameter ENABLE_C_EXTENSION = 1, 
+localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30) (
     input   wire logic                          cpu_clock_i,
     // CSR Interface
     input   wire logic [31:0]                   csrfile_data_i,
@@ -38,7 +39,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     // exception handling    
     input   wire logic                          take_exception,
     input   wire logic                          take_interrupt,
-    input   wire logic [29:0]                   csrfile_epc_i,
+    input   wire logic [PC_BITS-1:0]            csrfile_epc_i,
     input   wire logic [31:0]                   csrfile_mtval_i,
     input   wire logic [3:0]                    csrfile_mcause_i,
 
@@ -55,7 +56,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
 
     // IQ
     output  wire logic                          real_privilege,
-    output  wire logic [29:0]                   mepc_o,
+    output  wire logic [PC_BITS-1:0]            mepc_o,
     output  wire logic [31:0]                   mtvec_o,
     
     output  wire logic                          enable_branch_pred,
@@ -90,7 +91,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
     localparam MSTATUSH = 12'h310;
 
     reg [31:0] mscratch = 0; localparam MSCRATCH = 12'h340;
-    reg [29:0] mepc = 0; localparam MEPC = 12'h341;
+    reg [PC_BITS-1:0] mepc = 0; localparam MEPC = 12'h341;
     reg [4:0] mcause = 0; localparam MCAUSE = 12'h342;
     reg [31:0] mtval = 0; localparam MTVAL = 12'h343;
     reg [2:0] mip = 0; localparam MIP = 12'h344;
@@ -133,7 +134,12 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
         d_write,
         d_kill);
     end endgenerate
-
+    wire [31:0] full_mepc;
+    generate if (ENABLE_C_EXTENSION) begin : _2
+        assign full_mepc = {mepc,1'b0};
+    end else begin : _4
+        assign full_mepc = {mepc,2'd0};
+    end endgenerate
     always_comb begin
         case (csrfile_address_i)
             MVENDORID: begin read_data = 32'h0; exists = 1; end
@@ -152,7 +158,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
             MENVCFG: begin read_data = {24'h0, menvcfg, 4'h0}; exists = 1; end
             MCAUSE: begin read_data = {mcause[4], 27'h0,mcause[3:0]};exists = 1;end
             MSCRATCH: begin read_data = mscratch;exists = 1;end
-            MEPC: begin read_data = {mepc,2'b00};exists = 1;end
+            MEPC: begin read_data = full_mepc;exists = 1;end
             MCOUNTERINHIBIT: begin read_data = {29'h0,mcountinhibit[1],1'b0,mcountinhibit[0]};exists = 1;end
             MCYCLE: begin read_data = cycle[31:0];exists = 1;end
             MCYCLEH: begin read_data = cycle[63:32];exists = 1;end
@@ -219,7 +225,7 @@ module csrfile #(parameter [31:0] HARTID = 0, parameter PMP_REGS = 8, parameter 
                     mcause <= {new_data[31],new_data[3:0]};
                 end
                 MEPC: begin
-                    mepc <= new_data[31:2];
+                    mepc <= new_data[31:(ENABLE_C_EXTENSION==1?1:2)];
                 end
                 MTVAL: begin
                     mtval <= new_data;
