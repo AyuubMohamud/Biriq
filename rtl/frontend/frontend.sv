@@ -115,7 +115,7 @@ module frontend #(
     output       logic [1:0]            btb_bm_pred_o,
     output       logic [PC_BITS-1:0]    btb_target_o,
     output       logic                  btb_vld_o,
-    output       logic                  btb_idx_o,
+    output       logic [IDX_BITS-1:0]   btb_idx_o,
     output       logic                  btb_way_o,
     output       logic                  valid_o,
     input   wire logic                  rn_busy_i,

@@ -20,7 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module icacheA1 #(parameter ENABLE_C_EXTENSION = 0,
+module icacheA1 #(parameter ENABLE_C_EXTENSION = 1,
 localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
 localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     input   wire logic                      core_clock_i,
@@ -122,7 +122,11 @@ localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     wire [8:0] ram_addr;
     wire [63:0] ram_data;
     assign dec_instruction_o = ram_data; // When busy_i true, data must be held stable.
-    assign ram_addr = working_addr[9:1];
+    generate if (ENABLE_C_EXTENSION) begin : ___if_IALIGN2
+        assign ram_addr = working_addr[10:2];
+    end else begin : ___if_IALIGN4
+        assign ram_addr = working_addr[9:1];
+    end endgenerate
     wire [1:0] valids = {valid1[used_address[11:7]],valid0[used_address[11:7]]};
     reg random_sample = 0;
     wire replacement = &valids ? random_sample : ~valids[1];

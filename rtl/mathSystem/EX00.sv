@@ -101,7 +101,7 @@ localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1) (
     wire ins_sz;
     generate if (ENABLE_C_EXTENSION) begin : _IALIGN2
         assign pc = {pc_i[30:2], data_i[0] ? ins_2byte_p ? pc_i[1:0]+2'b01 : pc_i[1:0]+2'b10 : pc_i[1:0]};
-        assign btb_vld_specific = btb_vld_i&(btb_idx_i==pc[1:0]);
+        assign btb_vld_specific = btb_vld_i&(btb_idx_i==(ins_2byte ? pc[1:0] : pc[1:0]==2'b00 ? 2'b01 : pc[1:0]==2'b01 ? 2'b10 : pc[1:0]==2'b10 ? 2'b11 : 2'b00));
         assign ins_sz = ins_2byte;
     end else begin : _IALIGN4
         assign pc = {pc_i[29:1], pc_i[0] ? 1'b1 : data_i[0]};

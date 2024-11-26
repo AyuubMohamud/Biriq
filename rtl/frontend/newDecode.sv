@@ -22,7 +22,7 @@
 //  -----------------------------------------------------------------------------------------
 module newDecode #(
     parameter ENABLE_PSX = 1,
-    parameter ENABLE_C_EXTENSION = 0,
+    parameter ENABLE_C_EXTENSION = 1,
     localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30,
     localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1
 ) (
@@ -96,7 +96,7 @@ module newDecode #(
     output       logic [1:0]            btb_bm_pred_o,
     output       logic [PC_BITS-1:0]    btb_target_o,
     output       logic                  btb_vld_o,
-    output       logic                  btb_idx_o,
+    output       logic [IDX_BITS-1:0]   btb_idx_o,
     output       logic                  btb_way_o,
     output       logic                  valid_o,
     input   wire logic                  rn_busy_i,
@@ -105,16 +105,16 @@ module newDecode #(
     output  wire logic [PC_BITS-1:0]    branch_correction_pc
 );
     wire [63:0] rv_instruction_i_p;
-    wire [29:0] rv_ppc_i;
-    wire [29:0] rv_target; wire [1:0] rv_btype; wire [1:0] rv_bm_pred; wire rv_btb_vld; wire excp_vld; wire [3:0] excp_code;
+    wire [PC_BITS-1:0] rv_ppc_i;
+    wire [PC_BITS-1:0] rv_target; wire [1:0] rv_btype; wire [1:0] rv_bm_pred; wire rv_btb_vld; wire excp_vld; wire [3:0] excp_code;
     wire logic [31:0]           dec0_instruction;
     wire logic                  dec0_instruction_is_2;
     wire logic [31:0]           dec1_instruction;
     wire logic                  dec1_instruction_is_2;
     wire logic                  dec1_instruction_valid;
     reg shutdown_frontend = 0;
-    wire rv_valid; wire btb_idx; wire btb_way;
-    skdbf #(.DW(139)) skidbuffer (
+    wire rv_valid; wire [IDX_BITS-1:0] btb_idx; wire btb_way;
+    skdbf #(.DW(PC_BITS+PC_BITS+78+IDX_BITS)) skidbuffer (
         cpu_clk_i, flush_i|branch_correction_flush, rn_busy_i, {dec0_instruction,
         dec0_instruction_is_2,
         dec1_instruction,
