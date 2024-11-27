@@ -257,7 +257,11 @@ module decompressor (
             );
           end
           3'b001: begin
-            illegal_instr_o = 1'b1;
+            instr_o = construct_j_type (
+              .imm(cj_imm),
+              .rd(5'd1),
+              .opcode(OPCODE_JAL)
+            );
           end
           3'b010: begin
             // c.li -> addi rd, x0, ci_imm

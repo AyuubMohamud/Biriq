@@ -61,14 +61,16 @@ module align #(
     wire [30:0] rv_ppc_i;
     wire [30:0] rv_target; wire [1:0] rv_btype; wire [1:0] rv_bm_pred; wire rv_btb_vld; wire excp_vld; wire [3:0] excp_code;
     wire rv_valid; wire [1:0] btb_idx; wire btb_way;
+    wire align_busy;
     skdbf #(.DW(139)) skidbuffer (
-        cpu_clk_i, flush_i, dec_busy_i, {working_ins, rv_ppc_i, rv_target, rv_btype, rv_bm_pred, rv_btb_vld, excp_vld, excp_code,btb_idx,btb_way}, rv_valid, busy_o, {instruction_i, if2_sip_vpc_i, btb_target_i, btb_btype_i,
+        cpu_clk_i, flush_i, align_busy|dec_busy_i, {working_ins, rv_ppc_i, rv_target, rv_btype, rv_bm_pred, rv_btb_vld, excp_vld, excp_code,btb_idx,btb_way}, rv_valid, busy_o, {instruction_i, if2_sip_vpc_i, btb_target_i, btb_btype_i,
         btb_bm_pred_i, btb_vld_i, if2_sip_excp_vld_i, if2_sip_excp_code_i, if2_btb_idx,btb_way_i}, icache_valid_i
     );
     reg [3:0] alignStageMask = 4'hF; // Mask for partial decoding
     localparam alignIDLE = 2'b00;
     localparam alignSPECIAL = 2'b01;
     reg [1:0] alignFSM = alignIDLE;
+    reg [15:0] alignResidue = '0;
 
     wire [2:0] pc_start_hw = {
         rv_ppc_i[1:0]==2'b10,
@@ -84,7 +86,7 @@ module align #(
         btb_idx[1:0]==2'b00
     };
     wire [3:0] determine_valid_hw_btb = {
-        rv_btb_vld?!(|idx_end_hw): 1'b1, rv_btb_vld?!(|idx_end_hw[1:0]): 1'b1, rv_btb_vld ? !(idx_end_hw[0]) : 1'b1, 1'b1
+        rv_btb_vld&(rv_bm_pred[1]|(rv_btype!=2'b00))?!(|idx_end_hw): 1'b1, rv_btb_vld&(rv_bm_pred[1]|(rv_btype!=2'b00))?!(|idx_end_hw[1:0]): 1'b1, rv_btb_vld&(rv_bm_pred[1]|(rv_btype!=2'b00)) ? !(idx_end_hw[0]) : 1'b1, 1'b1
     };
 
     wire [3:0] hw_accept = determine_valid_hw_pc&determine_valid_hw_btb&alignStageMask;
@@ -122,7 +124,7 @@ module align #(
                 hw_mask_off = first_32 ? 4'b1100 : 4'b0100;
             end
             4'b1000: begin
-                hw_mask_off = first_32 ? 4'b0000 : 4'b1000;
+                hw_mask_off = 4'b1000;
             end
             default: begin
                 hw_mask_off = '0;
@@ -163,7 +165,7 @@ module align #(
                 hw_mask_off_2 = second_32 ? 4'b1100 : 4'b0100;
             end
             4'b1000: begin
-                hw_mask_off_2 = second_32 ? 4'b0000 : 4'b1000;
+                hw_mask_off_2 = 4'b1000;
             end
             default: begin
                 hw_mask_off_2 = '0;
@@ -190,6 +192,7 @@ module align #(
     wire [1:0] first_ended = hw_mask_off[3] ? 2'b11 : hw_mask_off[2] ? 2'b10 : hw_mask_off[1] ? 2'b01 : 2'b00;
     wire [1:0] second_accepted = hw_mask_off_2[0] ? 2'b00 : hw_mask_off_2[1] ? 2'b01 : hw_mask_off_2[2] ? 2'b10 : 2'b11;
     wire [1:0] second_ended = hw_mask_off_2[3] ? 2'b11 : hw_mask_off_2[2] ? 2'b10 : hw_mask_off_2[1] ? 2'b01 : 2'b00;
+    assign align_busy = (!all_bytes_consumed&(alignFSM==alignIDLE)&rv_valid)|((hw_accept!=4'd1)&&(alignFSM==alignSPECIAL)&&rv_valid);
     always_ff @(posedge cpu_clk_i) begin
         if (flush_i) begin
             alignFSM <= alignIDLE;
@@ -215,7 +218,7 @@ module align #(
                             dec1_instruction_is_2 <= 1'b1;
                             dec1_instruction_valid_o <= (hw_accept_2!='0);
                         end
-                        dec_vld_o <= 1'b1;
+                        dec_vld_o <= !(first_incomplete_32&all_bytes_consumed);
                         dec_vpc_o <= {rv_ppc_i[30:2], first_accepted};
                         dec_btb_bm_pred_o <= rv_bm_pred;
                         dec_btb_btype_o <= rv_btype;
@@ -225,21 +228,49 @@ module align #(
                         dec_btb_vld_o <= rv_btb_vld&((first_ended==btb_idx)||(second_ended==btb_idx));
                         if (!all_bytes_consumed) begin
                             alignStageMask <= ~(hw_mask_off|hw_mask_off_2);
+                        end else begin
+                            alignStageMask <= 4'hF;
                             if (first_incomplete_32|second_incomplete_32) begin
                                 alignFSM <= alignSPECIAL;
                             end
-                        end else begin
-                            alignStageMask <= 4'hF;
                         end
+                        dec_excp_vld_o <= 1'b0;
+                        alignResidue <= working_ins[63:48];
                     end else if (rv_valid&excp_vld) begin
                         dec_vld_o <= 1'b1;
                         dec_vpc_o <= rv_ppc_i;
                         dec_excp_vld_o <= 1'b1;
                         dec_excp_code_o <= excp_code;
+                        alignStageMask <= 4'hF;
+                    end else if (!rv_valid) begin
+                        dec_vld_o <= 1'b0;
                     end
                 end
                 alignSPECIAL: begin
-                    
+                    if (rv_valid&!excp_vld) begin
+                        dec_vld_o <= 1'b1;
+                        dec0_instruction_is_2 <= 1'b0;
+                        dec0_instruction_o <= {working_ins[15:0], alignResidue};
+                        dec1_instruction_valid_o <= 1'b0;
+                        dec_btb_vld_o <= rv_btb_vld&(btb_idx==2'b00);
+                        dec_btb_bm_pred_o <= rv_bm_pred;
+                        dec_btb_btype_o <= rv_btype;
+                        dec_btb_index_o <= btb_idx;
+                        dec_btb_way_o <= btb_way;
+                        dec_btb_target_o <= rv_target;
+                        dec_vpc_o <= {dec_vpc_o[30:2],2'b11};
+                        alignStageMask <= 4'hE; 
+                        alignFSM <= alignIDLE;
+                    end else if (rv_valid&excp_vld) begin
+                        dec_vld_o <= 1'b1;
+                        dec_vpc_o <= {dec_vpc_o[30:2],2'b11};
+                        dec_excp_vld_o <= 1'b1;
+                        dec_excp_code_o <= excp_code;
+                        alignStageMask <= 4'hF;
+                        alignFSM <= alignIDLE;
+                    end else if (!rv_valid) begin
+                        dec_vld_o <= 1'b0;
+                    end
                 end
                 default: begin
                     

@@ -122,7 +122,13 @@ localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30) (
     end endgenerate
     wire [31:0] excp_addr;
     wire [31:0] first_operand = jalr ? operand_1 : pc_32;
-    wire [31:0] second_operand = (jal|jalr|brnch_res)&&!(auipc) ? offset : 32'd4;
+    wire [31:0] pc_constant;
+    generate if (ENABLE_C_EXTENSION) begin : __if_IALIGN2
+        assign pc_constant = ins_sz_i ? 32'd2 : 32'd4;
+    end else begin : __if_IALIGN4
+        assign pc_constant = 32'd4;
+    end endgenerate
+    wire [31:0] second_operand = (jal|jalr|brnch_res)&&!(auipc) ? offset : pc_constant;
 
     assign excp_addr = first_operand+second_operand;
     wire wrongful_nbranch = !btb_vld_i&&!(auipc);
@@ -132,12 +138,6 @@ localparam PC_BITS = ENABLE_C_EXTENSION==1 ? 31 : 30) (
     wire wrongful_bm = (brnch_res^bm_pred_i[1]) && btb_vld_i && branch_type==2'b00;    
     initial rcu_excp_o = 0; initial wb_valid_o = 0; initial res_valid_o = 0;           
     
-    wire [31:0] pc_constant;
-    generate if (ENABLE_C_EXTENSION) begin : __if_IALIGN2
-        assign pc_constant = ins_sz_i ? 32'd2 : 32'd4;
-    end else begin : __if_IALIGN4
-        assign pc_constant = 32'd4;
-    end endgenerate
 
     wire [31:0] pc_nx = pc_32+pc_constant;
 
