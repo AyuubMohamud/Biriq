@@ -86,11 +86,11 @@ localparam IDX_BITS = ENABLE_C_EXTENSION==1 ? 2 : 1)
         tlb_stage_valid_o = 0;
         tlb_stage_pc_o = 0;
         for (integer i = 0; i < BPU_ENTRIES; i++) begin : _initialise
-            targets[i] = 0; counters[i] = 0; btype[i] = 0; idx[i] = 0;
+            targets[i] = 0; counters[i] = 2'b11; btype[i] = 0; idx[i] = 2'b00;
         end
         for (integer i = 0; i < BPU_ENTRIES/2; i++) begin : _initialise
-            valid0[i] = 0; valid1[i] = 0; 
-            tag0[i] = 0; tag1[i] = 0;
+            valid0[i] = 1'b0; valid1[i] = 1'b1; 
+            tag0[i] = 12'h040; tag1[i] = 12'h040;
         end
         for (integer i = 0; i < BPU_RAS_ENTRIES; i++) begin : _initialise
             RAS[i] = 0;

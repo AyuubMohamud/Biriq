@@ -252,16 +252,27 @@ module newDecode #(
     wire [1:0] branches_decoded = {(isJAL2|isJALR2|isCmpBranch2)&dec1_instruction_valid, isJAL|isJALR|isCmpBranch};
     wire [IDX_BITS-1:0] first_idx;
     wire [IDX_BITS-1:0] second_idx;
+    wire [IDX_BITS-1:0] length_misprediction;
+    wire [IDX_BITS-1:0] second_start;
     generate if (ENABLE_C_EXTENSION) begin : _if_IALIGN2
         assign first_idx = dec0_instruction_is_2 ? rv_ppc_i[1:0] : rv_ppc_i[1:0]==2'b00 ? 2'b01 : rv_ppc_i[1:0]==2'b01 ? 2'b10 : rv_ppc_i[1:0]==2'b10 ? 2'b11 : 2'b00;
         assign second_idx = dec1_instruction_is_2 ? first_idx==2'b00 ? 2'b01 : first_idx==2'b01 ? 2'b10 : 2'b11 : first_idx==2'b00 ? 2'b10 : 2'b11;
+        assign second_start = dec0_instruction_is_2 ? rv_ppc_i[1:0]==2'b00 ? 2'b01 : rv_ppc_i[1:0]==2'b01 ? 2'b10 : 2'b11 : 2'b10;
+        assign length_misprediction[0] = ((rv_ppc_i[1:0]==2'b00 && btb_idx==2'b00) ||
+        (rv_ppc_i[1:0]==2'b01 && btb_idx==2'b01) ||
+        (rv_ppc_i[1:0]==2'b10 && btb_idx==2'b10))&!dec0_instruction_is_2&&rv_btb_vld;
+        assign length_misprediction[1] = ((second_start==2'b00 && btb_idx==2'b00) ||
+        (second_start==2'b01 && btb_idx==2'b01) ||
+        (second_start==2'b10 && btb_idx==2'b10))&!dec1_instruction_is_2&dec1_instruction_valid&&rv_btb_vld;
     end
     else begin : _if_IALIGN4
         assign first_idx = rv_ppc_i[0];
         assign second_idx = 1'b1;
+        assign length_misprediction = 1'd0;
+        assign second_start = 1'd0;
     end endgenerate
     wire [1:0] branches_predicted = {rv_btb_vld&dec1_instruction_valid&(btb_idx==second_idx), rv_btb_vld&(btb_idx==first_idx)};
-    wire btb_correction = (!branches_decoded[0]&branches_predicted[0])|(!branches_decoded[1]&branches_predicted[1]);
+    wire btb_correction = (!branches_decoded[0]&branches_predicted[0])|(!branches_decoded[1]&branches_predicted[1])|(|length_misprediction);
     
     reg [PC_BITS-1:0] address_to_correct;
     always_ff @(posedge cpu_clk_i) begin

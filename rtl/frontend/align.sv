@@ -193,6 +193,7 @@ module align #(
     wire [1:0] second_accepted = hw_mask_off_2[0] ? 2'b00 : hw_mask_off_2[1] ? 2'b01 : hw_mask_off_2[2] ? 2'b10 : 2'b11;
     wire [1:0] second_ended = hw_mask_off_2[3] ? 2'b11 : hw_mask_off_2[2] ? 2'b10 : hw_mask_off_2[1] ? 2'b01 : 2'b00;
     assign align_busy = (!all_bytes_consumed&(alignFSM==alignIDLE)&rv_valid)|((hw_accept!=4'd1)&&(alignFSM==alignSPECIAL)&&rv_valid);
+    wire [3:0] mask_off = hw_mask_off|hw_mask_off_2;
     always_ff @(posedge cpu_clk_i) begin
         if (flush_i) begin
             alignFSM <= alignIDLE;
@@ -225,9 +226,9 @@ module align #(
                         dec_btb_index_o <= btb_idx;
                         dec_btb_way_o <= btb_way;
                         dec_btb_target_o <= rv_target;
-                        dec_btb_vld_o <= rv_btb_vld&((first_ended==btb_idx)||(second_ended==btb_idx));
+                        dec_btb_vld_o <= rv_btb_vld&((first_ended>=btb_idx)||(second_ended>=btb_idx));
                         if (!all_bytes_consumed) begin
-                            alignStageMask <= ~(hw_mask_off|hw_mask_off_2);
+                            alignStageMask <= mask_off[2] ? 4'h8 : mask_off[1] ? 4'hC : 4'hE;
                         end else begin
                             alignStageMask <= 4'hF;
                             if (first_incomplete_32|second_incomplete_32) begin
