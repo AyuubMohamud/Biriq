@@ -1,5 +1,5 @@
 # BiriqIII
-This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMBC_Zicond_Zifencei_Zicsr_XPSX** implementation with Machine and User support.
+This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMBC_Zicond_Zifencei_Zicsr_Zcb_XPSX** implementation with Machine and User support.
 
 ![Abstract Pipeline](cpu.drawio.svg)
 
