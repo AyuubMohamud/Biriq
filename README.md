@@ -1,4 +1,4 @@
-# BiriqIIEC
+# BiriqIII
 This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMB_Zicond_Zifencei_Zicsr_XPSX** implementation with Machine and User support.
 
 ![Abstract Pipeline](cpu.drawio.svg)
@@ -19,11 +19,10 @@ Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, 
 - Store Forwarding in the case where one store overlaps any number of bytes in a load.
 - 64 physical registers with PR0 mapped permanently to $zero.
 - Forwarding for both integer ALU's and branch unit.
-- Up to 32 instructions in flight.
+- Up to 32/64 instructions in flight.
 - SIMD instructions on both Integer ALU Ports.
 - Dual ported, dual issue out of order integer scheduler for maximum effeciency in scheduling integer/branch instructions
 - 0, 4, or 8 PMP Entries with a granularity of 128 bytes.
-- A coherent TileLink-UL port into the data cache allowing for coherent DMA (and write-updates to the cache if it writes a present line).
 
 Queue capacities: \
 Up to 16 memory/mul/div/csr instructions \
@@ -34,19 +33,17 @@ The PMA Map of this core is:\
 0x80000000 - 0xFFFFFFFF (inclusive) -> Weakly ordered/Strongly ordered, non-idempotent memory (RVWMO/SC)
 
 I/O ordering is configurable using MAUX (CSR: 0x7C0) bit 4, allowing I/O loads to execute with disregard to I/O stores (except cases of address overlap)
+Load reordering is configurable using MAUX bit 5.
 ## Improvements:
-- Add ebreak into decoder (done)
-- Make divider and multiplier out of pipe (done)
-- Add in timeout wait (done)
-- Fix RAS (done)
-- Fix the load pipeline, and improve non-blocking cache (done)
-- Make LUI run on both Integer Ports. (done)
-- Make Data Cache 64-bit (done).
-- Add configurable PMAs
-- Add PMP for NAPOT only (done)
-- Add atomic instructions for both IO and non IO regions
-- Make dcache/icache more bus agnostic to enable different bus implementations (AXI, AHB, Wishbone)
-- Make more parameters configurable
+- More PMP Entries
+- More powerful vector extension.
+- Configurable Cache Sizes.
+- Smepmp.
+- Unaligned loads/stores.
+- Global history based branch prediction.
+- Write back caches.
+- Atomics
+- Wider window than now (64 over 32).
 
 This core supports a regular TileLink Uncached Heavyweight bus at 32-bit data width, and 32-bit address width.
 
