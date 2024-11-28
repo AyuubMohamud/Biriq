@@ -58,17 +58,29 @@ module irf
     reg [31:0] file01 [0:63]; 
     reg [31:0] file10 [0:63]; 
     // forwarding network over ALUs
-    assign p0_rd_datas = (p0_we_dest==p0_rd_src)&&(p0_we_i) ? p0_we_data :  (p1_we_dest==p0_rd_src)&&(p1_we_i) ? p1_we_data :
+    wire p0_match_p0 = (p0_we_dest==p0_rd_src)&&(p0_we_i);
+    wire p0_match_p1 = (p1_we_dest==p0_rd_src)&&(p1_we_i);
+    wire p1_match_p0 = (p0_we_dest==p1_rd_src)&&(p0_we_i);
+    wire p1_match_p1 = (p1_we_dest==p1_rd_src)&&(p1_we_i);
+    wire p2_match_p0 = (p0_we_dest==p2_rd_src)&&(p0_we_i);
+    wire p2_match_p1 = (p1_we_dest==p2_rd_src)&&(p1_we_i);
+    wire p3_match_p0 = (p0_we_dest==p3_rd_src)&&(p0_we_i);
+    wire p3_match_p1 = (p1_we_dest==p3_rd_src)&&(p1_we_i);
+    wire p4_match_p0 = (p0_we_dest==p4_rd_src)&&(p0_we_i);
+    wire p4_match_p1 = (p1_we_dest==p4_rd_src)&&(p1_we_i);
+    wire p5_match_p0 = (p0_we_dest==p5_rd_src)&&(p0_we_i);
+    wire p5_match_p1 = (p1_we_dest==p5_rd_src)&&(p1_we_i);
+    assign p0_rd_datas = p0_match_p0 ? p0_we_data :  p0_match_p1 ? p1_we_data :
     file00[p0_rd_src] ^ file01[p0_rd_src] ^ file10[p0_rd_src];
-    assign p1_rd_datas = (p0_we_dest==p1_rd_src)&&(p0_we_i) ? p0_we_data :  (p1_we_dest==p1_rd_src)&&(p1_we_i) ? p1_we_data :
+    assign p1_rd_datas = p1_match_p0 ? p0_we_data :  p1_match_p1 ? p1_we_data :
     file00[p1_rd_src] ^ file01[p1_rd_src] ^ file10[p1_rd_src];
-    assign p2_rd_datas = (p0_we_dest==p2_rd_src)&&(p0_we_i) ? p0_we_data :  (p1_we_dest==p2_rd_src)&&(p1_we_i) ? p1_we_data :
+    assign p2_rd_datas = p2_match_p0 ? p0_we_data :  p2_match_p1 ? p1_we_data :
     file00[p2_rd_src] ^ file01[p2_rd_src] ^ file10[p2_rd_src];
-    assign p3_rd_datas = (p0_we_dest==p3_rd_src)&&(p0_we_i) ? p0_we_data :  (p1_we_dest==p3_rd_src)&&(p1_we_i) ? p1_we_data :
+    assign p3_rd_datas = p3_match_p0 ? p0_we_data :  p3_match_p1 ? p1_we_data :
     file00[p3_rd_src] ^ file01[p3_rd_src] ^ file10[p3_rd_src];
-    assign p4_rd_datas = (p0_we_dest==p4_rd_src)&&(p0_we_i) ? p0_we_data :  (p1_we_dest==p4_rd_src)&&(p1_we_i) ? p1_we_data :
+    assign p4_rd_datas = p4_match_p0 ? p0_we_data :  p4_match_p1 ? p1_we_data :
     file00[p4_rd_src] ^ file01[p4_rd_src] ^ file10[p4_rd_src];
-    assign p5_rd_datas = (p0_we_dest==p5_rd_src)&&(p0_we_i) ? p0_we_data :  (p1_we_dest==p5_rd_src)&&(p1_we_i) ? p1_we_data :
+    assign p5_rd_datas = p5_match_p0 ? p0_we_data :  p5_match_p1 ? p1_we_data :
     file00[p5_rd_src] ^ file01[p5_rd_src] ^ file10[p5_rd_src];
 
     always_ff @(posedge clk_i) begin
