@@ -135,10 +135,10 @@ module newStoreBuffer #(parameter PHYS = 32, parameter ENTRIES = 10) (
         address = 'x;
         bm = 'x;
         c_io = 'x;
-        for (integer i = 0; i < ENTRIES; i++) begin
-            if (vld[i]&~speculative[i]&!FINISHSEL4) begin
+        for (integer i = 0; i < ENTRIES; i++) begin // Change store buffer to stop at earliest valid entry regardless of if it is speculative or not
+            if (vld[i]&!FINISHSEL4) begin
                 FINISHSEL4 = 1;
-                cdec[i] = 1;
+                cdec[i] = ~speculative[i];
                 cache_dq = data[i];
                 address = physical_addresses[i];
                 bm = bitmask[i];
