@@ -43,6 +43,8 @@ module mpu #(parameter PMP_REGS = 8) (
 localparam PMPCFG0        = 12'h3a0; // Physical memory protection configuration.
 localparam PMPCFG1        = 12'h3a1; // Physical memory protection configuration, RV32 only.
 
+localparam PMPCFG_BASE = 12'h3a0;
+localparam PMPCFG_NUM = PMP_REGS/4;
 generate if (PMP_REGS==0 || (PMP_REGS%4 != 0)) begin : _no_pmp
     assign d_kill = 0;
     assign i_kill = 0;
