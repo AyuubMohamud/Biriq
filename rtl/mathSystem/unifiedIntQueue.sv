@@ -135,7 +135,7 @@ module unifiedIntQueue (
     endgenerate
     generate
         for (genvar i = 0; i < 12; i++) begin: _3
-            assign data_rdy[i] = vld[i] & AV2[i] & AV1[i] & !flush_i;
+            assign data_rdy[i] = vld[i] & AV2l[i] & AV1l[i] & !flush_i;
         end
     endgenerate
     generate 

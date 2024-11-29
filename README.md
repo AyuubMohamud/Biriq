@@ -1,5 +1,5 @@
 # BiriqIIEC
-This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMB_Zicond_Zifencei_Zicsr_XPSX** implementation with Machine and User support.
+This is a yet to be fully verified 2-way superscalar, out-of-order speculative **RV32IMB_Zicond_Zifencei_Zicsr_Zicbo_XPSX** implementation with Machine and User support.
 
 ![Abstract Pipeline](cpu.drawio.svg)
 
@@ -23,8 +23,6 @@ Above is the the BiriqIIE verbatim from this repository with a DMA, GPIO, UART, 
 - SIMD instructions on both Integer ALU Ports.
 - Dual ported, dual issue out of order integer scheduler for maximum effeciency in scheduling integer/branch instructions
 - 0, 4, or 8 PMP Entries with a granularity of 128 bytes.
-- A coherent TileLink-UL port into the data cache allowing for coherent DMA (and write-updates to the cache if it writes a present line).
-
 Queue capacities: \
 Up to 16 memory/mul/div/csr instructions \
 Up to 12 ALU/Branch instructions.
