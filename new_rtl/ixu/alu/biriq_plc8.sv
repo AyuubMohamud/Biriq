@@ -1,0 +1,288 @@
+// SPDX-FileCopyrightText: 2024 Ayuub Mohamud <ayuub.mohamud@outlook.com>
+// SPDX-License-Identifier: CERN-OHL-W-2.0
+
+//  -----------------------------------------------------------------------------------------
+//  | Copyright (C) Ayuub Mohamud 2024.                                                     |
+//  |                                                                                       |
+//  | This source describes Open Hardware (RTL) and is licensed under the CERN-OHL-W v2.    |
+//  |                                                                                       |
+//  | You may redistribute and modify this source and make products using it under          |
+//  | the terms of the CERN-OHL-W v2 (https://ohwr.org/cern_ohl_w_v2.txt).                  |
+//  |                                                                                       |
+//  | This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY,                   |
+//  | INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR A                  |
+//  | PARTICULAR PURPOSE. Please see the CERN-OHL-W v2 for applicable conditions.           |
+//  |                                                                                       |
+//  | Source location: https://github.com/AyuubMohamud/Biriq                                |
+//  |                                                                                       |
+//  | As per CERN-OHL-W v2 section 4, should You produce hardware based on this             |
+//  | source, You must where practicable maintain the Source Location visible               |
+//  | in the same manner as is done within this source.                                     |
+//  |                                                                                       |
+//  -----------------------------------------------------------------------------------------
+module biriq_plc8 (
+    input  wire logic [7:0] a,
+    output logic      [3:0] b
+);
+  reg [3:0] cpop_lkp_table[0:255];
+  initial begin
+    cpop_lkp_table[0]   = 0;
+    cpop_lkp_table[1]   = 1;
+    cpop_lkp_table[2]   = 1;
+    cpop_lkp_table[3]   = 2;
+    cpop_lkp_table[4]   = 1;
+    cpop_lkp_table[5]   = 2;
+    cpop_lkp_table[6]   = 2;
+    cpop_lkp_table[7]   = 3;
+    cpop_lkp_table[8]   = 1;
+    cpop_lkp_table[9]   = 2;
+    cpop_lkp_table[10]  = 2;
+    cpop_lkp_table[11]  = 3;
+    cpop_lkp_table[12]  = 2;
+    cpop_lkp_table[13]  = 3;
+    cpop_lkp_table[14]  = 3;
+    cpop_lkp_table[15]  = 4;
+    cpop_lkp_table[16]  = 1;
+    cpop_lkp_table[17]  = 2;
+    cpop_lkp_table[18]  = 2;
+    cpop_lkp_table[19]  = 3;
+    cpop_lkp_table[20]  = 2;
+    cpop_lkp_table[21]  = 3;
+    cpop_lkp_table[22]  = 3;
+    cpop_lkp_table[23]  = 4;
+    cpop_lkp_table[24]  = 2;
+    cpop_lkp_table[25]  = 3;
+    cpop_lkp_table[26]  = 3;
+    cpop_lkp_table[27]  = 4;
+    cpop_lkp_table[28]  = 3;
+    cpop_lkp_table[29]  = 4;
+    cpop_lkp_table[30]  = 4;
+    cpop_lkp_table[31]  = 5;
+    cpop_lkp_table[32]  = 1;
+    cpop_lkp_table[33]  = 2;
+    cpop_lkp_table[34]  = 2;
+    cpop_lkp_table[35]  = 3;
+    cpop_lkp_table[36]  = 2;
+    cpop_lkp_table[37]  = 3;
+    cpop_lkp_table[38]  = 3;
+    cpop_lkp_table[39]  = 4;
+    cpop_lkp_table[40]  = 2;
+    cpop_lkp_table[41]  = 3;
+    cpop_lkp_table[42]  = 3;
+    cpop_lkp_table[43]  = 4;
+    cpop_lkp_table[44]  = 3;
+    cpop_lkp_table[45]  = 4;
+    cpop_lkp_table[46]  = 4;
+    cpop_lkp_table[47]  = 5;
+    cpop_lkp_table[48]  = 2;
+    cpop_lkp_table[49]  = 3;
+    cpop_lkp_table[50]  = 3;
+    cpop_lkp_table[51]  = 4;
+    cpop_lkp_table[52]  = 3;
+    cpop_lkp_table[53]  = 4;
+    cpop_lkp_table[54]  = 4;
+    cpop_lkp_table[55]  = 5;
+    cpop_lkp_table[56]  = 3;
+    cpop_lkp_table[57]  = 4;
+    cpop_lkp_table[58]  = 4;
+    cpop_lkp_table[59]  = 5;
+    cpop_lkp_table[60]  = 4;
+    cpop_lkp_table[61]  = 5;
+    cpop_lkp_table[62]  = 5;
+    cpop_lkp_table[63]  = 6;
+    cpop_lkp_table[64]  = 1;
+    cpop_lkp_table[65]  = 2;
+    cpop_lkp_table[66]  = 2;
+    cpop_lkp_table[67]  = 3;
+    cpop_lkp_table[68]  = 2;
+    cpop_lkp_table[69]  = 3;
+    cpop_lkp_table[70]  = 3;
+    cpop_lkp_table[71]  = 4;
+    cpop_lkp_table[72]  = 2;
+    cpop_lkp_table[73]  = 3;
+    cpop_lkp_table[74]  = 3;
+    cpop_lkp_table[75]  = 4;
+    cpop_lkp_table[76]  = 3;
+    cpop_lkp_table[77]  = 4;
+    cpop_lkp_table[78]  = 4;
+    cpop_lkp_table[79]  = 5;
+    cpop_lkp_table[80]  = 2;
+    cpop_lkp_table[81]  = 3;
+    cpop_lkp_table[82]  = 3;
+    cpop_lkp_table[83]  = 4;
+    cpop_lkp_table[84]  = 3;
+    cpop_lkp_table[85]  = 4;
+    cpop_lkp_table[86]  = 4;
+    cpop_lkp_table[87]  = 5;
+    cpop_lkp_table[88]  = 3;
+    cpop_lkp_table[89]  = 4;
+    cpop_lkp_table[90]  = 4;
+    cpop_lkp_table[91]  = 5;
+    cpop_lkp_table[92]  = 4;
+    cpop_lkp_table[93]  = 5;
+    cpop_lkp_table[94]  = 5;
+    cpop_lkp_table[95]  = 6;
+    cpop_lkp_table[96]  = 2;
+    cpop_lkp_table[97]  = 3;
+    cpop_lkp_table[98]  = 3;
+    cpop_lkp_table[99]  = 4;
+    cpop_lkp_table[100] = 3;
+    cpop_lkp_table[101] = 4;
+    cpop_lkp_table[102] = 4;
+    cpop_lkp_table[103] = 5;
+    cpop_lkp_table[104] = 3;
+    cpop_lkp_table[105] = 4;
+    cpop_lkp_table[106] = 4;
+    cpop_lkp_table[107] = 5;
+    cpop_lkp_table[108] = 4;
+    cpop_lkp_table[109] = 5;
+    cpop_lkp_table[110] = 5;
+    cpop_lkp_table[111] = 6;
+    cpop_lkp_table[112] = 3;
+    cpop_lkp_table[113] = 4;
+    cpop_lkp_table[114] = 4;
+    cpop_lkp_table[115] = 5;
+    cpop_lkp_table[116] = 4;
+    cpop_lkp_table[117] = 5;
+    cpop_lkp_table[118] = 5;
+    cpop_lkp_table[119] = 6;
+    cpop_lkp_table[120] = 4;
+    cpop_lkp_table[121] = 5;
+    cpop_lkp_table[122] = 5;
+    cpop_lkp_table[123] = 6;
+    cpop_lkp_table[124] = 5;
+    cpop_lkp_table[125] = 6;
+    cpop_lkp_table[126] = 6;
+    cpop_lkp_table[127] = 7;
+    cpop_lkp_table[128] = 1;
+    cpop_lkp_table[129] = 2;
+    cpop_lkp_table[130] = 2;
+    cpop_lkp_table[131] = 3;
+    cpop_lkp_table[132] = 2;
+    cpop_lkp_table[133] = 3;
+    cpop_lkp_table[134] = 3;
+    cpop_lkp_table[135] = 4;
+    cpop_lkp_table[136] = 2;
+    cpop_lkp_table[137] = 3;
+    cpop_lkp_table[138] = 3;
+    cpop_lkp_table[139] = 4;
+    cpop_lkp_table[140] = 3;
+    cpop_lkp_table[141] = 4;
+    cpop_lkp_table[142] = 4;
+    cpop_lkp_table[143] = 5;
+    cpop_lkp_table[144] = 2;
+    cpop_lkp_table[145] = 3;
+    cpop_lkp_table[146] = 3;
+    cpop_lkp_table[147] = 4;
+    cpop_lkp_table[148] = 3;
+    cpop_lkp_table[149] = 4;
+    cpop_lkp_table[150] = 4;
+    cpop_lkp_table[151] = 5;
+    cpop_lkp_table[152] = 3;
+    cpop_lkp_table[153] = 4;
+    cpop_lkp_table[154] = 4;
+    cpop_lkp_table[155] = 5;
+    cpop_lkp_table[156] = 4;
+    cpop_lkp_table[157] = 5;
+    cpop_lkp_table[158] = 5;
+    cpop_lkp_table[159] = 6;
+    cpop_lkp_table[160] = 2;
+    cpop_lkp_table[161] = 3;
+    cpop_lkp_table[162] = 3;
+    cpop_lkp_table[163] = 4;
+    cpop_lkp_table[164] = 3;
+    cpop_lkp_table[165] = 4;
+    cpop_lkp_table[166] = 4;
+    cpop_lkp_table[167] = 5;
+    cpop_lkp_table[168] = 3;
+    cpop_lkp_table[169] = 4;
+    cpop_lkp_table[170] = 4;
+    cpop_lkp_table[171] = 5;
+    cpop_lkp_table[172] = 4;
+    cpop_lkp_table[173] = 5;
+    cpop_lkp_table[174] = 5;
+    cpop_lkp_table[175] = 6;
+    cpop_lkp_table[176] = 3;
+    cpop_lkp_table[177] = 4;
+    cpop_lkp_table[178] = 4;
+    cpop_lkp_table[179] = 5;
+    cpop_lkp_table[180] = 4;
+    cpop_lkp_table[181] = 5;
+    cpop_lkp_table[182] = 5;
+    cpop_lkp_table[183] = 6;
+    cpop_lkp_table[184] = 4;
+    cpop_lkp_table[185] = 5;
+    cpop_lkp_table[186] = 5;
+    cpop_lkp_table[187] = 6;
+    cpop_lkp_table[188] = 5;
+    cpop_lkp_table[189] = 6;
+    cpop_lkp_table[190] = 6;
+    cpop_lkp_table[191] = 7;
+    cpop_lkp_table[192] = 2;
+    cpop_lkp_table[193] = 3;
+    cpop_lkp_table[194] = 3;
+    cpop_lkp_table[195] = 4;
+    cpop_lkp_table[196] = 3;
+    cpop_lkp_table[197] = 4;
+    cpop_lkp_table[198] = 4;
+    cpop_lkp_table[199] = 5;
+    cpop_lkp_table[200] = 3;
+    cpop_lkp_table[201] = 4;
+    cpop_lkp_table[202] = 4;
+    cpop_lkp_table[203] = 5;
+    cpop_lkp_table[204] = 4;
+    cpop_lkp_table[205] = 5;
+    cpop_lkp_table[206] = 5;
+    cpop_lkp_table[207] = 6;
+    cpop_lkp_table[208] = 3;
+    cpop_lkp_table[209] = 4;
+    cpop_lkp_table[210] = 4;
+    cpop_lkp_table[211] = 5;
+    cpop_lkp_table[212] = 4;
+    cpop_lkp_table[213] = 5;
+    cpop_lkp_table[214] = 5;
+    cpop_lkp_table[215] = 6;
+    cpop_lkp_table[216] = 4;
+    cpop_lkp_table[217] = 5;
+    cpop_lkp_table[218] = 5;
+    cpop_lkp_table[219] = 6;
+    cpop_lkp_table[220] = 5;
+    cpop_lkp_table[221] = 6;
+    cpop_lkp_table[222] = 6;
+    cpop_lkp_table[223] = 7;
+    cpop_lkp_table[224] = 3;
+    cpop_lkp_table[225] = 4;
+    cpop_lkp_table[226] = 4;
+    cpop_lkp_table[227] = 5;
+    cpop_lkp_table[228] = 4;
+    cpop_lkp_table[229] = 5;
+    cpop_lkp_table[230] = 5;
+    cpop_lkp_table[231] = 6;
+    cpop_lkp_table[232] = 4;
+    cpop_lkp_table[233] = 5;
+    cpop_lkp_table[234] = 5;
+    cpop_lkp_table[235] = 6;
+    cpop_lkp_table[236] = 5;
+    cpop_lkp_table[237] = 6;
+    cpop_lkp_table[238] = 6;
+    cpop_lkp_table[239] = 7;
+    cpop_lkp_table[240] = 4;
+    cpop_lkp_table[241] = 5;
+    cpop_lkp_table[242] = 5;
+    cpop_lkp_table[243] = 6;
+    cpop_lkp_table[244] = 5;
+    cpop_lkp_table[245] = 6;
+    cpop_lkp_table[246] = 6;
+    cpop_lkp_table[247] = 7;
+    cpop_lkp_table[248] = 5;
+    cpop_lkp_table[249] = 6;
+    cpop_lkp_table[250] = 6;
+    cpop_lkp_table[251] = 7;
+    cpop_lkp_table[252] = 6;
+    cpop_lkp_table[253] = 7;
+    cpop_lkp_table[254] = 7;
+    cpop_lkp_table[255] = 8;
+
+  end
+  assign b = cpop_lkp_table[a];
+endmodule
