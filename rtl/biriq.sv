@@ -322,7 +322,7 @@ counter_overload,i_addr,i_kill,d_addr,d_write,d_kill,weak_io, cbie, cbcfe, cbze,
     p1_we_data, p1_we_dest, p2_we_i, p2_we_data, p2_we_dest, p0_rd_src, p0_rd_datas, p1_rd_src, p1_rd_datas, p2_rd_src, p2_rd_datas, p3_rd_src, p3_rd_datas, p4_rd_src, 
     p4_rd_datas, p5_rd_src, p5_rd_datas,r4_vec_indx, r4, r5_vec_indx,r5);
 
-    mathSystem #(ENABLE_PSX) maths (cpu_clock_i, full_flush, ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_hint_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,
+    ixu maths (cpu_clock_i, full_flush, ms_ins0_opcode_o,ms_ins0_ins_type,ms_ins0_imm_o,ms_ins0_immediate_o,ms_ins0_hint_o,ms_ins0_dest_o,ms_ins0_valid,ms_ins1_opcode_o,
     ms_ins1_ins_type,ms_ins1_imm_o,ms_ins1_immediate_o,ms_ins1_dest_o,ms_ins1_hint_o,ms_ins1_valid,ms_pack_id,ms_rn_pc_o,ms_rn_bm_pred_o,ms_rn_btype_o,ms_rn_btb_vld_o
     ,ms_rn_btb_target_o,ms_rn_btb_way_o,ms_rn_btb_idx_o,ms_rn_btb_pack,ms_rn_btb_wen,ms_p0_data_o,ms_p0_vld_o,ms_p0_rs1_vld_o,ms_p0_rs2_vld_o,
     ms_p0_rs1_rdy,ms_p0_rs2_rdy,ms_p1_data_o,ms_p1_vld_o,ms_p1_rs1_vld_o,ms_p1_rs2_vld_o,ms_p1_rs1_rdy,ms_p1_rs2_rdy,ms_p0_busy_i,ms_p1_busy_i, p2_we_i, p2_we_dest,
