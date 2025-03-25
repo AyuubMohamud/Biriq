@@ -24,7 +24,7 @@
 
 `default_nettype none
 
-module unifiedIntQueue (
+module ixu_mp_queue (
     input  wire         core_clock_i,
     input  wire         core_flush_i,
     input  wire  [17:0] p0_data_i,

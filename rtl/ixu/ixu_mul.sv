@@ -1,4 +1,4 @@
-module mul (
+module ixu_mul (
     input  wire [31:0] a,
     input  wire [31:0] b,
     input  wire [ 1:0] op,

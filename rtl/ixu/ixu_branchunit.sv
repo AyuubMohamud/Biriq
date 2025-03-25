@@ -20,7 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module branchUnit (
+module ixu_branchunit (
     input  wire        mts,
     input  wire        mtu,
     input  wire        eq,
@@ -44,10 +44,7 @@ module branchUnit (
   wire lt;
   wire [31:0] first_operand;
   wire [31:0] second_operand;
-  wire wrongful_nbranch;
-  wire wrongful_target;
-  wire wrongful_type;
-  wire wrongful_bm;
+
   assign mt = !bnch_cond[1] ? mts : mtu;
   assign lt = !(mt | eq);
   assign brnch_res  = {bnch_cond[2], bnch_cond[0]} == 2'b00 ? eq :   {bnch_cond[2], bnch_cond[0]} == 2'b01 ? !eq :    {bnch_cond[2], bnch_cond[0]} == 2'b10 ? lt :   mt|eq;

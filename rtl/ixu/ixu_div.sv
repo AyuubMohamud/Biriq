@@ -3,19 +3,19 @@
 // Learn more at https://projectf.io/verilog-lib/
 // Expanded to support all divison opcodes in RISC-V by Ayuub Mohamud
 
-module division (
-    input  wire         core_clock_i,         // clock
-    input  wire         core_flush_i,         // reset
-    input  wire         start,       // start calculation
+module ixu_div (
+    input  wire         core_clock_i,  // clock
+    input  wire         core_flush_i,  // reset
+    input  wire         start,         // start calculation
     input  wire         unsigned_i,
     input  wire         opcode_i,
-    output logic        busy,        // calculation in progress
-    output logic        done,        // calculation is complete (high for one tick)
-    output logic        valid,       // result is valid
-    output logic        dbz,         // divide by zero
+    output logic        busy,          // calculation in progress
+    output logic        done,          // calculation is complete (high for one tick)
+    output logic        valid,         // result is valid
+    output logic        dbz,           // divide by zero
     output logic        overflow,
-    input  wire  [31:0] a_i,         // dividend (numerator)
-    input  wire  [31:0] b_i,         // divisor (denominator)
+    input  wire  [31:0] a_i,           // dividend (numerator)
+    input  wire  [31:0] b_i,           // divisor (denominator)
     output logic [31:0] res
 );
 

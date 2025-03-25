@@ -189,7 +189,7 @@ module ixu_sc_pipe (
       .mtu_o(mtu),
       .eq_o(eq)
   );
-  branchUnit branchUnit_inst (
+  ixu_branchunit branchUnit_inst (
       .mts(mts),
       .mtu(mtu),
       .eq(eq),

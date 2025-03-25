@@ -20,46 +20,63 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module binfo (
-    input   wire logic                  cpu_clock_i,
-
-    input   wire logic [29:0]           rn_pc_i,
-    input   wire logic  [1:0]           rn_bm_pred_i,
-    input   wire logic  [1:0]           rn_btype_i,
-    input   wire logic                  rn_btb_vld_i,
-    input   wire logic  [29:0]          rn_btb_target_i,
-    input   wire logic                  rn_btb_way_i,
-    input   wire logic                  rn_btb_idx_i,
-    input   wire logic [3:0]            rn_btb_pack,
-    input   wire logic                  rn_btb_wen,
-
-    input   wire logic [3:0]            pack_i,
-    output  wire logic [29:0]           pc_o,
-    output  wire logic  [1:0]           bm_pred_o,
-    output  wire logic  [1:0]           btype_o,
-    output  wire logic                  btb_vld_o,
-    output  wire logic  [29:0]          btb_target_o,
-    output  wire logic                  btb_way_o,
-    output  wire logic                  btb_idx_o
+module ixu_iram (
+    input  wire        cpu_clk_i,
+    input  wire [ 6:0] ins0_opcode_i,
+    input  wire [ 5:0] ins0_ins_type,
+    input  wire        ins0_imm_i,
+    input  wire [31:0] ins0_immediate_i,
+    input  wire [ 5:0] ins0_dest_i,
+    input  wire [ 1:0] ins0_hint_i,
+    input  wire        ins0_valid,
+    input  wire [ 6:0] ins1_opcode_i,
+    input  wire [ 5:0] ins1_ins_type,
+    input  wire        ins1_imm_i,
+    input  wire [31:0] ins1_immediate_i,
+    input  wire [ 5:0] ins1_dest_i,
+    input  wire [ 1:0] ins1_hint_i,
+    input  wire        ins1_valid,
+    input  wire [ 3:0] pack_id,
+    output wire [ 6:0] alu0_opcode_o,
+    output wire [ 5:0] alu0_ins_type,
+    output wire        alu0_imm_o,
+    output wire [31:0] alu0_immediate_o,
+    output wire [ 5:0] alu0_dest_o,
+    output wire [ 1:0] alu0_hint_o,
+    input  wire [ 4:0] alu0_rob_i,
+    output wire [ 6:0] alu1_opcode_o,
+    output wire [ 5:0] alu1_ins_type,
+    output wire        alu1_imm_o,
+    output wire [31:0] alu1_immediate_o,
+    output wire [ 5:0] alu1_dest_o,
+    output wire [ 1:0] alu1_hint_o,
+    input  wire [ 4:0] alu1_rob_i
 );
-    reg [66:0] binfo_ram [0:15];
+  // 2x2 ram
+  reg [53:0] iram0[0:15];
+  reg [53:0] iram1[0:15];
 
-    always_ff @(posedge cpu_clock_i) begin
-        if (rn_btb_wen) begin
-            binfo_ram[rn_btb_pack] <= {rn_pc_i,
-            rn_bm_pred_i,
-            rn_btype_i,
-            rn_btb_vld_i,
-            rn_btb_target_i,
-            rn_btb_way_i,
-            rn_btb_idx_i};
-        end
+  always_ff @(posedge cpu_clk_i) begin
+    if (ins0_valid) begin
+      iram0[pack_id] <= {
+        ins0_hint_i, ins0_opcode_i, ins0_ins_type, ins0_imm_i, ins0_immediate_i, ins0_dest_i
+      };
     end
-    assign {pc_o,
-    bm_pred_o,
-    btype_o,
-    btb_vld_o,
-    btb_target_o,
-    btb_way_o,
-    btb_idx_o} = binfo_ram[pack_i];
+    if (ins1_valid) begin
+      iram1[pack_id] <= {
+        ins1_hint_i, ins1_opcode_i, ins1_ins_type, ins1_imm_i, ins1_immediate_i, ins1_dest_i
+      };
+    end
+  end
+  assign {alu0_hint_o,alu0_opcode_o,
+    alu0_ins_type,
+    alu0_imm_o,
+    alu0_immediate_o,
+    alu0_dest_o} = 
+    alu0_rob_i[0] ? iram1[alu0_rob_i[4:1]] : iram0[alu0_rob_i[4:1]];
+  assign {alu1_hint_o,alu1_opcode_o,
+    alu1_ins_type, 
+    alu1_imm_o,
+    alu1_immediate_o,
+    alu1_dest_o} = alu1_rob_i[0] ? iram1[alu1_rob_i[4:1]] : iram0[alu1_rob_i[4:1]];
 endmodule

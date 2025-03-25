@@ -13,8 +13,7 @@ module ixu_mc_pipe (
     // IXU Multi Cycle Pipe <-> Instruction RAM (IXU)
     output wire  [ 4:0] rob_o,
     input  wire  [ 6:0] opcode_i,
-    input  wire  [ 1:0] type_i,
-    input  wire  [ 5:0] ins_type,         // 0 = ALU, 1 = JAL, 2 = JALR, 3 = LUI, 4 - AUIPC
+    input  wire  [ 6:0] ins_type,
     input  wire         imm_i,
     input  wire  [31:0] immediate_i,
     input  wire  [ 5:0] dest_i,
@@ -32,6 +31,7 @@ module ixu_mc_pipe (
     output wire  [ 4:0] pmu_ins_id_o,
     output wire         pmu_ins_valid_o
 );
+  // 0 = ALU, 1 = JAL, 2 = JALR, 3 = LUI, 4 = AUIPC, 5 = Mul, 6 = Div
   assign rob_o = data_i[4:0];
   assign rs1_o = data_i[11:6];
   assign rs2_o = data_i[17:12];
@@ -78,48 +78,47 @@ module ixu_mc_pipe (
   end
   always_ff @(posedge core_clock_i) {wb_dest, ex_dest} <= {ex_dest, dest_i};
   always_ff @(posedge core_clock_i) {wb_rob, ex_rob} <= {ex_rob, data_i[5:0]};
-  //always_ff @(posedge core_clock_i)
-  //  if (core_flush_i) {wb_valid, ex_valid} <= '0;
-  //  else
-  //    {wb_valid, ex_valid} <= {
-  //      ex_valid, (type_i == 2'b10 && valid_i && div_done) || (type_i != 2'b10 && valid_i)
-  //    };
-  //always_ff @(posedge core_clock_i) {ex_type} <= type_i;
-  //always_ff @(posedge core_clock_i)
-  //  if (core_flush_i) {wb_fwd, ex_fwd} <= '0;
-  //  else
-  //    {wb_fwd, ex_fwd} <= {
-  //      ex_fwd,
-  //      (|ins_type) & ((type_i == 2'b10 && valid_i && div_done) || (type_i != 2'b10 && valid_i)) & (dest_i != '0)
-  //    };
-  //always_ff @(posedge core_clock_i) wb_data <= ixu_mc_ex_data;
+  always_ff @(posedge core_clock_i)
+    if (core_flush_i) {wb_valid, ex_valid} <= '0;
+    else {wb_valid, ex_valid} <= {ex_valid & !(ins_type[6] && !div_done), valid_i};
+  always_ff @(posedge core_clock_i) {ex_type} <= ins_type[6] ? 2'b10 : ins_type[5] ? 2'b01 : 2'b00;
+  always_ff @(posedge core_clock_i)
+    if (core_flush_i) {wb_fwd, ex_fwd} <= '0;
+    else
+      {wb_fwd, ex_fwd} <= {
+        ex_fwd & !(ins_type[6] && !div_done), (|ins_type) & valid_i & (dest_i != '0)
+      };
+  always_ff @(posedge core_clock_i) wb_data <= ixu_mc_ex_data;
 
   always_comb
     case (mc_pipe_state)
-      IDLE: begin
-        busy_o = valid_i & (type_i == 2'b10);
-      end
-      DIVISION: begin
-        busy_o = !div_done;
-      end
+      IDLE: busy_o = valid_i & ins_type[6];
+      DIVISION: busy_o = !div_done;
     endcase
 
   always_ff @(posedge core_clock_i)
     if (core_flush_i) mc_pipe_state <= IDLE;
     else
       case (mc_pipe_state)
-        IDLE: if (valid_i & (type_i == 2'b10)) mc_pipe_state <= DIVISION;
+        IDLE: if (valid_i & ins_type[6]) mc_pipe_state <= DIVISION;
         DIVISION: if (div_done) mc_pipe_state <= IDLE;
+      endcase
+  always_ff @(posedge core_clock_i)
+    if (core_flush_i) div_ex <= 1'b0;
+    else
+      case (mc_pipe_state)
+        IDLE: if (valid_i & ins_type[6]) div_ex <= 1'b1;
+        DIVISION: div_ex <= 1'b0;
       endcase
 
   assign ixu_mc_ex_dest = ex_dest;
   assign ixu_mc_ex_data = ex_type == 2'b00 ? ex_alu_result : ex_type == 2'b01 ? ex_mul_result : ex_div_result;
-  assign ixu_mc_ex_valid = ex_fwd;
+  assign ixu_mc_ex_valid = ex_fwd & !(ins_type[6] && !div_done);
   assign ixu_mc_wb_dest = wb_dest;
   assign ixu_mc_wb_data = wb_data;
   assign ixu_mc_wb_valid = wb_fwd;
   assign wakeup_dest = ex_dest;
-  assign wakeup_valid = ex_fwd;
+  assign wakeup_valid = ex_fwd & !(ins_type[6] && !div_done);
   assign pmu_ins_id_o = wb_rob[4:0];
   assign pmu_ins_valid_o = wb_valid;
 
@@ -139,14 +138,14 @@ module ixu_mc_pipe (
       .eq_o(eq)
   );
 
-  mul mul_inst (
+  ixu_mul mul_inst (
       .a  (a),
       .b  (b),
       .op (opc[1:0]),
       .res(ex_mul_result)
   );
 
-  division division_inst (
+  ixu_div division_inst (
       .core_clock_i(core_clock_i),
       .core_flush_i(core_flush_i),
       .start(div_ex),
@@ -164,7 +163,7 @@ module ixu_mc_pipe (
 
   // verilator lint_off UNUSED
   wire unused;
-  assign unused = |ex_adder_result | mts | mtu | eq | div_dbz | div_overflow | div_valid | wb_rob[5];
+  assign unused = |ex_adder_result | mts | mtu | eq | div_dbz | div_overflow | div_valid | div_busy | wb_rob[5];
   // verilator lint_on UNUSED
 
 
