@@ -12,7 +12,7 @@ module ixu_sc_pipe (
     // IXU Single Cycle Pipe <-> Instruction RAM (IXU)
     output wire  [ 4:0] rob_o,
     input  wire  [ 6:0] opcode_i,
-    input  wire  [ 5:0] ins_type,           // 0 = ALU, 1 = JAL, 2 = JALR, 3 = LUI, 4 - AUIPC
+    input  wire  [ 6:0] ins_type,
     input  wire         imm_i,
     input  wire  [31:0] immediate_i,
     input  wire  [ 5:0] dest_i,

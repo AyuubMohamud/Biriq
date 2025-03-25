@@ -24,14 +24,14 @@ module ixu (
     input  wire        core_clock_i,
     input  wire        core_flush_i,
     input  wire [ 6:0] ins0_opcode_i,
-    input  wire [ 5:0] ins0_ins_type,
+    input  wire [ 6:0] ins0_ins_type,
     input  wire        ins0_imm_i,
     input  wire [31:0] ins0_immediate_i,
     input  wire [ 1:0] ins0_hint_i,
     input  wire [ 5:0] ins0_dest_i,
     input  wire        ins0_valid,
     input  wire [ 6:0] ins1_opcode_i,
-    input  wire [ 5:0] ins1_ins_type,
+    input  wire [ 6:0] ins1_ins_type,
     input  wire        ins1_imm_i,
     input  wire [31:0] ins1_immediate_i,
     input  wire [ 5:0] ins1_dest_i,
@@ -47,13 +47,17 @@ module ixu (
     input  wire        rn_btb_idx_i,
     input  wire [ 3:0] rn_btb_pack,
     input  wire        rn_btb_wen,
-    input  wire [18:0] p0_data_i,
+    input  wire [17:0] p0_data_i,
+    input  wire        p0_sc_i,
+    input  wire        p0_mc_i,
     input  wire        p0_vld_i,
     input  wire        p0_rs1_vld_i,
     input  wire        p0_rs2_vld_i,
     input  wire        p0_rs1_rdy,
     input  wire        p0_rs2_rdy,
-    input  wire [18:0] p1_data_i,
+    input  wire [17:0] p1_data_i,
+    input  wire        p1_sc_i,
+    input  wire        p1_mc_i,
     input  wire        p1_vld_i,
     input  wire        p1_rs1_vld_i,
     input  wire        p1_rs2_vld_i,
@@ -106,14 +110,14 @@ module ixu (
     output wire        wb_btb_bm_mod_o
 );
   wire [ 6:0] alu0_opcode_o;
-  wire [ 5:0] alu0_ins_type;
+  wire [ 6:0] alu0_ins_type;
   wire        alu0_imm_o;
   wire [31:0] alu0_immediate_o;
   wire [ 5:0] alu0_dest_o;
   wire [ 1:0] alu0_hint_o;
   wire [ 4:0] alu0_rob_i;
   wire [ 6:0] alu1_opcode_o;
-  wire [ 5:0] alu1_ins_type;
+  wire [ 6:0] alu1_ins_type;
   wire        alu1_imm_o;
   wire [31:0] alu1_immediate_o;
   wire [ 5:0] alu1_dest_o;
@@ -192,16 +196,16 @@ module ixu (
       core_clock_i,
       core_flush_i,
       p0_data_i[17:0],
-      p0_data_i[18],
-      1'b0,
+      p0_sc_i,
+      p0_mc_i,
       p0_vld_i,
       p0_rs1_vld_i,
       p0_rs2_vld_i,
       p0_rs1_rdy,
       p0_rs2_rdy,
       p1_data_i[17:0],
-      p1_data_i[18],
-      1'b0,
+      p1_sc_i,
+      p1_mc_i,
       p1_vld_i,
       p1_rs1_vld_i,
       p1_rs2_vld_i,
@@ -282,7 +286,7 @@ module ixu (
       .rs2_data_i(ex10_rs2_data_i),
       .rob_o(alu1_rob_i),
       .opcode_i(alu1_opcode_o),
-      .ins_type({1'b0, alu1_ins_type}),
+      .ins_type(alu1_ins_type),
       .imm_i(alu1_imm_o),
       .immediate_i(alu1_immediate_o),
       .dest_i(alu1_dest_o),

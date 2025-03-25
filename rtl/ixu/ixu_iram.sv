@@ -23,14 +23,14 @@
 module ixu_iram (
     input  wire        cpu_clk_i,
     input  wire [ 6:0] ins0_opcode_i,
-    input  wire [ 5:0] ins0_ins_type,
+    input  wire [ 6:0] ins0_ins_type,
     input  wire        ins0_imm_i,
     input  wire [31:0] ins0_immediate_i,
     input  wire [ 5:0] ins0_dest_i,
     input  wire [ 1:0] ins0_hint_i,
     input  wire        ins0_valid,
     input  wire [ 6:0] ins1_opcode_i,
-    input  wire [ 5:0] ins1_ins_type,
+    input  wire [ 6:0] ins1_ins_type,
     input  wire        ins1_imm_i,
     input  wire [31:0] ins1_immediate_i,
     input  wire [ 5:0] ins1_dest_i,
@@ -38,14 +38,14 @@ module ixu_iram (
     input  wire        ins1_valid,
     input  wire [ 3:0] pack_id,
     output wire [ 6:0] alu0_opcode_o,
-    output wire [ 5:0] alu0_ins_type,
+    output wire [ 6:0] alu0_ins_type,
     output wire        alu0_imm_o,
     output wire [31:0] alu0_immediate_o,
     output wire [ 5:0] alu0_dest_o,
     output wire [ 1:0] alu0_hint_o,
     input  wire [ 4:0] alu0_rob_i,
     output wire [ 6:0] alu1_opcode_o,
-    output wire [ 5:0] alu1_ins_type,
+    output wire [ 6:0] alu1_ins_type,
     output wire        alu1_imm_o,
     output wire [31:0] alu1_immediate_o,
     output wire [ 5:0] alu1_dest_o,
@@ -53,8 +53,8 @@ module ixu_iram (
     input  wire [ 4:0] alu1_rob_i
 );
   // 2x2 ram
-  reg [53:0] iram0[0:15];
-  reg [53:0] iram1[0:15];
+  reg [54:0] iram0[0:15];
+  reg [54:0] iram1[0:15];
 
   always_ff @(posedge cpu_clk_i) begin
     if (ins0_valid) begin

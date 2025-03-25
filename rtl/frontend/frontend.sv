@@ -62,7 +62,7 @@ parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RA
     // out to engine
     output       logic                  ins0_port_o,
     output       logic                  ins0_dnagn_o,
-    output       logic [5:0]            ins0_alu_type_o,
+    output       logic [6:0]            ins0_alu_type_o,
     output       logic [6:0]            ins0_alu_opcode_o,
     output       logic                  ins0_alu_imm_o,
     output       logic [5:0]            ins0_ios_type_o,
@@ -80,7 +80,7 @@ parameter [31:0] BPU_ENTRIES = 32,parameter BPU_ENABLE_RAS = 1, parameter BPU_RA
     output       logic [3:0]            ins0_excp_code_o,
     output       logic                  ins1_port_o,
     output       logic                  ins1_dnagn_o,
-    output       logic [5:0]            ins1_alu_type_o,
+    output       logic [6:0]            ins1_alu_type_o,
     output       logic [6:0]            ins1_alu_opcode_o,
     output       logic                  ins1_alu_imm_o,
     output       logic [5:0]            ins1_ios_type_o,
