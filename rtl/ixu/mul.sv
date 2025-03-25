@@ -11,5 +11,10 @@ module mul (
   assign result = $signed(a1) * $signed(b1);
 
   assign res = op == 2'b00 ? result[31:0] : result[63:32];
+
+  // verilator lint_off UNUSED
+  wire unused;
+  assign unused = |result[65:64];
+  // verilator lint_on UNUSED
 endmodule
 
