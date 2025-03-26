@@ -72,7 +72,7 @@ module ixu_div (
         overflow   <= 0;
         b1         <= b;
         unsigned_r <= unsigned_i;
-        sign       <= a[31] ^ b[31];
+        sign       <= opcode_i ? a_i[31] : a_i[31] ^ b_i[31];
         {acc, quo} <= {{32{1'b0}}, a, 1'b0};  // initialize calculation
       end
     end else if (busy) begin
