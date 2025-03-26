@@ -61,14 +61,6 @@ module memory_scheduler (
     output       logic [31:0]                   lsu_data_o,
     output       logic [31:0]                   lsu_addr_o,
     output       logic [5:0]                    lsu_dest_o,
-    // Complex outputs
-    output       logic  [2:0]                   cu_opcode_o,
-    output       logic  [31:0]                  cu_operand1_o,
-    output       logic  [31:0]                  cu_operand2_o,
-    output       logic                          cu_valid_o,
-    input  wire  logic                          busy_i, // ! Unused as successive requests never issued to this
-    input  wire  logic  [31:0]                  result_i,
-    input  wire  logic                          wb_valid_i,
     // csrfile inputs
     output   logic [31:0]                       tmu_data_o,
     output   logic [11:0]                       tmu_address_o,
@@ -93,7 +85,7 @@ module memory_scheduler (
 
     input   wire logic                          p2_we_i_ld
 );
-    initial tmu_valid_o = 0; initial lsu_vld_o = 0; initial cu_valid_o = 0;
+    initial tmu_valid_o = 0; initial lsu_vld_o = 0;
     wire empty;
     wire issue;
     wire logic [5:0]                    pkt0_rs1;
@@ -163,34 +155,7 @@ module memory_scheduler (
             lsu_vld_o <= 0;
         end
     end
-    reg [4:0] complex_rob = 0;
-    reg [5:0] complex_dest = 0;
-    reg [31:0] complex_data = 0;
 
-    always_ff @(posedge cpu_clk_i) begin
-        if (flush_i) begin
-            cu_valid_o <= 0;
-            complex_performing <= 0;
-            complex_await <= 0;
-        end else if (complex_await) begin
-            if (!p2_we_i_ld) begin
-                complex_await <= 0;
-            end
-        end else if (complex_performing) begin
-            cu_valid_o <= 0;
-            if (wb_valid_i) begin
-                complex_performing <= 0;
-                complex_data <= result_i;
-                complex_await <= 1;
-            end
-        end else if (packet_type[0]&packet_is_issueable) begin // check rs1 and rs2 are ready
-            cu_valid_o <= 1; cu_opcode_o <= packet_opcode; cu_operand1_o <= rs1_data; cu_operand2_o <= rs2_data;
-            complex_performing <= 1;
-            complex_rob <= packet_rob[4:0]; complex_dest <= packet_dest;
-        end else begin
-            cu_valid_o <= 0;
-        end
-    end
     always_ff @(posedge cpu_clk_i) begin
         if (flush_i) begin
             packet_select <= 1'b0;
@@ -229,10 +194,10 @@ module memory_scheduler (
             fence_exec <= 1;
         end
     end
-    assign p2_we_data = complex_await&!p2_we_i_ld ? complex_data : tmu_data_i;
-    assign p2_we_dest = complex_await&!p2_we_i_ld ? complex_dest : packet_dest;
+    assign p2_we_data = tmu_data_i;
+    assign p2_we_dest = packet_dest;
     assign p2_we_i = (tmu_done_i&!tmu_excp_i||(complex_await&!p2_we_i_ld))&&p2_we_dest!=0;
-    assign completed_rob_id = complex_await&!p2_we_i_ld ? complex_rob : packet_rob[4:0];
+    assign completed_rob_id = packet_rob[4:0];
     assign completion_valid = system_instruction_done|(complex_await&!p2_we_i_ld);
     assign exception_o = tmu_done_i&tmu_excp_i;
     assign exception_code_o = 4'd2;
