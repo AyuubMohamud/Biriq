@@ -80,14 +80,15 @@ module ixu_mc_pipe (
   always_ff @(posedge core_clock_i) {wb_rob, ex_rob} <= {ex_rob, data_i[5:0]};
   always_ff @(posedge core_clock_i)
     if (core_flush_i) {wb_valid, ex_valid} <= '0;
-    else {wb_valid, ex_valid} <= {ex_valid & !(ins_type[6] && !div_done), valid_i};
+    else if (div_done) {wb_valid, ex_valid} <= {1'b0, 1'b1};
+    else if (div_ex) {wb_valid, ex_valid} <= {1'b0, 1'b1};
+    else if (!div_busy) {wb_valid, ex_valid} <= {ex_valid, valid_i};
   always_ff @(posedge core_clock_i) {ex_type} <= ins_type[6] ? 2'b10 : ins_type[5] ? 2'b01 : 2'b00;
   always_ff @(posedge core_clock_i)
     if (core_flush_i) {wb_fwd, ex_fwd} <= '0;
-    else
-      {wb_fwd, ex_fwd} <= {
-        ex_fwd & !(ins_type[6] && !div_done), (|ins_type) & valid_i & (dest_i != '0)
-      };
+    else if (div_done) {wb_fwd, ex_fwd} <= {1'b0, 1'b1};
+    else if (div_ex) {wb_fwd, ex_fwd} <= '0;
+    else if (!div_busy) {wb_fwd, ex_fwd} <= {ex_fwd, (|ins_type[5:0]) & valid_i & (dest_i != '0)};
   always_ff @(posedge core_clock_i) wb_data <= ixu_mc_ex_data;
 
   always_comb
@@ -103,6 +104,7 @@ module ixu_mc_pipe (
         IDLE: if (valid_i & ins_type[6]) mc_pipe_state <= DIVISION;
         DIVISION: if (div_done) mc_pipe_state <= IDLE;
       endcase
+
   always_ff @(posedge core_clock_i)
     if (core_flush_i) div_ex <= 1'b0;
     else
@@ -113,12 +115,12 @@ module ixu_mc_pipe (
 
   assign ixu_mc_ex_dest = ex_dest;
   assign ixu_mc_ex_data = ex_type == 2'b00 ? ex_alu_result : ex_type == 2'b01 ? ex_mul_result : ex_div_result;
-  assign ixu_mc_ex_valid = ex_fwd & !(ins_type[6] && !div_done);
+  assign ixu_mc_ex_valid = ex_fwd;
   assign ixu_mc_wb_dest = wb_dest;
   assign ixu_mc_wb_data = wb_data;
   assign ixu_mc_wb_valid = wb_fwd;
   assign wakeup_dest = ex_dest;
-  assign wakeup_valid = ex_fwd & !(ins_type[6] && !div_done);
+  assign wakeup_valid = ex_fwd;
   assign pmu_ins_id_o = wb_rob[4:0];
   assign pmu_ins_valid_o = wb_valid;
 
