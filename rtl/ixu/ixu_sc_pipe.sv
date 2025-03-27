@@ -126,7 +126,7 @@ module ixu_sc_pipe (
     {wb_btb_target, bnch_btb_target} <= {bnch_btb_target, btb_target_i};
     {wb_btb_way, bnch_btb_way} <= {bnch_btb_way, btb_way_i};  // mask off appropriately
     {wb_call, bnch_call} <= {bnch_call, hint_i[1]};
-    {wb_ret, bnch_ret} <= {bnch_call, hint_i[0]};
+    {wb_ret, bnch_ret} <= {bnch_ret, hint_i[0]};
     wb_brnch_res <= brnch_res;
     wb_excp_addr <= excp_addr;
     wb_branch_type <= branch_type;
