@@ -23,9 +23,9 @@
 module ixu_branchunit (
     input  wire        mts,
     input  wire        mtu,
-    input  wire        eq,
     // base instruction information
     input  wire [31:0] operand_1,
+    input  wire [31:0] operand_2,
     input  wire [31:0] offset,
     input  wire [29:0] pc,
     input  wire        auipc,
@@ -42,9 +42,11 @@ module ixu_branchunit (
 );
   wire mt;
   wire lt;
+  wire eq;
   wire [31:0] first_operand;
   wire [31:0] second_operand;
 
+  assign eq = operand_1 == operand_2;
   assign mt = !bnch_cond[1] ? mts : mtu;
   assign lt = !(mt | eq);
   assign brnch_res  = {bnch_cond[2], bnch_cond[0]} == 2'b00 ? eq :   {bnch_cond[2], bnch_cond[0]} == 2'b01 ? !eq :    {bnch_cond[2], bnch_cond[0]} == 2'b10 ? lt :   mt|eq;

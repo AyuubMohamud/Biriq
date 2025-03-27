@@ -38,7 +38,7 @@ module biriq_branch #(
 
   always_comb begin
     case ({
-      a_i[31], operand_2[31], gt_30
+      a_i[31], b_i[31], gt_30
     })
       3'b000: begin
         mts = 0;
@@ -78,7 +78,7 @@ module biriq_branch #(
 
   assign mt = op_i[2] ? mts : mtu;
   assign eq = a_i == operand_2;
-  assign gt_30 = a_i[30:0] > operand_2[30:0];
+  assign gt_30 = a_i[30:0] > b_i[30:0];
   assign slt = {op_i[1:0]} == 2'b10 ? {!(mts | eq)} : {!(mtu | eq)};
 
   generate

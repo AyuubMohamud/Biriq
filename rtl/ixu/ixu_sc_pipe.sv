@@ -192,8 +192,8 @@ module ixu_sc_pipe (
   ixu_branchunit branchUnit_inst (
       .mts(mts),
       .mtu(mtu),
-      .eq(eq),
       .operand_1(a),
+      .operand_2(b),
       .offset(bnch_offset),
       .pc(bnch_pc),
       .auipc(bnch_auipc),
@@ -208,7 +208,7 @@ module ixu_sc_pipe (
 
   // verilator lint_off UNUSED
   wire unused;
-  assign unused = |ex_adder_result;
+  assign unused = |ex_adder_result | eq;
   // verilator lint_on UNUSED
 
 
