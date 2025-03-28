@@ -381,7 +381,7 @@ module decode #(
       ins0_rs1_o <= rv_instruction_i[19:15];
       ins0_rs2_o <= rv_instruction_i[24:20];
       ins0_dest_o <= rv_instruction_i[11:7];
-      ins0_imm_o <= isOPIMM|isJALR|isLoad|isSystem ? jalrImmediate : isStore ? storeImmediate : isLUI|isAUIPC ? auipcImmediate : isJAL ? jalImmediate : isCmpBranch ? cmpBranchImmediate : 0;
+      ins0_imm_o <= isOPIMM|isJALR|isLoad ? jalrImmediate : isSystem ? {jalrImmediate[31:13], rv_instruction_i[19:15]!=5'd0, jalrImmediate[11:0]} : isStore ? storeImmediate : isLUI|isAUIPC ? auipcImmediate : isJAL ? jalImmediate : isCmpBranch ? cmpBranchImmediate : 0;
       ins0_reg_props_o <= {
         (isOP|isPSX|isOPIMM|isLoad|isJAL|isJALR|isAUIPC|isLUI|((isCSRRW|isCSRRC|isCSRRS)&isSystem))&&(rv_instruction_i[11:7]!=0),
         !(((isECALL | isEBREAK | isMRET | isWFI) & isSystem) | isAUIPC | isLUI | isJAL),
@@ -423,7 +423,7 @@ module decode #(
       ins1_rs1_o <= rv_instruction_i2[19:15];
       ins1_rs2_o <= rv_instruction_i2[24:20];
       ins1_dest_o <= rv_instruction_i2[11:7];
-      ins1_imm_o <= isOPIMM2|isJALR2|isLoad2|isSystem2 ? jalrImmediate2 : isStore2 ? storeImmediate2 : isLUI2|isAUIPC2 ? auipcImmediate2 : isJAL2 ? jalImmediate2 : isCmpBranch2 ? cmpBranchImmediate2 : 0;
+      ins1_imm_o <= isOPIMM2|isJALR2|isLoad2 ? jalrImmediate2 : isSystem2 ? {jalrImmediate2[31:13], rv_instruction_i2[19:15]!='0, jalrImmediate2[11:0]} : isStore2 ? storeImmediate2 : isLUI2|isAUIPC2 ? auipcImmediate2 : isJAL2 ? jalImmediate2 : isCmpBranch2 ? cmpBranchImmediate2 : 0;
       ins1_reg_props_o <= {
         (isOP2|isPSX2|isOPIMM2|isLoad2|isJAL2|isJALR2|isAUIPC2|isLUI2|((isCSRRW2|isCSRRC2|isCSRRS2)&isSystem2))&&(rv_instruction_i2[11:7]!=0),
         !(((isECALL2 | isEBREAK2 | isMRET2 | isWFI2) & isSystem2) | isAUIPC2 | isLUI2 | isJAL2),

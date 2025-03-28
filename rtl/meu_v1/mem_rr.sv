@@ -94,7 +94,7 @@ module mem_rr (
       tmu_opcode_o <= meu_op_i[1:0];
       tmu_data_o <= meu_op_i[2] ? {27'h0, meu_rs1_i[4:0]} : meu_op_i[1] ? {27'h0, rs1_data[4:0]} : rs1_data;
       tmu_address_o <= meu_imm_i[11:0];
-      tmu_wr_en <= (meu_rs1_i != 0 | meu_op_i[2]);
+      tmu_wr_en <= (meu_imm_i[12] | meu_op_i[2]);
       tmu_valid_o <= 1;
     end else if (tmu_valid_o) begin
       tmu_valid_o <= 0;
