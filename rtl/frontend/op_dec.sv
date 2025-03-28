@@ -27,6 +27,7 @@ module op_dec (
     output wire [6:0] uop,
     output wire       div,
     output wire       mul,
+    output wire       sc,
     output wire       valid
 );
   // 35 LUTs in vivado using synthesis defaults
@@ -127,8 +128,17 @@ module op_dec (
                     func3==3'b101 ? case_101_instruction : 
                     func3==3'b110 ? case_110_instruction : 
                     case_111_instruction;
-
   assign multiCycle = func7 == 7'b0000001;
+  assign sc = func3==3'b000 ? (func7 != 7'b0000000) & (func7 != 7'b0100000) & !multiCycle :
+  func3==3'b001 ? (func7!=7'b0000000) & !multiCycle:
+  func3==3'b010 ? (func7!=7'b0000000) & !multiCycle:
+  func3==3'b011 ? (func7!=7'b0000000) & !multiCycle:
+  func3==3'b100 ? (func7!=7'b0000000) & !multiCycle:
+  func3==3'b101 ? (func7!=7'b0000000) & (func7 != 7'b0100000) & !multiCycle: 
+  func3==3'b110 ? (func7!=7'b0000000) & !multiCycle: 
+  (func7!=7'b0000000)& !multiCycle;
+
+
   assign div = multiCycle & func3[2];
   assign mul = multiCycle & !func3[2];
 endmodule

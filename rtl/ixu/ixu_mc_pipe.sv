@@ -134,10 +134,10 @@ module ixu_mc_pipe (
   assign pmu_ins_valid_o = wb_valid;
 
   biriq_alu #(
-      .C_HAS_ZBA_EXTENSION  (1'b1),
-      .C_HAS_ZBB_EXTENSION  (1'b1),
-      .C_HAS_ZBS_EXTENSION  (1'b1),
-      .C_HAS_CZERO_EXTENSION(1'b1)
+      .C_HAS_ZBA_EXTENSION  (1'b0),
+      .C_HAS_ZBB_EXTENSION  (1'b0),
+      .C_HAS_ZBS_EXTENSION  (1'b0),
+      .C_HAS_CZERO_EXTENSION(1'b0)
   ) biriq_alu_inst (
       .a_i(a),
       .b_i(b),

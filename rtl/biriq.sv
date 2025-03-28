@@ -173,6 +173,8 @@ module biriq #(
   logic        ins0_dnagn_o;
   logic [ 6:0] ins0_alu_type_o;
   logic [ 6:0] ins0_alu_opcode_o;
+  logic        ins0_alu_mc_o;
+  logic        ins0_alu_sc_o;
   logic        ins0_alu_imm_o;
   logic [ 5:0] ins0_ios_type_o;
   logic [ 2:0] ins0_ios_opcode_o;
@@ -191,6 +193,8 @@ module biriq #(
   logic        ins1_dnagn_o;
   logic [ 6:0] ins1_alu_type_o;
   logic [ 6:0] ins1_alu_opcode_o;
+  logic        ins1_alu_mc_o;
+  logic        ins1_alu_sc_o;
   logic        ins1_alu_imm_o;
   logic [ 5:0] ins1_ios_type_o;
   logic [ 2:0] ins1_ios_opcode_o;
@@ -261,6 +265,8 @@ module biriq #(
       ins0_dnagn_o,
       ins0_alu_type_o,
       ins0_alu_opcode_o,
+      ins0_alu_mc_o,
+      ins0_alu_sc_o,
       ins0_alu_imm_o,
       ins0_ios_type_o,
       ins0_ios_opcode_o,
@@ -279,6 +285,8 @@ module biriq #(
       ins1_dnagn_o,
       ins1_alu_type_o,
       ins1_alu_opcode_o,
+      ins1_alu_mc_o,
+      ins1_alu_sc_o,
       ins1_alu_imm_o,
       ins1_ios_type_o,
       ins1_ios_opcode_o,
@@ -452,6 +460,8 @@ module biriq #(
       ins0_dnagn_o,
       ins0_alu_type_o,
       ins0_alu_opcode_o,
+      ins0_alu_mc_o,
+      ins0_alu_sc_o,
       ins0_alu_imm_o,
       ins0_ios_type_o,
       ins0_ios_opcode_o,
@@ -470,6 +480,8 @@ module biriq #(
       ins1_dnagn_o,
       ins1_alu_type_o,
       ins1_alu_opcode_o,
+      ins1_alu_mc_o,
+      ins1_alu_sc_o,
       ins1_alu_imm_o,
       ins1_ios_type_o,
       ins1_ios_opcode_o,

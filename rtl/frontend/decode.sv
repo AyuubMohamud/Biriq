@@ -47,6 +47,8 @@ module decode #(
     output logic        ins0_dnagn_o,
     output logic [ 6:0] ins0_alu_type_o,
     output logic [ 6:0] ins0_alu_opcode_o,
+    output logic        ins0_alu_mc_o,
+    output logic        ins0_alu_sc_o,
     output logic        ins0_alu_imm_o,
     output logic [ 5:0] ins0_ios_type_o,
     output logic [ 2:0] ins0_ios_opcode_o,
@@ -65,6 +67,8 @@ module decode #(
     output logic        ins1_dnagn_o,
     output logic [ 6:0] ins1_alu_type_o,
     output logic [ 6:0] ins1_alu_opcode_o,
+    output logic        ins1_alu_mc_o,
+    output logic        ins1_alu_sc_o,
     output logic        ins1_alu_imm_o,
     output logic [ 5:0] ins1_ios_type_o,
     output logic [ 2:0] ins1_ios_opcode_o,
@@ -219,22 +223,26 @@ module decode #(
   wire [6:0] uop0;
   wire div0, mul0;
   wire op_valid0;
+  wire sc0;
   op_dec opdec0 (
       rv_instruction_i[31:25],
       rv_instruction_i[14:12],
       uop0,
       div0,
       mul0,
+      sc0,
       op_valid0
   );
   wire [6:0] uop_imm0;
   wire op_imm_valid0;
+  wire sc_imm0;
   op_imm_dec opimmdec0 (
       rv_instruction_i[31:25],
       rv_instruction_i[14:12],
       rv_instruction_i[24:20],
       uop_imm0,
-      op_imm_valid0
+      op_imm_valid0,
+      sc_imm0
   );
   wire invalid_instruction = !(&rv_instruction_i[1:0])||!(isAUIPC|isLUI|(isOP&op_valid0)|(isOPIMM&op_imm_valid0)|isJAL|isJALR|(isCmpBranch&!isCMPBranchInvalid)|(isLoad&!load_invalid)|(isStore&!store_invalid)
     |(isSystem&!sys_invalid)|isFence|isFenceI|isPSX|(isCMO&(isCBO_CLEAN|isCBO_FLUSH|isCBO_INVAL|isCBO_ZERO)));
@@ -272,22 +280,26 @@ module decode #(
   wire [6:0] uop1;
   wire div1, mul1;
   wire op_valid1;
+  wire sc1;
   op_dec opdec1 (
       rv_instruction_i2[31:25],
       rv_instruction_i2[14:12],
       uop1,
       div1,
       mul1,
+      sc1,
       op_valid1
   );
   wire [6:0] uop_imm1;
   wire op_imm_valid1;
+  wire sc_imm1;
   op_imm_dec opimmdec1 (
       rv_instruction_i2[31:25],
       rv_instruction_i2[14:12],
       rv_instruction_i2[24:20],
       uop_imm1,
-      op_imm_valid1
+      op_imm_valid1,
+      sc_imm1
   );
   wire invalid_instruction2 = !(&rv_instruction_i2[1:0])||!(isAUIPC2|isLUI2|(isOP2&op_valid1)|(isOPIMM2&op_imm_valid1)|isJAL2|isJALR2|(isCmpBranch2&!isCMPBranchInvalid2)|(isLoad2&!load_invalid2)|(isStore2&!store_invalid2)
     |(isSystem2&!sys_invalid2)|isFence2|isFenceI2|isPSX2|(isCMO2&(isCBO_CLEAN2|isCBO_FLUSH2|isCBO_INVAL2|isCBO_ZERO2)));
@@ -375,6 +387,10 @@ module decode #(
         !(((isECALL | isEBREAK | isMRET | isWFI) & isSystem) | isAUIPC | isLUI | isJAL),
         isOP | isPSX | isCmpBranch | isStore
       };
+      ins0_alu_sc_o <= isOP ? sc0 : isOPIMM ? sc_imm0 : isCmpBranch | isAUIPC | isJALR | isJAL;
+      ins1_alu_sc_o <= isOP2 ? sc1 : isOPIMM2 ? sc_imm1 : isCmpBranch2|isAUIPC2|isJALR2|isJAL2;
+      ins0_alu_mc_o <= isOP & (div0 | mul0);
+      ins1_alu_mc_o <= isOP2 & (div1 | mul1);
       ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
       ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
       ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&((isMRET&!(current_privlidge))|(isWFI&!current_privlidge&tw)|isECALL|isEBREAK));
