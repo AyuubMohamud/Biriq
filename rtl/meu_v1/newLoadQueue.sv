@@ -74,30 +74,31 @@ module newLoadQueue #(
 );
   // Declaring wires
   wire        busy;
-  wire [ 5:0] lsu_rob;
-  wire [ 2:0] lsu_op;
-  wire [31:0] lsu_addr;
-  wire [ 5:0] lsu_dest;
-  wire        lsu_cmo;
-  wire        lsu_vld;
-  wire [ 3:0] lsu_bm;
+  wire [ 5:0] lsu_rob = lsu_rob_i;
+  wire [ 2:0] lsu_op = lsu_op_i;
+  wire [31:0] lsu_addr = lsu_addr_i;
+  wire [ 5:0] lsu_dest = lsu_dest_i;
+  wire        lsu_cmo = lsu_cmo_i;
+  wire        lsu_vld = lsu_vld_i;
+  wire [ 3:0] lsu_bm = lsu_bm_i;
   reg  [23:0] current_miss;
   reg         current_miss_valid = 0;
   reg         cmo_in_progress = 0;
-  skdbf #(
-      .DW(52)
-  ) lqskidbuffer (
-      core_clock_i,
-      core_flush_i | rob_lock,
-      busy,
-      {lsu_rob, lsu_op, lsu_addr, lsu_dest, lsu_cmo, lsu_bm},
-      lsu_vld,
-      lsu_busy_o,
-      {lsu_rob_i, lsu_op_i, lsu_addr_i, lsu_dest_i, lsu_cmo_i, lsu_bm_i},
-      lsu_vld_i
-  );
+  //skdbf #(
+  //    .DW(52)
+  //) lqskidbuffer (
+  //    core_clock_i,
+  //    core_flush_i | rob_lock,
+  //    busy,
+  //    {lsu_rob, lsu_op, lsu_addr, lsu_dest, lsu_cmo, lsu_bm},
+  //    lsu_vld,
+  //    lsu_busy_o,
+  //    {lsu_rob_i, lsu_op_i, lsu_addr_i, lsu_dest_i, lsu_cmo_i, lsu_bm_i},
+  //    lsu_vld_i
+  //);
 
   // Drive store buffer conflict signals
+  assign lsu_busy_o = busy;
   assign conflict_address_o = lsu_addr[31:2];
   assign conflict_bm_o = lsu_bm;
 

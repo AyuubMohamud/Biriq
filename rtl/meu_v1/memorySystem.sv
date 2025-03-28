@@ -113,58 +113,62 @@ module memorySystem #(
     input  wire        weak_io,
     input  wire        load_reordering
 );
-  wire        lsu_busy;
-  wire        lsu_vld;
-  wire [ 5:0] lsu_rob;
-  wire [ 3:0] lsu_op;
-  wire [31:0] lsu_data;
-  wire [31:0] lsu_addr;
-  wire [ 5:0] lsu_dest;
-  wire        lq_full;
-  wire [31:0] lq_addr;
-  wire [ 2:0] lq_ld_type;
-  wire [ 5:0] lq_dest;
-  wire [ 5:0] lq_rob;
-  wire        lq_cmo;
-  wire        lq_valid;
-  wire        enqueue_full;
-  wire [29:0] enqueue_address;
-  wire [31:0] enqueue_data;
-  wire [ 3:0] enqueue_bm;
-  wire        enqueue_io;
-  wire        enqueue_en;
-  wire [ 4:0] enqueue_rob;
-  wire [29:0] conflict_address;
-  wire [ 3:0] conflict_bm;
-  wire [31:0] excp_pc;
-  wire        excp_valid;
-  wire [ 3:0] excp_code;
-  wire [ 5:0] excp_rob;
-  wire        ins_cmp;
-  wire [ 4:0] ins_rob;
-  wire [ 4:0] agu_completed_rob_id;
-  wire        agu_completion_valid;
-  wire        agu_exception;
-  wire [ 5:0] agu_exception_rob;
-  wire [ 3:0] agu_exception_code;
-  wire        conflict_resolvable;
-  wire        conflict_res_valid;
-  wire [31:0] conflict_data_c;
-  wire [ 3:0] conflict_bm_c;
-  wire        cache_done;
-  wire [29:0] store_address;
-  wire [31:0] store_data;
-  wire [ 3:0] store_bm;
-  wire        store_valid;
-  wire        store_buffer_empty;
 
-  wire        lq_wr_en;
+  wire         lq_full;
+  wire  [31:0] lq_addr;
+  wire  [ 2:0] lq_ld_type;
+  wire  [ 5:0] lq_dest;
+  wire  [ 5:0] lq_rob;
+  wire         lq_cmo;
+  wire         lq_valid;
+  wire         enqueue_full;
+  wire  [29:0] enqueue_address;
+  wire  [31:0] enqueue_data;
+  wire  [ 3:0] enqueue_bm;
+  wire         enqueue_io;
+  wire         enqueue_en;
+  wire  [ 4:0] enqueue_rob;
+  wire  [29:0] conflict_address;
+  wire  [ 3:0] conflict_bm;
+  wire  [31:0] excp_pc;
+  wire         excp_valid;
+  wire  [ 3:0] excp_code;
+  wire  [ 5:0] excp_rob;
+  wire         ins_cmp;
+  wire  [ 4:0] ins_rob;
+  wire  [ 4:0] agu_completed_rob_id;
+  wire         agu_completion_valid;
+  wire         agu_exception;
+  wire  [ 5:0] agu_exception_rob;
+  wire  [ 3:0] agu_exception_code;
+  wire         conflict_resolvable;
+  wire         conflict_res_valid;
+  wire  [31:0] conflict_data_c;
+  wire  [ 3:0] conflict_bm_c;
+  wire         cache_done;
+  wire  [29:0] store_address;
+  wire  [31:0] store_data;
+  wire  [ 3:0] store_bm;
+  wire         store_valid;
+  wire         store_buffer_empty;
 
-  wire        lsu_cmo;
-  wire        memsched_we;
-  wire [31:0] memsched_data;
-  wire [ 5:0] memsched_dest;
-  wire [ 3:0] bm;
+  wire         lq_wr_en;
+
+
+  wire         memsched_we;
+  wire  [31:0] memsched_data;
+  wire  [ 5:0] memsched_dest;
+  wire  [ 3:0] bm;
+
+  logic        meu_vld;
+  logic [ 5:0] meu_rob;
+  logic [ 5:0] meu_type;
+  logic [ 2:0] meu_op;
+  logic [31:0] meu_imm;
+  logic [ 5:0] meu_rs1;
+  logic [ 5:0] meu_rs2;
+  logic [ 5:0] meu_dest;
+  logic        meu_busy;
   memory_scheduler port2 (
       cpu_clk_i,
       flush_i,
@@ -185,22 +189,54 @@ module memorySystem #(
       pkt1_ios_opcode_i,
       pkt1_vld_i,
       full,
-      rs1_data,
-      rs1_o,
-      rs2_data,
-      rs2_o,
       r4_vec_indx_o,
       r4_i,
       r5_vec_indx_o,
       r5_i,
-      lsu_busy,
-      lsu_vld,
-      lsu_rob,
-      lsu_cmo,
-      lsu_op,
-      lsu_data,
-      lsu_addr,
-      lsu_dest,
+      meu_busy,
+      meu_vld,
+      meu_rob,
+      meu_type,
+      meu_op,
+      meu_imm,
+      meu_rs1,
+      meu_rs2,
+      meu_dest
+  );
+  wire         agu_busy;
+  logic        agu_vld;
+  logic [ 5:0] agu_rob;
+  logic        agu_cmo;
+  logic [ 3:0] agu_op;
+  logic [31:0] agu_rs1;
+  logic [31:0] agu_rs2;
+  logic [31:0] agu_imm;
+  logic [ 5:0] agu_dest;
+  mem_rr rr0 (
+      cpu_clk_i,
+      flush_i,
+      meu_busy,
+      meu_vld,
+      meu_rob,
+      meu_type,
+      meu_op,
+      meu_imm,
+      meu_rs1,
+      meu_rs2,
+      meu_dest,
+      rs1_data,
+      rs1_o,
+      rs2_data,
+      rs2_o,
+      agu_busy,
+      agu_vld,
+      agu_rob,
+      agu_cmo,
+      agu_op,
+      agu_rs1,
+      agu_rs2,
+      agu_imm,
+      agu_dest,
       tmu_data_o,
       tmu_address_o,
       tmu_opcode_o,
@@ -219,21 +255,60 @@ module memorySystem #(
       agu_exception_code,
       memsched_we,
       memsched_data,
-      memsched_dest,
-      lq_wr_en
+      memsched_dest
   );
-
+  wire         lsu_busy;
+  logic        lsu_vld;
+  logic [ 5:0] lsu_rob;
+  logic        lsu_cmo;
+  logic [ 3:0] lsu_op;
+  logic [31:0] lsu_addr;
+  logic [31:0] lsu_data;
+  logic [ 5:0] lsu_dest;
+  logic [31:0] lsu_sq_data;
+  logic [ 3:0] lsu_sq_bm;
   AGU0 agu (
       cpu_clk_i,
       flush_i,
+      agu_busy,
+      agu_vld,
+      agu_rob,
+      agu_cmo,
+      agu_op,
+      agu_rs1,
+      agu_rs2,
+      agu_imm,
+      agu_dest,
       lsu_busy,
       lsu_vld,
       lsu_rob,
       lsu_cmo,
       lsu_op,
-      lsu_data,
       lsu_addr,
+      lsu_data,
       lsu_dest,
+      lsu_sq_data,
+      lsu_sq_bm,
+      excp_pc,
+      excp_valid,
+      excp_code,
+      excp_rob,
+      d_addr,
+      d_write,
+      d_kill
+  );
+
+  cacheAccess ca0 (
+      lsu_busy,
+      lsu_vld,
+      lsu_rob,
+      lsu_cmo,
+      lsu_op,
+      lsu_addr,
+      lsu_data,
+      lsu_dest,
+      lsu_sq_data,
+      lsu_sq_bm,
       lq_full,
       lq_addr,
       lq_cmo,
@@ -248,14 +323,8 @@ module memorySystem #(
       enqueue_bm,
       enqueue_io,
       enqueue_en,
-      enqueue_rob,
-      excp_pc,
-      excp_valid,
-      excp_code,
-      excp_rob,
-      d_addr,
-      d_write,
-      d_kill
+      enqueue_rob
+
   );
   wire sio;
   newStoreBuffer #(
