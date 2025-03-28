@@ -20,6 +20,8 @@ module ixu_mc_pipe (
     // IXU Multi Cycle <-> Instruction Wakeup
     output logic [ 5:0] wakeup_dest,
     output logic        wakeup_valid,
+    output logic [ 5:0] l_wakeup_dest,
+    output logic        l_wakeup_valid,
     // IXU Multi Cycle <-> Integer Register File
     output logic [ 5:0] ixu_mc_ex_dest,
     output logic [31:0] ixu_mc_ex_data,
@@ -35,7 +37,7 @@ module ixu_mc_pipe (
   assign rob_o = data_i[4:0];
   assign rs1_o = data_i[11:6];
   assign rs2_o = data_i[17:12];
-  initial wakeup_valid = 0;
+  //initial wakeup_valid = 0;
   /** Execute Registers and Wires **/
   typedef enum {
     IDLE,
@@ -63,10 +65,13 @@ module ixu_mc_pipe (
   wire                   div_dbz;
   wire                   div_overflow;
   wire                   div_valid;
+
   /** Writeback Stage Registers and Wires **/
   reg             [31:0] wb_data;
   reg             [ 5:0] wb_dest;
   reg             [ 5:0] wb_rob;
+  reg                    wb_mul;
+  reg             [31:0] wb_mul_data;
   reg                    wb_fwd;
   reg                    wb_valid;
   //assign div_ex = valid_i & (type_i == 2'b10) & !div_busy;
@@ -78,6 +83,8 @@ module ixu_mc_pipe (
   end
   always_ff @(posedge core_clock_i) {wb_dest, ex_dest} <= {ex_dest, dest_i};
   always_ff @(posedge core_clock_i) {wb_rob, ex_rob} <= {ex_rob, data_i[5:0]};
+  always_ff @(posedge core_clock_i) wb_mul <= ex_type == 2'b01;
+  always_ff @(posedge core_clock_i) wb_mul_data <= ex_mul_result;
   always_ff @(posedge core_clock_i)
     if (core_flush_i) {wb_valid, ex_valid} <= '0;
     else if (div_done) {wb_valid, ex_valid} <= {1'b0, 1'b1};
@@ -94,7 +101,7 @@ module ixu_mc_pipe (
   always_comb
     case (mc_pipe_state)
       IDLE: busy_o = valid_i & ins_type[6];
-      DIVISION: busy_o = !div_done;
+      DIVISION: busy_o = !(div_done);
     endcase
 
   always_ff @(posedge core_clock_i)
@@ -114,13 +121,15 @@ module ixu_mc_pipe (
       endcase
 
   assign ixu_mc_ex_dest = ex_dest;
-  assign ixu_mc_ex_data = ex_type == 2'b00 ? ex_alu_result : ex_type == 2'b01 ? ex_mul_result : ex_div_result;
+  assign ixu_mc_ex_data = ex_type == 2'b00 ? ex_alu_result : ex_div_result;
   assign ixu_mc_ex_valid = ex_fwd;
   assign ixu_mc_wb_dest = wb_dest;
-  assign ixu_mc_wb_data = wb_data;
+  assign ixu_mc_wb_data = wb_mul ? wb_mul_data : wb_data;
   assign ixu_mc_wb_valid = wb_fwd;
-  assign wakeup_dest = ex_dest;
-  assign wakeup_valid = ex_fwd;
+  assign wakeup_dest = dest_i;
+  assign wakeup_valid = (valid_i & !busy_o & (|ins_type[4:0])) | div_done;
+  assign l_wakeup_dest = ex_dest;
+  assign l_wakeup_valid = ex_valid & (ex_type == 2'b01);
   assign pmu_ins_id_o = wb_rob[4:0];
   assign pmu_ins_valid_o = wb_valid;
 

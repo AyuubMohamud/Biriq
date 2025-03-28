@@ -55,7 +55,9 @@ module ixu_mp_queue (
     input  wire  [ 5:0] eu1_wk,
     input  wire         eu1_vld,
     input  wire  [ 5:0] eu2_wk,
-    input  wire         eu2_vld
+    input  wire         eu2_vld,
+    input  wire  [ 5:0] eu3_wk,
+    input  wire         eu3_vld
 );
   reg [5:0] ShQueueCAM1[0:9];  // Store Data
   reg [5:0] ShQueueCAM0[0:9];
@@ -103,7 +105,7 @@ module ixu_mp_queue (
   wire [9:0] CMPs;
   generate
     for (genvar i = 0; i < 10; i++) begin : _0
-      assign CMPy[i] = (((ShQueueCAM1[i] == eu0_wk) & eu0_vld) | ((ShQueueCAM1[i] == eu1_wk) & eu1_vld) | ((ShQueueCAM1[i] == eu2_wk) & eu2_vld)) & vld[i];
+      assign CMPy[i] = (((ShQueueCAM1[i] == eu0_wk) & eu0_vld) | ((ShQueueCAM1[i] == eu1_wk) & eu1_vld) | ((ShQueueCAM1[i] == eu2_wk) & eu2_vld)| ((ShQueueCAM1[i] == eu3_wk) & eu3_vld)) & vld[i];
     end
   endgenerate
 
@@ -119,7 +121,7 @@ module ixu_mp_queue (
   endgenerate
   generate
     for (genvar i = 0; i < 10; i++) begin : _______
-      assign CMPs[i] = (((ShQueueCAM0[i] == eu0_wk) & eu0_vld) | ((ShQueueCAM0[i] == eu1_wk) & eu1_vld) | ((ShQueueCAM0[i] == eu2_wk) & eu2_vld) )& vld[i];
+      assign CMPs[i] = (((ShQueueCAM0[i] == eu0_wk) & eu0_vld) | ((ShQueueCAM0[i] == eu1_wk) & eu1_vld) | ((ShQueueCAM0[i] == eu2_wk) & eu2_vld)  | ((ShQueueCAM0[i] == eu3_wk) & eu3_vld))& vld[i];
     end
   endgenerate
   generate
@@ -189,14 +191,14 @@ module ixu_mp_queue (
     end
   endgenerate
   wire p0_av1_temp;
-  assign p0_av1_temp = ((((p0_data_i[17:12] == eu0_wk) & eu0_vld) | ((p0_data_i[17:12] == eu1_wk) & eu1_vld) | ((p0_data_i[17:12] == eu2_wk) & eu2_vld)))|p0_rs1_rdy|!p0_rs1_vld_i;
+  assign p0_av1_temp = ((((p0_data_i[17:12] == eu0_wk) & eu0_vld) | ((p0_data_i[17:12] == eu1_wk) & eu1_vld) | ((p0_data_i[17:12] == eu2_wk) & eu2_vld) | ((p0_data_i[17:12] == eu3_wk) & eu3_vld)))|p0_rs1_rdy|!p0_rs1_vld_i;
   wire p1_av1_temp;
-  assign p1_av1_temp = ((((p1_data_i[17:12] == eu0_wk) & eu0_vld) | ((p1_data_i[17:12] == eu1_wk) & eu1_vld) | ((p1_data_i[17:12] == eu2_wk) & eu2_vld)))|p1_rs1_rdy|!p1_rs1_vld_i;
+  assign p1_av1_temp = ((((p1_data_i[17:12] == eu0_wk) & eu0_vld) | ((p1_data_i[17:12] == eu1_wk) & eu1_vld) | ((p1_data_i[17:12] == eu2_wk) & eu2_vld) | ((p1_data_i[17:12] == eu3_wk) & eu3_vld)))|p1_rs1_rdy|!p1_rs1_vld_i;
 
   wire p0_av2_temp;
-  assign p0_av2_temp = (((p0_data_i[11:6] == eu0_wk) & eu0_vld) | ((p0_data_i[11:6] == eu1_wk) & eu1_vld) | ((p0_data_i[11:6] == eu2_wk) & eu2_vld) )|p0_rs2_rdy||!p0_rs2_vld_i;
+  assign p0_av2_temp = (((p0_data_i[11:6] == eu0_wk) & eu0_vld) | ((p0_data_i[11:6] == eu1_wk) & eu1_vld) | ((p0_data_i[11:6] == eu2_wk) & eu2_vld) | ((p0_data_i[11:6] == eu3_wk) & eu3_vld))|p0_rs2_rdy||!p0_rs2_vld_i;
   wire p1_av2_temp;
-  assign p1_av2_temp = ((((p1_data_i[11:6] == eu0_wk)& eu0_vld) | ((p1_data_i[11:6] == eu1_wk) & eu1_vld) | ((p1_data_i[11:6] == eu2_wk) & eu2_vld) ))|p1_rs2_rdy|!p1_rs2_vld_i;
+  assign p1_av2_temp = ((((p1_data_i[11:6] == eu0_wk)& eu0_vld) | ((p1_data_i[11:6] == eu1_wk) & eu1_vld) | ((p1_data_i[11:6] == eu2_wk) & eu2_vld) | ((p1_data_i[11:6] == eu3_wk) & eu3_vld)))|p1_rs2_rdy|!p1_rs2_vld_i;
 
   always_ff @(posedge core_clock_i) begin
     ShQueueCAM1[9] <= shift_two[9] ? p1_data_i[11:6] : shift[9] ? p0_data_i[11:6] : ShQueueCAM1[9];

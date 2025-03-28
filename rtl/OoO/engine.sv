@@ -147,6 +147,8 @@ module engine (
     input  wire  [ 5:0] alu0_reg_dest,
     input  wire         alu1_reg_ready,
     input  wire  [ 5:0] alu1_reg_dest,
+    input  wire         alul_reg_ready,
+    input  wire  [ 5:0] alul_reg_dest,
     output wire         stb_c0,
     output wire         stb_c1,
     input  wire         stb_emp,
@@ -192,9 +194,15 @@ module engine (
     input  wire         p0_we_i,
     input  wire  [31:0] p0_we_data,
     input  wire  [ 5:0] p0_we_dest,
+    input  wire         p0_ex_i,
+    input  wire  [31:0] p0_ex_data,
+    input  wire  [ 5:0] p0_ex_dest,
     input  wire         p1_we_i,
     input  wire  [31:0] p1_we_data,
     input  wire  [ 5:0] p1_we_dest,
+    input  wire         p1_ex_i,
+    input  wire  [31:0] p1_ex_data,
+    input  wire  [ 5:0] p1_ex_dest,
     input  wire         p2_we_i,
     input  wire  [31:0] p2_we_data,
     input  wire  [ 5:0] p2_we_dest,
@@ -233,9 +241,15 @@ module engine (
       p0_we_i,
       p0_we_data,
       p0_we_dest,
+      p0_ex_i,
+      p0_ex_data,
+      p0_ex_dest,
       p1_we_i,
       p1_we_data,
       p1_we_dest,
+      p1_ex_i,
+      p1_ex_data,
+      p1_ex_dest,
       p2_we_i,
       p2_we_data,
       p2_we_dest,
@@ -255,14 +269,16 @@ module engine (
   wire [5:0] p0_vec_indx;
   wire       p0_busy_vld;
   wire [5:0] p1_vec_indx;
-  wire       p1_free_vld = rename_flush;
+  wire       p1_free_vld = 1'b0;
   wire       p1_busy_vld;
-  wire [5:0] p2_vec_indx = rename_flush ? c1 : alu0_reg_dest;
-  wire       p2_free_vld = rename_flush | alu0_reg_ready;
-  wire [5:0] p3_vec_indx = rename_flush ? c2 : alu1_reg_dest;
+  wire [5:0] p2_vec_indx = rename_flush ? c0 : alu0_reg_dest;
+  wire       p2_free_vld = rename_flush | alu0_reg_ready;  // early wake
+  wire [5:0] p3_vec_indx = rename_flush ? c1 : alu1_reg_dest;
   wire       p3_free_vld = rename_flush | alu1_reg_ready;
-  wire [5:0] p4_vec_indx = rename_flush ? c3 : p2_we_dest;
+  wire [5:0] p4_vec_indx = rename_flush ? c2 : p2_we_dest;
   wire       p4_free_vld = rename_flush | p2_we_i;
+  wire [5:0] p5_vec_indx = rename_flush ? c3 : alul_reg_dest;
+  wire       p5_free_vld = rename_flush | alul_reg_ready;
   wire [5:0] r0_vec_indx;
   wire       r0;
   wire [5:0] r1_vec_indx;
@@ -275,7 +291,7 @@ module engine (
       core_clock_i,
       p0_vec_indx,
       p0_busy_vld,
-      rename_flush ? c0 : p1_vec_indx,
+      p1_vec_indx,
       p1_free_vld,
       p1_busy_vld,
       p2_vec_indx,
@@ -284,6 +300,8 @@ module engine (
       p3_free_vld,
       p4_vec_indx,
       p4_free_vld,
+      p5_vec_indx,
+      p5_free_vld,
       r0_vec_indx,
       r0,
       r1_vec_indx,

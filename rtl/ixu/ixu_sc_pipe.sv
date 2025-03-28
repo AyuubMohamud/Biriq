@@ -154,8 +154,8 @@ module ixu_sc_pipe (
   assign ixu_sc_wb_dest = wb_dest;
   assign ixu_sc_wb_data = wb_data;
   assign ixu_sc_wb_valid = wb_fwd;
-  assign wakeup_dest = ex_dest;
-  assign wakeup_valid = ex_fwd;
+  assign wakeup_dest = dest_i;
+  assign wakeup_valid = valid_i & (|ins_type);
   assign pmu_ins_id_o = wb_rob[4:0];
   assign pmu_ins_valid_o = wb_valid;
   assign pmu_excp_rob_o = wb_rob;

@@ -78,13 +78,21 @@ module ixu (
     output wire [ 5:0] alu0_reg_dest,
     output wire        alu1_reg_ready,
     output wire [ 5:0] alu1_reg_dest,
+    output wire        alul_reg_ready,
+    output wire [ 5:0] alul_reg_dest,
     // Register file
     output wire [31:0] p0_we_data,
     output wire [ 5:0] p0_we_dest,
     output wire        p0_wen,
+    output wire [31:0] p0_ex_data,
+    output wire [ 5:0] p0_ex_dest,
+    output wire        p0_ex,
     output wire [31:0] p1_we_data,
     output wire [ 5:0] p1_we_dest,
     output wire        p1_wen,
+    output wire [31:0] p1_ex_data,
+    output wire [ 5:0] p1_ex_dest,
+    output wire        p1_ex,
     output wire [ 5:0] ex00_rs1_o,
     output wire [ 5:0] ex00_rs2_o,
     input  wire [31:0] ex00_rs1_data_i,
@@ -223,11 +231,11 @@ module ixu (
       wkp_alu1,
       wkp_alu1_v,
       eu2_dest,
-      eu2_v
+      eu2_v,
+      alul_reg_dest,
+      alul_reg_ready
   );
-  wire ex_fwd, ex2_fwd;
-  wire [5:0] ex_dest, ex2_dest;
-  wire [31:0] ex_data, ex2_data;
+
   ixu_sc_pipe ixu_sc_pipe_inst (
       .core_clock_i(core_clock_i),
       .core_flush_i(core_flush_i),
@@ -253,9 +261,9 @@ module ixu (
       .btb_idx_i(btb_idx_o),
       .wakeup_dest(wkp_alu0),
       .wakeup_valid(wkp_alu0_v),
-      .ixu_sc_ex_dest(ex_dest),
-      .ixu_sc_ex_data(ex_data),
-      .ixu_sc_ex_valid(ex_fwd),
+      .ixu_sc_ex_dest(p0_ex_dest),
+      .ixu_sc_ex_data(p0_ex_data),
+      .ixu_sc_ex_valid(p0_ex),
       .ixu_sc_wb_dest(p0_we_dest),
       .ixu_sc_wb_data(p0_we_data),
       .ixu_sc_wb_valid(p0_wen),
@@ -292,9 +300,11 @@ module ixu (
       .dest_i(alu1_dest_o),
       .wakeup_dest(wkp_alu1),
       .wakeup_valid(wkp_alu1_v),
-      .ixu_mc_ex_dest(ex2_dest),
-      .ixu_mc_ex_data(ex2_data),
-      .ixu_mc_ex_valid(ex2_fwd),
+      .l_wakeup_dest(alul_reg_dest),
+      .l_wakeup_valid(alul_reg_ready),
+      .ixu_mc_ex_dest(p1_ex_dest),
+      .ixu_mc_ex_data(p1_ex_data),
+      .ixu_mc_ex_valid(p1_ex),
       .ixu_mc_wb_dest(p1_we_dest),
       .ixu_mc_wb_data(p1_we_data),
       .ixu_mc_wb_valid(p1_wen),
@@ -308,6 +318,6 @@ module ixu (
   assign pmu_bnch_present_o = 1'b0;
   // verilator lint_off UNUSED
   wire unused;
-  assign unused = |ex_data | |ex_dest | ex_fwd | |ex2_data | |ex2_dest | ex2_fwd | |alu1_hint_o;
+  assign unused = |alu1_hint_o;
   // verilator lint_on UNUSED
 endmodule
