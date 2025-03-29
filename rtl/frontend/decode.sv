@@ -391,8 +391,10 @@ module decode #(
       ins1_alu_sc_o <= isOP2 ? sc1 : isOPIMM2 ? sc_imm1 : isCmpBranch2|isAUIPC2|isJALR2|isJAL2;
       ins0_alu_mc_o <= isOP & (div0 | mul0);
       ins1_alu_mc_o <= isOP2 & (div1 | mul1);
-      ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
-      ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
+      //ins0_mov_elim_o <= (rv_instruction_i[31:20]==12'h000)&(rv_instruction_i[14:12]==3'b000)&(rv_instruction_i[6:2]==5'b00100);
+      //ins1_mov_elim_o <= (rv_instruction_i2[31:20]==12'h000)&(rv_instruction_i2[14:12]==3'b000)&(rv_instruction_i2[6:2]==5'b00100);
+      ins0_mov_elim_o <= 1'b0;
+      ins1_mov_elim_o <= 1'b0;
       ins0_excp_valid_o <= invalid_instruction|excp_vld|(isSystem&((isMRET&!(current_privlidge))|(isWFI&!current_privlidge&tw)|isECALL|isEBREAK));
       ins1_excp_valid_o <= invalid_instruction2|excp_vld|(isSystem2&((isMRET2&!(current_privlidge))|(isWFI2&!current_privlidge&tw)|isECALL2|isEBREAK2));
       ins0_excp_code_o <= excp_vld ? excp_code : invalid_instruction|(isSystem&(isWFI&!current_privlidge&tw)) ? 4'b0010 : isSystem&isECALL ? ecall : ebreak;
