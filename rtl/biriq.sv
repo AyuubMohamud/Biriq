@@ -22,13 +22,13 @@
 //  -----------------------------------------------------------------------------------------
 module biriq #(
     parameter [31:0] START_ADDR = 32'h0,
-    parameter [31:0] BPU_ENTRIES = 32,
+    parameter [31:0] BPU_ENTRIES = 128,
     parameter BPU_ENABLE_RAS = 1,
     parameter BPU_RAS_ENTRIES = 32,
     parameter HARTID = 0,
     parameter ENTRIES = 8,
     parameter PMP_ENTRIES = 8,
-    parameter ENABLE_PSX = 1
+    parameter ENABLE_PSX = 0
 ) (
     input  wire         cpu_clock_i,
     input  wire         cpu_reset_i,
