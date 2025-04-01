@@ -98,10 +98,20 @@ module rename (
     output wire logic        rcu_push_packet,
     input  wire logic        rcu_busy,
     input  wire logic [ 4:0] rcu_pack,
-    input  wire logic [ 4:0] arch_reg0,
-    input  wire logic [ 4:0] arch_reg1,
-    input  wire logic [ 5:0] phys_reg0,
-    input  wire logic [ 5:0] phys_reg1,
+    // Inst0
+    output wire logic [ 4:0] p0_logical_reg_o,
+    input  wire logic [ 5:0] p0_phys_reg_i,
+    output wire logic [ 4:0] p1_logical_reg_o,
+    input  wire logic [ 5:0] p1_phys_reg_i,
+    // Inst1
+    output wire logic [ 4:0] p2_logical_reg_o,
+    input  wire logic [ 5:0] p2_phys_reg_i,
+    output wire logic [ 4:0] p3_logical_reg_o,
+    input  wire logic [ 5:0] p3_phys_reg_i,
+    output wire logic [ 4:0] p4_logical_reg_o,
+    input  wire logic [ 5:0] p4_phys_reg_i,
+    output wire logic [ 4:0] p5_logical_reg_o,
+    input  wire logic [ 5:0] p5_phys_reg_i,
     // mathsystem
     output wire logic [ 6:0] ms_ins0_opcode_o,
     output wire logic [ 6:0] ms_ins0_ins_type,
@@ -348,43 +358,63 @@ module rename (
       },
       valid_i
   );
+  wire commit_rmt_p0l;
+  wire commit_rmt_p1l;
+  wire commit_rmt_p2l;
+  wire commit_rmt_p3l;
+  wire commit_rmt_p4l;
+  wire commit_rmt_p5l;
   wire [4:0] p0_logical_reg = ins0_rs1;
   wire [5:0] p0_phys_reg;
+  wire [5:0] p0_phys_reg_l;
   wire [4:0] p1_logical_reg = ins0_rs2;
   wire [5:0] p1_phys_reg;
+  wire [5:0] p1_phys_reg_l;
   wire [4:0] p2_logical_reg = ins1_rs1;
   wire [5:0] p2_phys_reg;
+  wire [5:0] p2_phys_reg_l;
   wire [4:0] p3_logical_reg = ins1_rs2;
   wire [5:0] p3_phys_reg;
+  wire [5:0] p3_phys_reg_l;
   wire [4:0] p4_logical_reg = ins0_dest;
   wire [5:0] p4_phys_reg;
+  wire [5:0] p4_phys_reg_l;
   wire [4:0] p5_logical_reg = ins1_dest;
   wire [5:0] p5_phys_reg;
+  wire [5:0] p5_phys_reg_l;
   wire [4:0] w0_logical_reg = ins0_dest;
   wire [5:0] w0_phys_reg = ins0_mov_elim ? p0_phys_reg : i_rd_data0;
   wire           w0_we = !flush_i&cyc_valid&!busy&(ins0_reg_props[2]|ins0_mov_elim)&!ins0_excp_valid&!(ins0_dest==0);
   wire [4:0] w1_logical_reg = ins1_dest;
   wire [5:0] w1_phys_reg = ins1_mov_elim ? p2_phys_reg : i_rd_data1;
   wire           w1_we = !flush_i&cyc_valid&!busy&(ins1_reg_props[2]|ins1_mov_elim)&!ins1_excp_valid&ins1_valid&!(ins1_dest==0);
+
+  assign p0_phys_reg = commit_rmt_p0l ? p0_phys_reg_i : p0_phys_reg_l;
+  assign p1_phys_reg = commit_rmt_p1l ? p1_phys_reg_i : p1_phys_reg_l;
+  assign p2_phys_reg = commit_rmt_p2l ? p2_phys_reg_i : p2_phys_reg_l;
+  assign p3_phys_reg = commit_rmt_p3l ? p3_phys_reg_i : p3_phys_reg_l;
+  assign p4_phys_reg = commit_rmt_p4l ? p4_phys_reg_i : p4_phys_reg_l;
+  assign p5_phys_reg = commit_rmt_p5l ? p5_phys_reg_i : p5_phys_reg_l;
+  assign p0_logical_reg_o = p0_logical_reg;
+  assign p1_logical_reg_o = p1_logical_reg;
+  assign p2_logical_reg_o = p2_logical_reg;
+  assign p3_logical_reg_o = p3_logical_reg;
+  assign p4_logical_reg_o = p4_logical_reg;
+  assign p5_logical_reg_o = p5_logical_reg;
   srmt speculative_register_remap_table (
       cpu_clock_i,
-      recovery_i,
       p0_logical_reg,
-      p0_phys_reg,
+      p0_phys_reg_l,
       p1_logical_reg,
-      p1_phys_reg,
+      p1_phys_reg_l,
       p2_logical_reg,
-      p2_phys_reg,
+      p2_phys_reg_l,
       p3_logical_reg,
-      p3_phys_reg,
-      arch_reg0,
-      phys_reg0,
-      arch_reg1,
-      phys_reg1,
+      p3_phys_reg_l,
       p4_logical_reg,
-      p4_phys_reg,
+      p4_phys_reg_l,
       p5_logical_reg,
-      p5_phys_reg,
+      p5_phys_reg_l,
       w0_logical_reg,
       w0_phys_reg,
       w0_we,
@@ -392,6 +422,26 @@ module rename (
       w1_phys_reg,
       w1_we
   );
+
+  map regMap (
+      cpu_clock_i,
+      flush_i,
+      w0_logical_reg,
+      w0_we,
+      w1_logical_reg,
+      w1_we,
+      p0_logical_reg,
+      p1_logical_reg,
+      p2_logical_reg,
+      p3_logical_reg,
+      commit_rmt_p0l,
+      commit_rmt_p1l,
+      commit_rmt_p2l,
+      commit_rmt_p3l,
+      commit_rmt_p4l,
+      commit_rmt_p5l
+  );
+
 
   assign ms_ins0_opcode_o = ins0_alu_opcode;
   assign ms_ins0_ins_type = ins0_alu_type;

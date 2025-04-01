@@ -22,10 +22,10 @@
 //  -----------------------------------------------------------------------------------------
 module rst (
     input  wire        clk_i,
+    input  wire        flush_i,
     input  wire  [5:0] p0_vec_indx_i,
     input  wire        p0_busy_vld_i,
     input  wire  [5:0] p1_vec_indx_i,
-    input  wire        p1_free_vld_i,
     input  wire        p1_busy_vld_i,
     input  wire  [5:0] p2_vec_indx_i,
     input  wire        p2_free_vld_i,
@@ -49,47 +49,20 @@ module rst (
     output logic       r5_o
 );
 
-  reg ffa[0:63];  // Busy port
-  reg ffb[0:63];  // Busy port
-  reg ffc[0:63];  // Free port
-  reg ffd[0:63];  // Free port
-  reg ffe[0:63];  // Free port
-  reg fff[0:63];
-  initial begin
-    for (integer i = 0; i < 64; i++) begin
-      ffa[i] = 1'b1;
-      ffb[i] = 1'b0;
-      ffc[i] = 1'b0;
-      ffd[i] = 1'b0;
-      ffe[i] = 1'b0;
-      fff[i] = 1'b0;
+  reg [63:0] rst_ff;
+  initial rst_ff = '1;
+
+  for (genvar k = 0; k < 64; k++) begin : g_
+    always_ff @(posedge clk_i) begin
+      rst_ff[k] <= flush_i ? 1'b1 : ((p0_busy_vld_i&(p0_vec_indx_i==k))||(p1_busy_vld_i&(p1_vec_indx_i==k))) ? 1'b0 :  ((p2_free_vld_i&(p2_vec_indx_i==k))||(p3_free_vld_i&(p3_vec_indx_i==k))||(p4_free_vld_i&(p4_vec_indx_i==k))||(p5_free_vld_i&(p5_vec_indx_i==k))) ? 1'b1 : rst_ff[k];
     end
   end
-  always_ff @(posedge clk_i) begin
-    if (p0_busy_vld_i) begin
-      ffa[p0_vec_indx_i] <= (1'b0 ^ ffb[p0_vec_indx_i] ^ ffc[p0_vec_indx_i] ^ ffd[p0_vec_indx_i] ^ ffe[p0_vec_indx_i]^ fff[p0_vec_indx_i]);
-    end
-    if (p1_busy_vld_i | p1_free_vld_i) begin
-      ffb[p1_vec_indx_i] <= (p1_free_vld_i ^ ffa[p1_vec_indx_i] ^ ffc[p1_vec_indx_i] ^ ffd[p1_vec_indx_i] ^ ffe[p1_vec_indx_i]^ fff[p1_vec_indx_i]);
-    end
-    if (p2_free_vld_i) begin
-      ffc[p2_vec_indx_i] <= (1'b1 ^ ffb[p2_vec_indx_i] ^ ffa[p2_vec_indx_i] ^ ffd[p2_vec_indx_i] ^ ffe[p2_vec_indx_i]^ fff[p2_vec_indx_i]);
-    end
-    if (p3_free_vld_i) begin
-      ffd[p3_vec_indx_i] <= (1'b1 ^ ffb[p3_vec_indx_i] ^ ffc[p3_vec_indx_i] ^ ffa[p3_vec_indx_i] ^ ffe[p3_vec_indx_i]^ fff[p3_vec_indx_i]);
-    end
-    if (p4_free_vld_i) begin
-      ffe[p4_vec_indx_i] <= (ffa[p4_vec_indx_i] ^ ffb[p4_vec_indx_i] ^ ffc[p4_vec_indx_i] ^ ffd[p4_vec_indx_i] ^ fff[p4_vec_indx_i]  ^ 1'b1);
-    end
-    if (p5_free_vld_i) begin
-      fff[p5_vec_indx_i] <= (ffa[p5_vec_indx_i] ^ ffb[p5_vec_indx_i] ^ ffc[p5_vec_indx_i] ^ ffd[p5_vec_indx_i] ^ ffe[p5_vec_indx_i]  ^ 1'b1);
-    end
-  end
-  // remove unneccsary comparisons for combinatinal driving.
-  assign r0_o = (ffa[r0_vec_indx_i] ^ ffb[r0_vec_indx_i] ^ ffc[r0_vec_indx_i] ^ ffd[r0_vec_indx_i] ^ ffe[r0_vec_indx_i] ^ fff[r0_vec_indx_i]);
-  assign r1_o = (ffa[r1_vec_indx_i] ^ ffb[r1_vec_indx_i] ^ ffc[r1_vec_indx_i] ^ ffd[r1_vec_indx_i] ^ ffe[r1_vec_indx_i] ^ fff[r1_vec_indx_i]);
-  assign r2_o = (ffa[r2_vec_indx_i] ^ ffb[r2_vec_indx_i] ^ ffc[r2_vec_indx_i] ^ ffd[r2_vec_indx_i] ^ ffe[r2_vec_indx_i] ^ fff[r2_vec_indx_i])&(!((p0_vec_indx_i == r2_vec_indx_i)&&p0_busy_vld_i)||(p0_vec_indx_i==0));
-  assign r3_o = (ffa[r3_vec_indx_i] ^ ffb[r3_vec_indx_i] ^ ffc[r3_vec_indx_i] ^ ffd[r3_vec_indx_i] ^ ffe[r3_vec_indx_i] ^ fff[r3_vec_indx_i]) && (!((p0_vec_indx_i == r3_vec_indx_i)&&p0_busy_vld_i)||(p0_vec_indx_i==0));
-  assign r4_o = (ffa[r4_vec_indx_i] ^ ffb[r4_vec_indx_i] ^ ffc[r4_vec_indx_i] ^ ffd[r4_vec_indx_i] ^ ffe[r4_vec_indx_i] ^ fff[r4_vec_indx_i]);
-  assign r5_o = (ffa[r5_vec_indx_i] ^ ffb[r5_vec_indx_i] ^ ffc[r5_vec_indx_i] ^ ffd[r5_vec_indx_i] ^ ffe[r5_vec_indx_i] ^ fff[r5_vec_indx_i]);
+  assign r0_o = (rst_ff[r0_vec_indx_i]);
+  assign r1_o = (rst_ff[r1_vec_indx_i]);
+  assign r2_o = (rst_ff[r2_vec_indx_i])&(!((p0_vec_indx_i == r2_vec_indx_i)&&p0_busy_vld_i)||(p0_vec_indx_i==0));
+  assign r3_o = (rst_ff[r3_vec_indx_i]) && (!((p0_vec_indx_i == r3_vec_indx_i)&&p0_busy_vld_i)||(p0_vec_indx_i==0));
+  assign r4_o = (rst_ff[r4_vec_indx_i]);
+  assign r5_o = (rst_ff[r5_vec_indx_i]);
+
+
 endmodule

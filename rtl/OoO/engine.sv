@@ -273,7 +273,6 @@ module engine (
   wire [5:0] p0_vec_indx;
   wire       p0_busy_vld;
   wire [5:0] p1_vec_indx;
-  wire       p1_free_vld = 1'b0;
   wire       p1_busy_vld;
   wire [5:0] p2_vec_indx = rename_flush ? c0 : alu0_reg_dest;
   wire       p2_free_vld = rename_flush | alu0_reg_ready;  // early wake
@@ -293,10 +292,10 @@ module engine (
   wire       r3;
   rst rst (
       core_clock_i,
+      rename_flush_o,
       p0_vec_indx,
       p0_busy_vld,
       p1_vec_indx,
-      p1_free_vld,
       p1_busy_vld,
       p2_vec_indx,
       p2_free_vld,
@@ -403,10 +402,18 @@ module engine (
   wire        push_packet;
   wire        rcu_busy;
   wire [ 4:0] rcu_pack;
-  wire [ 4:0] arch_reg0;
-  wire [ 4:0] arch_reg1;
-  wire [ 5:0] phys_reg0;
-  wire [ 5:0] phys_reg1;
+  wire logic [ 4:0] p0_logical_reg_i;
+  wire logic [ 5:0] p0_phys_reg_o;
+  wire logic [ 4:0] p1_logical_reg_i;
+  wire logic [ 5:0] p1_phys_reg_o;
+  wire logic [ 4:0] p2_logical_reg_i;
+  wire logic [ 5:0] p2_phys_reg_o;
+  wire logic [ 4:0] p3_logical_reg_i;
+  wire logic [ 5:0] p3_phys_reg_o;
+  wire logic [ 4:0] p4_logical_reg_i;
+  wire logic [ 5:0] p4_phys_reg_o;
+  wire logic [ 4:0] p5_logical_reg_i;
+  wire logic [ 5:0] p5_phys_reg_o;
 
   rename renamer (
       core_clock_i,
@@ -485,10 +492,18 @@ module engine (
       push_packet,
       rcu_busy,
       rcu_pack,
-      arch_reg0,
-      arch_reg1,
-      phys_reg0,
-      phys_reg1,
+      p0_logical_reg_i,
+      p0_phys_reg_o,
+      p1_logical_reg_i,
+      p1_phys_reg_o,
+      p2_logical_reg_i,
+      p2_phys_reg_o,
+      p3_logical_reg_i,
+      p3_phys_reg_o,
+      p4_logical_reg_i,
+      p4_phys_reg_o,
+      p5_logical_reg_i,
+      p5_phys_reg_o,
       ms_ins0_opcode_o,
       ms_ins0_ins_type,
       ms_ins0_imm_o,
@@ -597,10 +612,18 @@ module engine (
       push_packet,
       rcu_busy,
       rcu_pack,
-      arch_reg0,
-      arch_reg1,
-      phys_reg0,
-      phys_reg1,
+      p0_logical_reg_i,
+      p0_phys_reg_o,
+      p1_logical_reg_i,
+      p1_phys_reg_o,
+      p2_logical_reg_i,
+      p2_phys_reg_o,
+      p3_logical_reg_i,
+      p3_phys_reg_o,
+      p4_logical_reg_i,
+      p4_phys_reg_o,
+      p5_logical_reg_i,
+      p5_phys_reg_o,
       rob0_status,
       commit0,
       rob0_status_o,
