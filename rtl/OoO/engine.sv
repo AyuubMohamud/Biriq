@@ -227,19 +227,19 @@ module engine (
     input  wire  [ 5:0] r5_vec_indx,
     output wire         r5
 );
-  wire rename_flush = flush;
-  reg [5:0] c0 = 6'd0;
-  reg [5:0] c1 = 6'd1;
-  reg [5:0] c2 = 6'd2;
-  reg [5:0] c3 = 6'd3;
-  always_ff @(posedge core_clock_i) begin
-    if (rename_flush) begin
-      c0 <= c0 + 4;
-      c1 <= c1 + 4;
-      c2 <= c2 + 4;
-      c3 <= c3 + 4;
-    end
-  end
+  //wire rename_flush = flush;
+  //reg [5:0] c0 = 6'd0;
+  //reg [5:0] c1 = 6'd1;
+  //reg [5:0] c2 = 6'd2;
+  //reg [5:0] c3 = 6'd3;
+  //always_ff @(posedge core_clock_i) begin
+  //  if (rename_flush) begin
+  //    c0 <= c0 + 4;
+  //    c1 <= c1 + 4;
+  //    c2 <= c2 + 4;
+  //    c3 <= c3 + 4;
+  //  end
+  //end
   irf integerRegisterFile (
       core_clock_i,
       p0_we_i,
@@ -274,14 +274,14 @@ module engine (
   wire       p0_busy_vld;
   wire [5:0] p1_vec_indx;
   wire       p1_busy_vld;
-  wire [5:0] p2_vec_indx = rename_flush ? c0 : alu0_reg_dest;
-  wire       p2_free_vld = rename_flush | alu0_reg_ready;  // early wake
-  wire [5:0] p3_vec_indx = rename_flush ? c1 : alu1_reg_dest;
-  wire       p3_free_vld = rename_flush | alu1_reg_ready;
-  wire [5:0] p4_vec_indx = rename_flush ? c2 : p2_we_dest;
-  wire       p4_free_vld = rename_flush | p2_we_i;
-  wire [5:0] p5_vec_indx = rename_flush ? c3 : alul_reg_dest;
-  wire       p5_free_vld = rename_flush | alul_reg_ready;
+  wire [5:0] p2_vec_indx = alu0_reg_dest;
+  wire       p2_free_vld = alu0_reg_ready;  // early wake
+  wire [5:0] p3_vec_indx = alu1_reg_dest;
+  wire       p3_free_vld = alu1_reg_ready;
+  wire [5:0] p4_vec_indx = p2_we_dest;
+  wire       p4_free_vld = p2_we_i;
+  wire [5:0] p5_vec_indx = alul_reg_dest;
+  wire       p5_free_vld = alul_reg_ready;
   wire [5:0] r0_vec_indx;
   wire       r0;
   wire [5:0] r1_vec_indx;
@@ -357,7 +357,7 @@ module engine (
   wire       rob1_ret_o;
   ciff ciff (
       core_clock_i,
-      flush,
+      rename_flush_o,
       alu0_rob_slot_i,
       alu0_rob_complete_i,
       alu0_call_i,

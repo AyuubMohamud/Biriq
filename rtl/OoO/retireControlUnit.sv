@@ -277,7 +277,7 @@ module retireControlUnit (
       (commit_ins1 | altcommit1) & (cins1_register_allocated) & (cins1_arch_reg != 0)
   );
 
-  assign rcu_busy = full|!(retire_control_state==Normal||retire_control_state==TakeInterrupt);
+  assign rcu_busy = full|!(retire_control_state==Normal||retire_control_state==TakeInterrupt||retire_control_state==ReclaimAndRecover);
   wire [29:0] currentPC = cpacket_pc[0] ? cpacket_pc : {cpacket_pc[29:1], partial_retire};
   wire [29:0] pcPlus4 = currentPC + 30'd1;  // used in special types CSRRW, SFENCE, FENCE.I
   // Conditions of committing
@@ -298,7 +298,7 @@ module retireControlUnit (
   wire older_than_current = (!exception_valid||(exception_rob[5]==winner[5] ? winner[4:0]<exception_rob[4:0] : winner[4:0]>exception_rob[4:0]))
     &&(alu_excp_i|exception_i); // 1 when older than current
   always_ff @(posedge cpu_clock_i) begin
-    exception_valid <= flush_o ? 1'b0 : exception_valid | (alu_excp_i | exception_i);
+    exception_valid <= rename_flush_o ? 1'b0 : exception_valid | (alu_excp_i | exception_i);
     exception_code <= older_than_current ? oldest_live_excp ? exception_code_i : alu_excp_code_i : exception_code;
     exception_rob <= older_than_current ? oldest_live_excp ? completed_rob_id : rob_i : exception_rob;
     relavant_address <= older_than_current & oldest_live_excp ? exception_addr : relavant_address;
@@ -325,7 +325,7 @@ module retireControlUnit (
   reg altcommitted_on_interrupt = 0;
   reg [29:0] altcommit_npc = 0;
   assign oldest_instruction = {rd_ptr[3:0], partial_retire};
-  assign rcu_block = retire_control_state != Normal;
+  assign rcu_block = retire_control_state != Normal && retire_control_state != ReclaimAndRecover;
   assign rename_flush_o = (retire_control_state==Await) && icache_idle && dcache_flush_resp && !mem_block_i;
   assign ins_commit0 = commit_ins0 | altcommit0;
   assign ins_commit1 = commit_ins1 | altcommit1;
@@ -392,13 +392,13 @@ module retireControlUnit (
         recoveryCounter0 <= recoveryCounter0 + 5'd2;
         recoveryCounter1 <= recoveryCounter1 + 5'd2;
         btb_mod <= 0;
-        if (recoveryCounter0 == 5'd30) begin
+        if ((rd_ptr[3:0] == retire_lim) || empty) begin
           retire_control_state <= Normal;
         end
       end
       Await: begin
         wfi <= 0;
-        retire_lim <= wr_ptr[3:0];
+        retire_lim <= wr_ptr[3:0] - 1'b1;
         if (icache_idle && dcache_flush_resp && !mem_block_i) begin
           retire_control_state <= ReclaimAndRecover;
         end
