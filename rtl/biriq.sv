@@ -28,7 +28,7 @@ module biriq #(
     parameter HARTID = 0,
     parameter ENTRIES = 8,
     parameter PMP_ENTRIES = 8,
-    parameter ENABLE_PSX = 0
+    parameter ICACHE_SIZE = 16
 ) (
     input  wire         cpu_clock_i,
     input  wire         cpu_reset_i,
@@ -121,9 +121,8 @@ module biriq #(
   wire         cbze;
   wire         load_reordering;
   csrfile #(
-      .HARTID(HARTID),
-      .PMP_REGS(PMP_ENTRIES),
-      .ENABLE_PSX(ENABLE_PSX)
+      .HARTID  (HARTID),
+      .PMP_REGS(PMP_ENTRIES)
   ) csrfile (
       cpu_clock_i,
       tmu_data_i,
@@ -229,7 +228,7 @@ module biriq #(
   wire         c1_btb_bm_i;
   wire         c1_call_affirm_i;
   wire         c1_ret_affirm_i;
-  frontend #(START_ADDR, BPU_ENTRIES, BPU_ENABLE_RAS, BPU_RAS_ENTRIES, ENABLE_PSX) frontend0 (
+  frontend #(START_ADDR, BPU_ENTRIES, BPU_ENABLE_RAS, BPU_RAS_ENTRIES, ICACHE_SIZE*1024) frontend0 (
       cpu_clock_i,
       cpu_reset_i,
       full_flush,

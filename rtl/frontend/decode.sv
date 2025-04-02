@@ -20,9 +20,7 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-module decode #(
-    parameter ENABLE_PSX = 1
-) (
+module decode (
     input  wire         cpu_clk_i,
     input  wire         flush_i,
     input  wire         current_privlidge,
@@ -327,15 +325,10 @@ module decode #(
   };
   initial valid_o = 0;
   wire ins1_valid = !rv_ppc_i[0]&!(rv_btb_vld&(rv_target!={rv_ppc_i[29:1], 1'd1})&!btb_idx&(rv_btype!=2'b00 ? 1'b1 : rv_bm_pred[1]));
-  generate
-    if (ENABLE_PSX) begin : _gen_psx_dec
-      assign isPSX  = rv_instruction_i[6:2] == 5'b01010 & (rv_instruction_i[14:12] == 0);
-      assign isPSX2 = rv_instruction_i2[6:2] == 5'b01010 & (rv_instruction_i2[14:12] == 0);
-    end else begin : _gen_psx_ndec
-      assign isPSX  = 1'b0;
-      assign isPSX2 = 1'b0;
-    end
-  endgenerate
+
+  assign isPSX  = 1'b0;
+  assign isPSX2 = 1'b0;
+
   wire [1:0] branches_decoded = {
     (isJAL2 | isJALR2 | isCmpBranch2) & ins1_valid, isJAL | isJALR | isCmpBranch
   };

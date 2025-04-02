@@ -98,12 +98,13 @@ module ixu_mc_pipe (
     else if (!div_busy) {wb_fwd, ex_fwd} <= {ex_fwd, (|ins_type[5:0]) & valid_i & (dest_i != '0)};
   always_ff @(posedge core_clock_i) wb_data <= ixu_mc_ex_data;
 
-  always_comb
+  always_comb begin
     case (mc_pipe_state)
       IDLE: busy_o = valid_i & ins_type[6];
       DIVISION: busy_o = !(div_done);
+      default: busy_o = 0;
     endcase
-
+  end
   always_ff @(posedge core_clock_i)
     if (core_flush_i) mc_pipe_state <= IDLE;
     else
