@@ -139,8 +139,12 @@ module AGU0 (
   always_ff @(posedge cpu_clock_i) begin
     if (flush_i) begin
       lsu_vld_o <= 1'b0;
-    end else if (!lsu_busy_i & agu_vld_i & !((d_kill | misaligned) & !agu_cmo_i)) begin
-      lsu_vld_o     <= 1'b1;
+    end else if (!lsu_busy_i) begin
+      lsu_vld_o <= !((d_kill | misaligned) & !agu_cmo_i) & agu_vld_i;
+    end
+  end
+  always_ff @(posedge cpu_clock_i) begin
+    if (!lsu_busy_i) begin
       lsu_rob_o     <= agu_rob_i;
       lsu_cmo_o     <= agu_cmo_i;
       lsu_op_o      <= agu_op_i;
@@ -149,8 +153,6 @@ module AGU0 (
       lsu_dest_o    <= agu_dest_i;
       lsu_sq_data_o <= store_data;
       lsu_sq_bm_o   <= bm;
-    end else if (!lsu_busy_i) begin
-      lsu_vld_o <= 1'b0;
     end
   end
 

@@ -352,8 +352,15 @@ module decode (
   assign branch_correction_pc = address_to_correct;
   always_ff @(posedge cpu_clk_i) begin
     if (flush_i | branch_correction_flush) begin
-      valid_o <= 0;
+      valid_o <= 1'b0;
     end else if (!rn_busy_i & rv_valid) begin
+      valid_o <= !shutdown_frontend & !btb_correction;
+    end else if (!rn_busy_i & !rv_valid) begin
+      valid_o <= 1'b0;
+    end
+  end
+  always_ff @(posedge cpu_clk_i) begin
+    if (!rn_busy_i) begin
       ins0_port_o <= !(isJAL | isJALR | isAUIPC | isLUI | ((isOP | isOPIMM)) | isCmpBranch | isPSX);
       ins0_dnagn_o <= isFenceI | isSystem & (isMRET | isWFI);
       ins0_alu_type_o <= {
@@ -443,8 +450,6 @@ module decode (
         (isJAL2 | isJALR2) & (rv_instruction_i2[11:7] == 1),
         isJALR2&(jalrImmediate2==0)&(rv_instruction_i2[19:15]==1)&(rv_instruction_i2[11:7]==0)
       };
-    end else if (!rn_busy_i & !rv_valid) begin
-      valid_o <= 0;
     end
   end
 endmodule

@@ -85,9 +85,9 @@ module irf (
     file00[p2_rd_src] ^ file01[p2_rd_src] ^ file10[p2_rd_src];
   assign p3_rd_datas = p3_match_p0 ? p0_we_data :  p3_match_p1 ? p1_we_data : (p0_ex_i)&&(p0_ex_dest==p3_rd_src) ? p0_ex_data : (p1_ex_i)&&(p1_ex_dest==p3_rd_src) ? p1_ex_data:
     file00[p3_rd_src] ^ file01[p3_rd_src] ^ file10[p3_rd_src];
-  assign p4_rd_datas = p4_match_p0 ? p0_we_data :  p4_match_p1 ? p1_we_data : 
+  assign p4_rd_datas = p4_match_p0 ? p0_we_data :  p4_match_p1 ? p1_we_data : (p0_ex_i)&&(p0_ex_dest==p4_rd_src) ? p0_ex_data : (p1_ex_i)&&(p1_ex_dest==p4_rd_src) ? p1_ex_data:
     file00[p4_rd_src] ^ file01[p4_rd_src] ^ file10[p4_rd_src];
-  assign p5_rd_datas = p5_match_p0 ? p0_we_data :  p5_match_p1 ? p1_we_data : 
+  assign p5_rd_datas = p5_match_p0 ? p0_we_data :  p5_match_p1 ? p1_we_data : (p0_ex_i)&&(p0_ex_dest==p5_rd_src) ? p0_ex_data : (p1_ex_i)&&(p1_ex_dest==p5_rd_src) ? p1_ex_data:
     file00[p5_rd_src] ^ file01[p5_rd_src] ^ file10[p5_rd_src];
 
   always_ff @(posedge clk_i) begin

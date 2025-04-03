@@ -58,7 +58,7 @@ module freelist (
     assign o_rd_data0 = read_balance ? fifo1_o_rd_data : fifo0_o_rd_data;
     assign o_rd_data1 = i_rd0 ? read_balance ? fifo0_o_rd_data : fifo1_o_rd_data : o_rd_data0;
     assign o_empty0 = fifo0_o_empty&fifo1_o_empty;
-    assign o_empty1 = i_rd0 ? fifo0_o_empty|fifo1_o_empty : fifo0_o_empty&fifo1_o_empty;
+    assign o_empty1 = fifo0_o_empty|fifo1_o_empty;
     assign o_full0 = fifo0_o_full&fifo1_o_full;
     assign o_full1 = i_wr_en0 ? fifo0_o_full|fifo1_o_full : fifo0_o_full&fifo0_o_full;
     always_ff @(posedge i_clk) begin

@@ -528,6 +528,6 @@ module rename (
   assign p0_busy_vld_o = w0_we & !ins0_mov_elim;
   assign p1_vec_indx_o = w1_phys_reg;
   assign p1_busy_vld_o = w1_we & !ins1_mov_elim;
-  assign o_rd0 = !(memSys_full|(ms_p0_busy_i|ms_p1_busy_i)|rcu_busy|flush_i)&cyc_valid&ins0_reg_props[2]&!ins0_mov_elim&!ins0_excp_valid;
-  assign o_rd1 = !(memSys_full|(ms_p0_busy_i|ms_p1_busy_i)|rcu_busy|flush_i)&cyc_valid&ins1_reg_props[2]&!ins1_mov_elim&ins1_valid&!ins1_excp_valid;
+  assign o_rd0 = !busy&!flush_i&cyc_valid&ins0_reg_props[2]&!ins0_mov_elim&!ins0_excp_valid;
+  assign o_rd1 = !busy&!flush_i&cyc_valid&ins1_reg_props[2]&!ins1_mov_elim&ins1_valid&!ins1_excp_valid;
 endmodule

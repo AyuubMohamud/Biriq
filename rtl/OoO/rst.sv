@@ -61,8 +61,8 @@ module rst (
   assign r1_o = (rst_ff[r1_vec_indx_i]);
   assign r2_o = (rst_ff[r2_vec_indx_i])&(!((p0_vec_indx_i == r2_vec_indx_i)&&p0_busy_vld_i)||(p0_vec_indx_i==0));
   assign r3_o = (rst_ff[r3_vec_indx_i]) && (!((p0_vec_indx_i == r3_vec_indx_i)&&p0_busy_vld_i)||(p0_vec_indx_i==0));
-  assign r4_o = (rst_ff[r4_vec_indx_i]);
-  assign r5_o = (rst_ff[r5_vec_indx_i]);
+  assign r4_o = (rst_ff[r4_vec_indx_i]) || (r4_vec_indx_i == p2_vec_indx_i && p2_free_vld_i) || (r4_vec_indx_i == p3_vec_indx_i && p3_free_vld_i) || (r4_vec_indx_i == p4_vec_indx_i && p4_free_vld_i) || (r4_vec_indx_i == p5_vec_indx_i && p5_free_vld_i);
+  assign r5_o = (rst_ff[r5_vec_indx_i]) || (r5_vec_indx_i == p2_vec_indx_i && p2_free_vld_i) || (r5_vec_indx_i == p3_vec_indx_i && p3_free_vld_i) || (r5_vec_indx_i == p4_vec_indx_i && p4_free_vld_i) || (r5_vec_indx_i == p5_vec_indx_i && p5_free_vld_i);
 
 
 endmodule
