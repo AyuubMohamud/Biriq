@@ -240,7 +240,7 @@ module engine (
   //    c3 <= c3 + 4;
   //  end
   //end
-  irf integerRegisterFile (
+  irf    integerRegisterFile (
       core_clock_i,
       p0_we_i,
       p0_we_data,

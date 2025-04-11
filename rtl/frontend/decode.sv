@@ -438,8 +438,7 @@ module decode (
       btb_bm_pred_o <= rv_bm_pred;
       btb_target_o <= rv_target;
       btb_vld_o <= rv_btb_vld;
-      insbundle_pc_o <= rv_ppc_i;
-      valid_o <= !shutdown_frontend & !btb_correction;
+      insbundle_pc_o <= rv_ppc_i; 
       ins0_dnr_o <= isSystem & (isCSRRC | isCSRRW | isCSRRS) & csr_imm;
       ins1_dnr_o <= isSystem2 & (isCSRRC2 | isCSRRW2 | isCSRRS2) & csr_imm2;
       ins0_hint_o <= {
