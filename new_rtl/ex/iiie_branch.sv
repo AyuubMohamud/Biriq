@@ -20,55 +20,38 @@
 //  | in the same manner as is done within this source.                                     |
 //  |                                                                                       |
 //  -----------------------------------------------------------------------------------------
-/*
-
-op == 4'b0000: add
-op == 4'b0001: sh1add
-op == 4'b0010: sh2add
-op == 4'b0011: sh3add
-op == 4'b0100: sub
-op == 4'b0101:
-op == 4'b1000: sext.b
-op == 4'b1001: sext.h
-op == 4'b1010: zext.h
-op == 4'b1011: Undefined
-*/
-module biriq_adder #(
-    parameter C_HAS_ZBA_EXTENSION = 0,
-    parameter C_HAS_ZBB_EXTENSION = 0
-) (
-    input  wire logic [31:0] a_i,   //! rs1
-    input  wire logic [31:0] b_i,   //! rs2 or imm
-    // verilator lint_off UNUSED
-    input  wire logic [ 3:0] op_i,  //! operation to be performed
-    // verilator lint_on UNUSED
-    output wire logic [31:0] c_o    //! result
+module iiie_branch (
+    input  wire        lt,
+    input  wire        eq,
+    // base instruction information
+    input  wire [31:0] operand_1,
+    input  wire [31:0] offset,
+    input  wire [29:0] pc,
+    input  wire        auipc,
+    input  wire        call,
+    input  wire        ret,
+    input  wire        jal,
+    input  wire        jalr,
+    input  wire [ 2:0] bnch_cond,
+    // btb info
+    output wire        brnch_res,
+    output wire [ 1:0] branch_type,
+    output wire [31:0] excp_addr,
+    output wire [31:0] result_o
 );
-  wire [31:0] add_res;  //! result of add
-  // verilator lint_off UNUSED
-  wire [31:0] ext_res;  //! result of extension
-  // verilator lint_on UNUSED
-  wire [31:0] sh_res;  //! result of pre-shift
-  generate
-    if (C_HAS_ZBB_EXTENSION) begin : g_zbb
-      assign ext_res = op_i[1:0] == 2'b00 ? {{24{a_i[7]}}, a_i[7:0]} : op_i[1:0] == 2'b01 ? {{16{a_i[15]}}, a_i[15:0]} : op_i[1:0] == 2'b10 ? {16'h0000, a_i[15:0]} : 32'h00000000;
-    end else begin : g_nzbb
-      assign ext_res = 32'd0;
-    end
-  endgenerate
-  generate
-    if (C_HAS_ZBA_EXTENSION) begin : g_zba
-      assign sh_res = a_i << op_i[1:0];
-    end else begin : g_nzba
-      assign sh_res = a_i;
-    end
-  endgenerate
-  assign add_res = op_i[2] ? sh_res - b_i : sh_res + b_i;
-  generate
-    if (C_HAS_ZBB_EXTENSION) begin : g_zbb_res
-      assign c_o = op_i[3] == 1'b0 ? add_res : ext_res;
-    end else begin : g_nzbb_res
-      assign c_o = add_res;
-    end
-  endgenerate
+  wire [31:0] first_operand;
+  wire [31:0] second_operand;
+  wire [31:0] second_first_opr;
+  wire [31:0] second_second_opr;
+
+  assign second_first_opr = {pc, 2'd0};
+  assign second_second_opr = auipc ? offset : 32'd1;
+  assign brnch_res  = {bnch_cond[2], bnch_cond[0]} == 2'b00 ? eq :   {bnch_cond[2], bnch_cond[0]} == 2'b01 ? !eq :    {bnch_cond[2], bnch_cond[0]} == 2'b10 ? lt :   ~lt;
+  assign first_operand = jalr ? operand_1 : {pc, 2'b00};
+  assign second_operand = (jal | jalr | brnch_res) && !(auipc) ? offset : 32'd4;
+  assign excp_addr = first_operand + second_operand;
+  assign branch_type = call ? 2'b01 : ret ? 2'b11 : jal | jalr ? 2'b10 : 2'b00;
+
+  assign result_o = second_first_opr + second_second_opr;
+
 endmodule

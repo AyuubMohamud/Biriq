@@ -53,31 +53,7 @@ module ixu_branchunit (
   assign first_operand = jalr ? operand_1 : {pc, 2'b00};
   assign second_operand = (jal | jalr | brnch_res) && !(auipc) ? offset : 32'd4;
   assign excp_addr = first_operand + second_operand;
-  //assign wrongful_nbranch = !btb_vld_i && !(auipc);
-  //assign wrongful_target = {btb_target_i, 2'b00} != excp_addr && btb_vld_i;
   assign branch_type = call ? 2'b01 : ret ? 2'b11 : jal | jalr ? 2'b10 : 2'b00;
-  //assign wrongful_type = branch_type != btype_i && btb_vld_i;
-  //assign wrongful_bm = (brnch_res ^ bm_pred_i[1]) && btb_vld_i && branch_type == 2'b00;
-
   assign result_o = auipc ? offset + {pc, 2'b00} : {pc + 30'h1, 2'b00};
-  //always_ff @(posedge cpu_clock_i) begin
-  //if (((wrongful_nbranch&(brnch_res|(branch_type[1:0]!=2'b00)))|wrongful_target|wrongful_type|wrongful_bm)&& !flush_i && valid_i) begin
-  //  rcu_excp_o <= 1;
-  //  c1_btb_bm_mod_o <= 0;
-  //  c1_call_affirm_o <= 0;
-  //  c1_ret_affirm_o <= 0;
-  //end
-  //    else if (!(wrongful_nbranch|wrongful_target|wrongful_type|wrongful_bm) && btb_vld_i && !flush_i && valid_i) begin
-  //  c1_btb_bm_mod_o <= !(call | ret);
-  //  c1_call_affirm_o <= call;
-  //  c1_ret_affirm_o <= ret;
-  //  rcu_excp_o <= 0;
-  //end else begin
-  //  c1_btb_bm_mod_o <= 0;
-  //  c1_call_affirm_o <= 0;
-  //  c1_ret_affirm_o <= 0;
-  //  rcu_excp_o <= 0;
-  //end
-  //end
 
 endmodule
